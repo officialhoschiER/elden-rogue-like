@@ -1,4 +1,4 @@
-#  Elden Rogue - 
+#  Elden Rogue - by Hoschi
 
 Hi und Servus! Schön, dass du hierher gefunden hast. 👋
 
