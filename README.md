@@ -18,7 +18,7 @@ Das Spiel befindet sich aktuell in einer **sehr, sehr frühen Entwicklungsphase*
 
 Du musst nichts herunterladen oder installieren! Du kannst das Spiel direkt hier über den Browser zocken:
 
-👉 **[HIER KLICKEN UM ELDEN ROGUE ZU SPIELEN](https://officialhoschier.github.io/elden-rogue/)** 🎮
+👉 **[HIER KLICKEN UM ELDEN ROGUE ZU SPIELEN](https://officialhoschier.github.io/elden-rogue-like/)** 🎮
 
 Falls du den Code lieber lokal auf dem PC haben willst:
 1. Lade dir die Dateien herunter.
