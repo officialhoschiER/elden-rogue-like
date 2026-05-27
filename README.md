@@ -10,7 +10,7 @@ Das Ganze ist ein reines Hobby-Projekt, komplett kostenlos und ich verdiene dami
 
 ## Early Access und Feedback
 
-Das Spiel befindet sich aktuell in einer frühen Entwicklungsphase. Das bedeutet: Es kann hier und da haken, Grafiken fehlen eventuell noch oder das Balancing ist absolut gnadenlos. 
+Das Spiel befindet sich aktuell in einer frühen Entwicklungsphase. Das Bedeutung: Es kann hier und da haken, Grafiken fehlen eventuell noch oder das Balancing ist absolut gnadenlos. 
 
 Für Feedback, Fehlermeldungen oder allgemeine Anmerkungen nutzt bitte die dedizierten Kanäle auf unserem Discord-Server. Ich bin offen für jegliche Art von Verbesserungsvorschlägen oder Bug-Reports! Wenn du Ideen hast, wie man das Kampfsystem cooler machen, neue Talismane einbauen oder das Interface verbessern kann – immer her damit! Lass uns das Ding gerne zusammen weiterentwickeln.
 
@@ -37,14 +37,14 @@ Du bewegst dich auf der Karte von unten nach oben durch ein verzweigtes Rauten-N
 
 ### Die Kartensymbole erklärt
 
-* **Elite-Feind (icon_elite):** Ein harter Kampf, der dir bei einem Sieg dauerhafte Vitalität einbringt. Deine maximale Lebenskraft erhöht sich permanent um +10%.
-* **Ruinen-Wächter (icon_loot):** Bezwinge diesen Hüter, um deine Waffe permanent in die nächsthöhere, grundlegend stärkere Evolutionsstufe deines Klassen-Pfades zu morphen.
-* **Invader (icon_invader):** Ein Finstergeist dringt in deine Welt ein. Dieser gefährliche Kampf belohnt dich bei einem Sieg mit einer neuen Schmiedestufe (+1) für deine aktuelle Klinge, was deinen Schaden erhöht.
-* **Ort der Gnade (icon_grace):** Dein Safe-Spot. Hier kannst du rasten, um deine HP und all deine Flakons vollständig zu regenerieren.
-* **Schatztruhe (icon_talisman):** Enthält einen zufälligen Talisman (wie den Axttalisman oder den Drachengroßschild-Talisman). Der Effekt wird sofort an deine Ausrüstung gebunden.
-* **Goldener Erdenbaum (icon_tree):** Ein leuchtender Sprössling. Verleiht dir permanent +1 Flakon-Kapazität und erhöht die Heil-Effizienz deiner Estus-Flakons dauerhaft um +10%.
-* **Heiliger Turm (icon_tower):** Sobald du eine Große Rune von einem Hauptboss erbeutet hast, kannst du sie an diesem Altar exklusiv aktivieren, um massive Attribut-Boosts zu erhalten.
-* **NPC Quest (icon_quest):** Hier triffst du auf Blaidd den Halbwolf. Bezwinge ihn insgesamt 5 Mal, um seine persönliche Questlinie abzuschließen und am Ende eine legendäre Belohnung einzustreichen.
+* **Elite-Feind:** Ein harter Kampf, der dir bei einem Sieg dauerhafte Vitalität einbringt. Deine maximale Lebenskraft erhöht sich permanent um +10%.
+* **Ruinen-Wächter:** Bezwinge diesen Hüter, um deine Waffe permanent in die nächsthöhere, grundlegend stärkere Evolutionsstufe deines Klassen-Pfades zu morphen.
+* **Invader:** Ein Finstergeist dringt in deine Welt ein. Dieser gefährliche Kampf belohnt dich bei einem Sieg mit einer neuen Schmiedestufe (+1) für deine aktuelle Klinge, was deinen Schaden erhöht.
+* **Ort der Gnade:** Dein Safe-Spot. Hier kannst du rasten, um deine HP und all deine Flakons vollständig zu regenerieren.
+* **Schatztruhe:** Enthält einen zufälligen Talisman (wie den Axttalisman oder den Drachengroßschild-Talisman). Der Effekt wird sofort an deine Ausrüstung gebunden.
+* **Goldener Erdenbaum:** Ein leuchtender Sprössling. Verleiht dir permanent +1 Flakon-Kapazität und erhöht die Heil-Effizienz deiner Estus-Flakons dauerhaft um +10%.
+* **Heiliger Turm:** Sobald du eine Große Rune von einem Hauptboss erbeutet hast, kannst du sie an diesem Altar exklusiv aktivieren, um massive Attribut-Boosts zu erhalten.
+* **NPC Quest:** Hier triffst du auf Blaidd den Halbwolf. Bezwinge ihn insgesamt 5 Mal, um seine persönliche Questlinie abzuschließen und am Ende eine legendäre Belohnung einzustreichen.
 * **Boss-Kampf:** Am Ende jeder Region wartet ein mächtiger Halbgott (wie Godrick der Verpflanzte oder Sternengeissel Radahn). Besiegst du ihn, reist du direkt in das nächste, noch gefährlichere Gebiet weiter. Deine HP und Flakons werden nach dem Sieg komplett regeneriert.
 
 ### Waffen und Upgrades
