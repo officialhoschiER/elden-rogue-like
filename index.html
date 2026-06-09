@@ -2,6 +2,8 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Elden Rogue – ein roguelike Browser-Abenteuer in den Zwischenlanden. by Hoschi.">
   <title>Elden Rogue - Hauptmenue</title>
   <style>
     @font-face {
@@ -26,6 +28,7 @@
       width: 100vw; height: 100vh; overflow: hidden;
       background-image: linear-gradient(to bottom, rgba(5, 5, 5, 0.85), rgba(5, 5, 5, 0.95)), url('images/limgrave.jpg');
       background-size: cover; background-position: center;
+      position: relative;
     }
     
     .menu-container {
@@ -57,13 +60,14 @@
       text-transform: uppercase;
     }
     
-    .rules-section ul { padding-left: 20px; margin: 0 0 20px 0; color: #ccc; font-size: 0.9rem; line-height: 1.6; }
-    .rules-section li { margin-bottom: 10px; }
+    .rules-section ul { padding-left: 20px; margin: 0 0 18px 0; color: #ccc; font-size: 0.9rem; line-height: 1.55; }
+    .rules-section li { margin-bottom: 8px; }
+    .rules-section strong { color: var(--gold); }
 
     .discord-notice {
       border-top: 1px dashed var(--border-color);
       padding-top: 15px;
-      margin-top: 15px;
+      margin-top: 5px;
       font-size: 0.85rem;
       line-height: 1.5;
       color: #b5a98f;
@@ -109,17 +113,16 @@
   <div class="author-tag">by Hoschi</div>
 
   <div class="rules-section">
-    <h3>Die Gesetze der Zwischenlande</h3>
+    <h3>So funktioniert's</h3>
     <ul>
-      <li><strong>Pfadwahl:</strong> Euer Weg führt euch über die verzweigten Knotenpunkte des Baukastens. Wählt eure Schritte weise, um tiefer in die Zonen vorzudringen und Gefahren zu überstehen.</li>
-      <li><strong>Waffen & Upgrades:</strong> Auf eurer Reise könnt ihr neue Waffen finden und diese stetig upgraden, um eure Macht zu steigern. Solltet ihr eine neue Waffe ausrüsten, werden eure bisherigen Upgrades auf die neue Waffe übertragen (zumindest sollte es so sein).</li>
-      <li><strong>Die Blaidd-Quest:</strong> Bezwingt Blaidd insgesamt 5 Mal, um seine persönliche Questlinie abzuschließen und einen enormen Stärkeschub für euren Charakter freizuschalten.</li>
-      <li><strong>Segen der Gnade:</strong> Die Rast an Kontrollpunkten sowie das Bezwingen von Gebietsbossen stellt eure Lebensenergie wieder her und füllt all eure Flakons vollständig auf.</li>
-      <li><strong>Grosse Runen:</strong> Bezwingt die Halbgötter der Zonen, um Fragmente zu erlangen, die ihr an den Heiligen Türmen aktivieren könnt.</li>
+      <li>⚔️ <strong>Pfad wählen:</strong> Klicke dich über die Knotenpunkte immer tiefer in die Zwischenlande.</li>
+      <li>🗡️ <strong>Waffen:</strong> Finde stärkere Waffen und verbessere sie – Upgrades wandern auf neue Waffen mit.</li>
+      <li>🔥 <strong>Gnade:</strong> Rasten und besiegte Gebietsbosse heilen dich voll und füllen deine Flakons.</li>
+      <li>👑 <strong>Grosse Runen:</strong> Bezwinge die Halbgötter und aktiviere ihre Runen an den Türmen.</li>
+      <li>🐺 <strong>Blaidd:</strong> Besiege ihn 5×, um seine Quest und einen Stärkeschub freizuschalten.</li>
     </ul>
-
     <div class="discord-notice">
-      Für Feedback, Fehlermeldungen oder allgemeine Anmerkungen nutzt bitte die dedizierten Kanäle auf unserem <span>Discord-Server</span>. Zudem wartet eine <span>exklusive Discord-Rolle</span> auf alle ungezähmten Befleckten, die das Spiel erfolgreich bis zum Ende durchspielen.
+      Feedback &amp; Bugs bitte auf unserem <span>Discord</span> melden. Wer das Spiel durchspielt und das <span>Eldenbiest</span> bezwingt, erhält eine exklusive Discord-Rolle.
     </div>
   </div>
 
@@ -130,8 +133,8 @@
 
   <div class="social-divider"></div>
   <div class="social-container">
-    <a href="https://www.twitch.tv/officialhoschi" target="_blank" class="btn-social btn-twitch">Twitch</a>
-    <a href="https://discord.gg/mUSzTDw8Ns" target="_blank" class="btn-social btn-discord">Discord</a>
+    <a href="https://www.twitch.tv/officialhoschi" target="_blank" rel="noopener" class="btn-social btn-twitch">Twitch</a>
+    <a href="https://discord.gg/mUSzTDw8Ns" target="_blank" rel="noopener" class="btn-social btn-discord">Discord</a>
   </div>
 </div>
 
