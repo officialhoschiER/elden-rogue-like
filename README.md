@@ -1,10 +1,10 @@
 # Elden Rogue - by Hoschi
 
-Hi und Servus! Schön, dass du hierher gefunden hast.
+Moin Freunde der Sonne!
 
-Elden Rogue ist ein kleines, leidenschaftliches Fan-Projekt von mir, das die düstere Atmosphäre von Elden Ring mit dem rundenbasierten Kampfsystem und Routen-Gameplay eines Roguelikes kreuzt. 
+Elden Rogue ist ein kleines, leidenschaftliches Fan-Projekt von mir, es ist inspiriert an (wer hätte es gedacht) Elden Ring und dem Browsergame Pokelike!
 
-Das Ganze ist ein reines Hobby-Projekt, komplett kostenlos und ich verdiene damit keinen einzigen Cent – es ist von einem Fan für Fans gedacht, um einfach Spaß zu haben!
+Das Ganze ist ein reines Hobby-Projekt, komplett kostenlos und ich verdiene damit keinen einzigen Cent!
 
 ---
 
@@ -12,9 +12,9 @@ Das Ganze ist ein reines Hobby-Projekt, komplett kostenlos und ich verdiene dami
 
 Das Spiel befindet sich aktuell in einer frühen Entwicklungsphase. Das Bedeutung: Es kann hier und da haken, Grafiken fehlen eventuell noch oder das Balancing ist absolut gnadenlos. 
 
-Für Feedback, Fehlermeldungen oder allgemeine Anmerkungen nutzt bitte die dedizierten Kanäle auf unserem Discord-Server. Ich bin offen für jegliche Art von Verbesserungsvorschlägen oder Bug-Reports! Wenn du Ideen hast, wie man das Kampfsystem cooler machen, neue Talismane einbauen oder das Interface verbessern kann – immer her damit! Lass uns das Ding gerne zusammen weiterentwickeln.
+Für Feedback, Fehlermeldungen oder allgemeine Anmerkungen nutzt bitte die **dedizierten Kanäle auf meinem Discord-Server**. Ich bin offen für jegliche Art von Verbesserungsvorschlägen oder Bug-Reports! Wenn du Ideen hast, wie man das Kampfsystem cooler machen, neue Talismane einbauen oder das Interface verbessern kann – immer her damit! Lass uns das Ding gerne zusammen weiterentwickeln.
 
-Zudem wartet eine exklusive Discord-Rolle auf alle ungezähmten Befleckten, die das Spiel erfolgreich bis zum Ende durchspielen und das Eldenbiest bezwingen.
+Zudem wartet eine exklusive Discord-Rolle auf alle , die das Spiel erfolgreich bis zum Ende durchspielen und das Eldenbiest bezwingen.
 
 ---
 
@@ -58,7 +58,7 @@ Der Kampf läuft rundenbasiert ab. Du hast jede Runde die Wahl zwischen zwei Akt
 2. **Heilen:** Du trinkst einen Flakon, um deine HP im Kampf zu regenerieren (solange du noch Flakons besitzt).
 
 **Das Ausweich-System (Die Rolle):**
-Egal ob du angreifst oder dich heilst – der Gegner schlägt im selben Zug unbarmherzig zurück. Je nach gewählter Starterklasse hast du eine bestimmte Rollen-Chance (Vagabund: 30%, Astrologe: 40%, Bettler: 50%).
+Egal ob du angreifst oder dich heilst – der Gegner schlägt im selben Zug unbarmherzig zurück. Je nach gewählter Starterklasse hast du eine bestimmte Rollen-Chance.
 * Hast du einen **Rollen-Erfolg**, weichst du dem gegnerischen Hieb elegant aus und erleidest 0 Schaden.
 * Misslingt die Rolle, wirst du am Ende deiner Aktion voll getroffen und nimmst Schaden.
 
