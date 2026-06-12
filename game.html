@@ -1203,7 +1203,7 @@ function updateUI() {
   if (aktiveRune === "radahn")  { runeHpBonus += Math.round(spielerMaxHp * 0.50); runeDmgBonus += 20; }
   if (aktiveRune === "morgott") { finalHpMultiplier += 1.0; } 
   
-  let finaleAusweichChance = Math.min(0.99, basisAusweichChance + tStats.extraRolle + runeRollBonus);
+  let finaleAusweichChance = Math.min(0.8, basisAusweichChance + tStats.extraRolle + runeRollBonus);
   let finalMaxHp = Math.round((spielerMaxHp + runeHpBonus) * finalHpMultiplier); 
   
   if (spielerHp > finalMaxHp) spielerHp = finalMaxHp;
@@ -1711,7 +1711,7 @@ function spielerAngriff() {
     enemyWrapper.style.transform = "translateX(-40px)"; let runeRollBonus = aktiveRune === "godrick" ? 0.15 : 0.0;
     if (dungeonBuffRemainingCombats > 0 && activeDungeonBuff === "dodge") runeRollBonus += 0.15;
     
-    let finaleAusweichChance = Math.min(0.99, basisAusweichChance + tStats.extraRolle + runeRollBonus);
+    let finaleAusweichChance = Math.min(0.80, basisAusweichChance + tStats.extraRolle + runeRollBonus);
     let wuerfel = Math.random(); let ausgewichen = wuerfel < finaleAusweichChance;
 
     setTimeout(() => {
@@ -1768,7 +1768,7 @@ function spielerHeilen() {
       let runeRollBonus = aktiveRune === "godrick" ? 0.15 : 0.0;
       if (dungeonBuffRemainingCombats > 0 && activeDungeonBuff === "dodge") runeRollBonus += 0.15;
       
-      let finaleAusweichChance = Math.min(0.99, basisAusweichChance + tStats.extraRolle + runeRollBonus);
+      let finaleAusweichChance = Math.min(0.80, basisAusweichChance + tStats.extraRolle + runeRollBonus);
       let wuerfel = Math.random(); let ausgewichen = wuerfel < finaleAusweichChance;
 
       if (ausgewichen) { playerWrapper.classList.add("player-rolling"); zeigeFloatingZahl(playerWrapper, "Ausgewichen!", "dmg-dodge"); document.getElementById("battle-log").innerText += `\n💨 Elegant rollst du dich während des Trinkens unter dem Schlag weg!`; updateUI(); } 
