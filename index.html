@@ -3,231 +3,186 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Elden Rogue – ein roguelike Browser-Abenteuer in den Zwischenlanden. by Hoschi.">
   <title>Elden Rogue - Hauptmenue</title>
-  <link rel="icon" type="image/png" href="images/favicon.png">
-  <!-- Online-Schicht (Login + Online-Bestenliste). Ohne Setup läuft alles lokal weiter. -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-  <script src="eldenrogue-online.js"></script>
+  
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
   <style>
-    @font-face { font-family: 'Mantinia'; src: url('fonts/Mantinia Regular.otf') format('opentype'); font-weight: normal; font-style: normal; }
-    :root { --gold: #cda34f; --gold-dark: #8c6d2d; --bg-dark: #0b0b0b; --border-color: #3a3224; --panel: #161616; }
-    * { box-sizing: border-box; }
-    body {
-      background-color: var(--bg-dark); color: #ede6d4; font-family: 'Georgia', serif; margin: 0; padding: 0;
-      min-height: 100vh; display: flex; justify-content: center; align-items: flex-start;
-      background-image: linear-gradient(to bottom, rgba(5,5,5,0.85), rgba(5,5,5,0.95)), url('images/limgrave.jpg');
-      background-size: cover; background-position: center; background-attachment: fixed;
+    @font-face {
+      font-family: 'Mantinia';
+      src: url('fonts/Mantinia Regular.otf') format('opentype');
+      font-weight: normal;
+      font-style: normal;
     }
-    .wrap { width: 92%; max-width: 760px; margin: 28px 0 50px; }
-    h1 { font-family: 'Mantinia', serif; color: var(--gold); font-size: 2.8rem; letter-spacing: 6px; margin: 0 0 4px; text-transform: uppercase; text-align: center; }
-    .author-tag { font-family: 'Mantinia', serif; color: #888; font-size: 0.85rem; letter-spacing: 3px; margin-bottom: 18px; text-transform: uppercase; text-align: center; }
 
-    .account-bar { background: var(--panel); border: 1px solid var(--border-color); border-radius: 6px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
-    .account-left { display: flex; align-items: center; gap: 12px; }
-    .account-left img { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--gold-dark); }
-    .account-name { font-size: 1rem; color: var(--gold); font-weight: bold; }
-    .account-sub { font-size: 0.72rem; color: #888; font-family: sans-serif; }
-    .btn-google { display: flex; align-items: center; gap: 10px; background: #fff; color: #444; border: none; border-radius: 4px; padding: 9px 16px; font-family: sans-serif; font-weight: bold; font-size: 0.9rem; cursor: pointer; }
-    .btn-google:hover { box-shadow: 0 0 14px rgba(255,255,255,0.25); }
-    .btn-google img { width: 18px; height: 18px; }
-    .btn-mini { background: #2c2214; color: var(--gold); border: 1px solid var(--gold-dark); border-radius: 4px; padding: 8px 14px; font-family: sans-serif; font-size: 0.85rem; cursor: pointer; }
-    .btn-mini:hover { background: var(--gold); color: #111; }
-    .name-input { background: #0e0e0e; border: 1px solid var(--border-color); color: #ede6d4; border-radius: 4px; padding: 8px 10px; font-family: sans-serif; font-size: 0.85rem; width: 150px; }
-    .local-badge { font-size: 0.68rem; color: #b5a98f; font-family: sans-serif; background: #0e0e0e; border: 1px solid var(--border-color); padding: 4px 8px; border-radius: 12px; }
+    :root {
+      --gold: #cda34f;
+      --gold-dark: #8c6d2d;
+      --bg-dark: #0b0b0b;
+      --border-color: #3a3224;
+    }
+    
+    body {
+      background-color: var(--bg-dark); color: #ede6d4;
+      font-family: 'Georgia', serif; 
+      margin: 0; padding: 0;
+      display: flex; justify-content: center; align-items: center;
+      width: 100vw; height: 100vh; overflow: hidden;
+      background-image: linear-gradient(to bottom, rgba(5, 5, 5, 0.85), rgba(5, 5, 5, 0.95)), url('images/limgrave.jpg');
+      background-size: cover; background-position: center;
+      position: relative;
+    }
+    
+    .menu-container {
+      background-color: #161616; border: 1px solid var(--gold); border-radius: 4px;
+      padding: 35px; width: 90%; max-width: 650px;
+      box-shadow: 0px 0px 35px rgba(0, 0, 0, 0.8); text-align: center; box-sizing: border-box;
+    }
+    
+    h1 { 
+      font-family: 'Mantinia', serif;
+      color: var(--gold); font-size: 2.8rem; letter-spacing: 6px; margin-top: 0; margin-bottom: 5px; 
+      text-transform: uppercase;
+    }
+    
+    .author-tag { 
+      font-family: 'Mantinia', serif;
+      color: #888; font-size: 0.85rem; letter-spacing: 3px; margin-bottom: 25px; 
+      text-transform: uppercase;
+    }
+    
+    .rules-section {
+      text-align: left; background-color: #0f0f0f; border: 1px solid var(--border-color);
+      padding: 22px; border-radius: 4px; margin-bottom: 25px;
+    }
+    
+    .rules-section h3 { 
+      font-family: 'Mantinia', serif;
+      color: var(--gold); margin-top: 0; font-size: 1.1rem; letter-spacing: 2px; margin-bottom: 15px; 
+      text-transform: uppercase;
+    }
+    
+    .rules-section ul { padding-left: 20px; margin: 0 0 18px 0; color: #ccc; font-size: 0.9rem; line-height: 1.55; }
+    .rules-section li { margin-bottom: 8px; }
+    .rules-section strong { color: var(--gold); }
 
-    .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
-    .tab { flex: 1; text-align: center; padding: 12px; font-family: 'Mantinia', serif; letter-spacing: 1px; text-transform: uppercase; font-size: 0.95rem; color: #b5a98f; background: var(--panel); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; transition: all 0.2s ease; }
-    .tab.active { color: #111; background: var(--gold); border-color: var(--gold); }
-    .tab:hover:not(.active) { border-color: var(--gold); }
-    .panel { background: var(--panel); border: 1px solid var(--gold); border-radius: 6px; padding: 26px; box-shadow: 0 0 35px rgba(0,0,0,0.8); }
-    .hidden { display: none; }
+    .discord-notice {
+      border-top: 1px dashed var(--border-color);
+      padding-top: 15px;
+      margin-top: 5px;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      color: #b5a98f;
+    }
+    
+    .discord-notice span {
+      color: var(--gold);
+      font-weight: bold;
+    }
 
-    .rules-section { text-align: left; background: #0f0f0f; border: 1px solid var(--border-color); padding: 20px; border-radius: 4px; margin-bottom: 22px; }
-    .rules-section h3 { font-family: 'Mantinia', serif; color: var(--gold); margin: 0 0 14px; font-size: 1.1rem; letter-spacing: 2px; text-transform: uppercase; }
-    .rules-section ul { padding-left: 20px; margin: 0; color: #ccc; font-size: 0.9rem; line-height: 1.6; }
-    .rules-section li { margin-bottom: 9px; }
-    .menu-buttons { display: flex; flex-direction: column; gap: 12px; align-items: center; }
-    .btn-menu { width: 100%; max-width: 340px; padding: 15px; font-family: 'Mantinia', serif; font-weight: bold; font-size: 1.1rem; letter-spacing: 2px; cursor: pointer; border-radius: 4px; transition: all 0.2s ease; text-decoration: none; text-align: center; text-transform: uppercase; }
-    .btn-normal { background: #2c2214; color: var(--gold); border: 1px solid var(--gold); }
-    .btn-normal:hover { background: var(--gold); color: #111; box-shadow: 0 0 20px rgba(205,163,79,0.5); transform: translateY(-2px); }
-    .btn-hard { background: #221111; color: #e74c3c; border: 1px solid #e74c3c; opacity: 0.5; cursor: not-allowed; }
+    .menu-buttons { display: flex; flex-direction: column; gap: 12px; align-items: center; width: 100%; margin-bottom: 25px; }
+    
+    .btn-menu {
+      width: 100%; max-width: 320px; padding: 14px;
+      font-family: 'Mantinia', serif; font-weight: bold; font-size: 1.05rem; 
+      letter-spacing: 2px; cursor: pointer;
+      border-radius: 4px; transition: all 0.2s ease; text-decoration: none; text-align: center; box-sizing: border-box;
+      text-transform: uppercase;
+    }
+    .btn-normal { background-color: #2c2214; color: var(--gold); border: 1px solid var(--gold); }
+    .btn-normal:hover { background-color: var(--gold); color: #111; box-shadow: 0 0 20px rgba(205, 163, 79, 0.5); transform: translateY(-2px); }
+    
+    /* EDLER GOLDENER CLOUD BUTTON */
+    .btn-cloud {
+      background-color: #171c19; color: #2ecc71; border: 1px solid #2ecc71; margin-bottom: 5px;
+    }
+    .btn-cloud:hover {
+      background-color: #2ecc71; color: #111; box-shadow: 0 0 20px rgba(46, 204, 113, 0.4); transform: translateY(-2px);
+    }
+    
+    .btn-hard { background-color: #221111; color: #e74c3c; border: 1px solid #e74c3c; opacity: 0.5; cursor: not-allowed; }
 
-    .lb-table { width: 100%; border-collapse: collapse; font-family: sans-serif; }
-    .lb-table th { text-align: left; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: #888; padding: 8px 10px; border-bottom: 1px solid var(--border-color); }
-    .lb-table td { padding: 10px; border-bottom: 1px solid #1d1a13; font-size: 0.92rem; }
-    .lb-rank { font-family: 'Mantinia', serif; color: var(--gold); width: 42px; }
-    .lb-rank.gold { color: #ffd24a; } .lb-rank.silver { color: #cfd2d6; } .lb-rank.bronze { color: #cd7f32; }
-    .lb-name { display: flex; align-items: center; gap: 8px; }
-    .lb-name img { width: 24px; height: 24px; border-radius: 50%; }
-    .lb-score { text-align: right; color: var(--gold); font-weight: bold; }
-    .muted { color: #888; font-family: sans-serif; font-size: 0.85rem; text-align: center; padding: 16px; }
-
-    .ach-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .ach-card { display: flex; gap: 12px; align-items: center; background: #0f0f0f; border: 1px solid var(--border-color); border-radius: 6px; padding: 12px; }
-    .ach-card.locked { opacity: 0.45; filter: grayscale(0.7); }
-    .ach-card .ic { font-size: 2rem; width: 44px; text-align: center; }
-    .ach-card .nm { font-family: 'Mantinia', serif; color: var(--gold); font-size: 1rem; letter-spacing: 1px; }
-    .ach-card .ds { font-size: 0.76rem; color: #b5a98f; font-family: sans-serif; margin-top: 2px; }
-    .ach-progress { text-align: center; color: var(--gold); font-family: sans-serif; font-size: 0.85rem; margin-bottom: 16px; }
-    .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
-    .stat-box { background: #0f0f0f; border: 1px solid var(--border-color); border-radius: 6px; padding: 12px; text-align: center; }
-    .stat-box .v { font-family: 'Mantinia', serif; color: var(--gold); font-size: 1.5rem; }
-    .stat-box .l { font-size: 0.68rem; color: #888; font-family: sans-serif; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 3px; }
-
-    .social-divider { border-top: 1px solid var(--border-color); margin: 22px 0 16px; }
+    .social-divider { border-top: 1px solid var(--border-color); margin: 15px 0; position: relative; }
     .social-container { display: flex; justify-content: center; gap: 15px; }
-    .btn-social { padding: 10px 20px; font-family: 'Mantinia', serif; font-weight: bold; font-size: 0.8rem; cursor: pointer; border-radius: 4px; transition: all 0.2s ease; text-decoration: none; text-align: center; width: 160px; text-transform: uppercase; letter-spacing: 1px; }
-    .btn-twitch { background: #6441a5; color: #fff; border: 1px solid #7d5bbe; }
-    .btn-twitch:hover { background: #7d5bbe; box-shadow: 0 0 15px rgba(100,65,165,0.6); }
-    .btn-discord { background: #5865F2; color: #fff; border: 1px solid #727efd; }
-    .btn-discord:hover { background: #727efd; box-shadow: 0 0 15px rgba(88,101,242,0.6); }
-    @media (max-width: 540px) { .ach-grid { grid-template-columns: 1fr; } .stat-grid { grid-template-columns: repeat(2,1fr); } }
+    
+    .btn-social {
+      padding: 10px 20px; font-family: 'Mantinia', serif; font-weight: bold; font-size: 0.8rem; 
+      cursor: pointer; border-radius: 4px; transition: all 0.2s ease;
+      text-decoration: none; text-align: center; box-sizing: border-box; width: 160px;
+      text-transform: uppercase; letter-spacing: 1px;
+    }
+    .btn-twitch { background-color: #6441a5; color: #fff; border: 1px solid #7d5bbe; }
+    .btn-twitch:hover { background-color: #7d5bbe; box-shadow: 0 0 15px rgba(100, 65, 165, 0.6); }
+    .btn-discord { background-color: #5865F2; color: #fff; border: 1px solid #727efd; }
+    .btn-discord:hover { background-color: #727efd; box-shadow: 0 0 15px rgba(88, 101, 242, 0.6); }
   </style>
 </head>
 <body>
-<div class="wrap">
+
+<div class="menu-container">
   <h1>Elden Rogue</h1>
   <div class="author-tag">by Hoschi</div>
 
-  <div class="account-bar" id="account-bar">
-    <div class="account-left" id="account-left"><div><div class="account-name">Lade…</div></div></div>
-    <div id="account-right"></div>
-  </div>
-
-  <div class="tabs">
-    <div class="tab active" data-tab="spiel">Spiel</div>
-    <div class="tab" data-tab="bestenliste">Bestenliste</div>
-    <div class="tab" data-tab="achievements">Achievements</div>
-  </div>
-
-  <div class="panel" id="tab-spiel">
-    <div class="rules-section">
-      <h3>Die Gesetze der Zwischenlande</h3>
-      <ul>
-        <li><strong>Pfadwahl:</strong> Euer Weg führt über verzweigte Knotenpunkte. Wählt weise, um tiefer vorzudringen.</li>
-        <li><strong>Waffen &amp; Upgrades:</strong> Findet neue Waffen und verbessert sie; Upgrades werden beim Waffenwechsel übertragen.</li>
-        <li><strong>Die Blaidd-Quest:</strong> Bezwingt Blaidd 4 Mal, um seine Questlinie und einen mächtigen Bonus freizuschalten.</li>
-        <li><strong>Segen der Gnade:</strong> Rasten und Bossbesiege stellen Leben und Flakons voll wieder her.</li>
-        <li><strong>Große Runen:</strong> Bezwingt die Halbgötter, um Runen an den Heiligen Türmen zu aktivieren.</li>
-      </ul>
-    </div>
-    <div class="menu-buttons">
-      <a href="game.html" class="btn-menu btn-normal">Normaler Modus</a>
-      <button class="btn-menu btn-hard" disabled>Schwerer Modus (In Entwicklung)</button>
+  <div class="rules-section">
+    <h3>So funktioniert's</h3>
+    <ul>
+      <li>⚔️ <strong>Pfad wählen:</strong> Klicke dich über die Knotenpunkte immer tiefer in die Zwischenlande.</li>
+      <li>🗡️ <strong>Waffen:</strong> Finde stärkere Waffen und verbessern sie – Upgrades wandern auf neue Waffen mit.</li>
+      <li>🔥 <strong>Gnade:</strong> Rasten und besiegte Gebietsbosse heilen dich voll und füllen deine Flakons.</li>
+      <li>👑 <strong>Grosse Runen:</strong> Bezwinge die Halbgötter und aktiviere ihre Runen an den Türmen.</li>
+      <li>🐺 <strong>Blaidd:</strong> Besiege ihn 5×, um seine Quest und einen Stärkeschub freizuschalten.</li>
+    </ul>
+    <div class="discord-notice">
+      Feedback &amp; Bugs bitte auf unserem <span>Discord</span> melden. Wer das Spiel durchspielt und das <span>Eldenbiest</span> bezwingt, erhält eine exklusive Discord-Rolle.
     </div>
   </div>
 
-  <div class="panel hidden" id="tab-bestenliste">
-    <div id="lb-status" class="muted">Lade Bestenliste…</div>
-    <table class="lb-table hidden" id="lb-table">
-      <thead><tr><th>#</th><th>Befleckter</th><th>Etappe</th><th>Bosse</th><th style="text-align:right;">Score</th></tr></thead>
-      <tbody id="lb-body"></tbody>
-    </table>
-  </div>
-
-  <div class="panel hidden" id="tab-achievements">
-    <div class="stat-grid" id="stat-grid"></div>
-    <div class="ach-progress" id="ach-progress"></div>
-    <div class="ach-grid" id="ach-grid"></div>
+  <div class="menu-buttons">
+    <button id="firebase-login-btn" class="btn-menu btn-cloud" onclick="einloggenMitGoogle()">🔗 mit cloud verbinden</button>
+    
+    <a href="game.html" class="btn-menu btn-normal">Normaler Modus</a>
+    <button class="btn-menu btn-hard" disabled>Schwerer Modus (In Entwicklung)</button>
   </div>
 
   <div class="social-divider"></div>
   <div class="social-container">
-    <a href="https://www.twitch.tv/officialhoschi" target="_blank" class="btn-social btn-twitch">Twitch</a>
-    <a href="https://discord.gg/mUSzTDw8Ns" target="_blank" class="btn-social btn-discord">Discord</a>
+    <a href="https://www.twitch.tv/officialhoschi" target="_blank" rel="noopener" class="btn-social btn-twitch">Twitch</a>
+    <a href="https://discord.gg/mUSzTDw8Ns" target="_blank" rel="noopener" class="btn-social btn-discord">Discord</a>
   </div>
 </div>
 
 <script>
-  document.querySelectorAll(".tab").forEach(function (t) {
-    t.addEventListener("click", function () {
-      document.querySelectorAll(".tab").forEach(x => x.classList.remove("active"));
-      t.classList.add("active");
-      ["spiel", "bestenliste", "achievements"].forEach(function (name) {
-        document.getElementById("tab-" + name).classList.toggle("hidden", name !== t.dataset.tab);
-      });
-      if (t.dataset.tab === "bestenliste") ladeBestenliste();
-      if (t.dataset.tab === "achievements") ladeAchievements();
+// --- INITIALISIERUNG VON DEINEM FIREBASE PROJEKT ---
+const firebaseConfig = {
+  apiKey: "AIzaSyBwgP06wTi9uygJxiJA_w5aP-M5JyMule8",
+  authDomain: "elden-rogue.firebaseapp.com",
+  projectId: "elden-rogue",
+  storageBucket: "elden-rogue.firebasestorage.app",
+  messagingSenderId: "156704144299",
+  appId: "1:156704144299:web:49ae7f6d3a6afd14b9f0ee",
+  measurementId: "G-XLB96HHTPF"
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+
+function einloggenMitGoogle() {
+  const provider = new firebase.auth.GoogleAuthProvider();
+  auth.signInWithPopup(provider)
+    .then((result) => {
+      // Ändert den Button-Text auf den Namen des Spielers
+      document.getElementById("firebase-login-btn").innerText = `👤 ${result.user.displayName}`;
+      document.getElementById("firebase-login-btn").style.borderColor = "#2ecc71";
+      console.log("✓ Erfolgreich mit Firebase Cloud verbunden!");
+    })
+    .catch((err) => {
+      console.error("Cloud-Verbindung fehlgeschlagen: ", err);
     });
-  });
-
-  function renderAccount(user) {
-    var left = document.getElementById("account-left");
-    var right = document.getElementById("account-right");
-    var online = window.ER && ER.isOnline();
-    if (user) {
-      left.innerHTML = (user.photoURL ? '<img src="' + user.photoURL + '" alt="">' : "") +
-        '<div><div class="account-name">' + (user.displayName || "Befleckter") + '</div><div class="account-sub">Angemeldet · Fortschritt wird online gespeichert</div></div>';
-      right.innerHTML = '<button class="btn-mini" id="btn-logout">Abmelden</button>';
-      document.getElementById("btn-logout").onclick = function () { ER.signOut(); };
-    } else if (online) {
-      left.innerHTML = '<div><div class="account-name">Nicht angemeldet</div><div class="account-sub">Melde dich an, um Fortschritt &amp; Bestenliste online zu speichern</div></div>';
-      right.innerHTML = '<button class="btn-google" id="btn-google"><img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="">Mit Google anmelden</button>';
-      document.getElementById("btn-google").onclick = function () { ER.signInWithGoogle().catch(function(){}); };
-    } else {
-      var name = (window.ER ? ER.getPlayerName() : "Befleckter");
-      left.innerHTML = '<div><div class="account-name">Lokaler Modus</div><div class="account-sub">Online-Login &amp; Online-Bestenliste sind noch nicht eingerichtet (siehe FIREBASE_SETUP.md)</div></div>';
-      right.innerHTML = '<span class="local-badge">Name:</span> <input class="name-input" id="name-input" value="' + name.replace(/"/g, "&quot;") + '" maxlength="18"> <button class="btn-mini" id="name-save">Speichern</button>';
-      document.getElementById("name-save").onclick = function () {
-        var v = document.getElementById("name-input").value.trim() || "Befleckter";
-        ER.setPlayerName(v); alert("Name gespeichert: " + v);
-      };
-    }
-  }
-
-  function ladeBestenliste() {
-    var status = document.getElementById("lb-status");
-    var table = document.getElementById("lb-table");
-    var body = document.getElementById("lb-body");
-    if (!window.ER) { status.textContent = "Nicht verfügbar."; return; }
-    status.classList.remove("hidden"); table.classList.add("hidden");
-    status.textContent = "Lade Bestenliste…";
-    ER.getLeaderboard(20, function (rows, online) {
-      if (!rows || rows.length === 0) {
-        status.textContent = online ? "Noch keine Einträge – sei der Erste!" : "Noch keine lokalen Läufe. Spiel eine Runde, um in die Bestenliste zu kommen!";
-        return;
-      }
-      body.innerHTML = "";
-      rows.forEach(function (r, i) {
-        var rankClass = i === 0 ? "gold" : (i === 1 ? "silver" : (i === 2 ? "bronze" : ""));
-        var tr = document.createElement("tr");
-        tr.innerHTML =
-          '<td class="lb-rank ' + rankClass + '">' + (i + 1) + '</td>' +
-          '<td><span class="lb-name">' + (r.photo ? '<img src="' + r.photo + '">' : "") + (r.name || "Befleckter") + '</span></td>' +
-          '<td>' + (r.stage || 0) + '</td>' +
-          '<td>' + (r.bosses || 0) + '</td>' +
-          '<td class="lb-score">' + (r.score || 0) + '</td>';
-        body.appendChild(tr);
-      });
-      status.classList.add("hidden"); table.classList.remove("hidden");
-      if (!online) { status.classList.remove("hidden"); status.textContent = "(Lokale Bestenliste – für eine geräteübergreifende Online-Liste Firebase einrichten.)"; }
-    });
-  }
-
-  function ladeAchievements() {
-    if (!window.ER) return;
-    var s = ER.getStats();
-    var statGrid = document.getElementById("stat-grid");
-    var stats = [
-      ["fightsWon", "Kämpfe gewonnen"], ["bossesKilled", "Bosse besiegt"], ["deaths", "Tode"],
-      ["runsStarted", "Runs gestartet"], ["dungeonsCleared", "Dungeons"], ["bestScore", "Bester Score"]
-    ];
-    statGrid.innerHTML = stats.map(function (x) { return '<div class="stat-box"><div class="v">' + (s[x[0]] || 0) + '</div><div class="l">' + x[1] + '</div></div>'; }).join("");
-
-    var list = ER.getAchievements();
-    var done = list.filter(function (a) { return a.unlocked; }).length;
-    document.getElementById("ach-progress").textContent = "Freigeschaltet: " + done + " / " + list.length;
-    document.getElementById("ach-grid").innerHTML = list.map(function (a) {
-      return '<div class="ach-card ' + (a.unlocked ? "" : "locked") + '">' +
-        '<div class="ic">' + (a.unlocked ? a.icon : "🔒") + '</div>' +
-        '<div><div class="nm">' + a.name + '</div><div class="ds">' + a.desc + '</div></div></div>';
-    }).join("");
-  }
-
-  if (window.ER) { ER.onUserChange(renderAccount); }
-  else { document.getElementById("account-left").innerHTML = '<div><div class="account-name">Lokaler Modus</div><div class="account-sub">Fortschritt konnte nicht geladen werden.</div></div>'; }
+}
 </script>
+
 </body>
 </html>
