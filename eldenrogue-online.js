@@ -27,6 +27,7 @@
   };
 
   const ONLINE = !!FIREBASE_CONFIG.apiKey && typeof firebase !== "undefined";
+  const PATCH = "1.4"; // aktuelle Spielversion – wird an neue Bestenlisten-Einträge angehängt
   let fbAuth = null, fbDB = null, currentUser = null;
   const userListeners = [];
 
@@ -109,7 +110,6 @@
     { id: "maliketh",   name: "Schwarze Klinge",        icon: "🐕", desc: "Besiege Maliketh.",                      check: s => (s.bossKills["Maliketh, die Schwarze Klinge"] || 0) >= 1 },
     { id: "loretta",    name: "Ritterin gefallen",      icon: "🌹", desc: "Besiege Loretta.",                       check: s => (s.bossKills["Loretta, Knight of the Haligtree"] || 0) >= 1 },
     { id: "niall",      name: "Kommandant besiegt",     icon: "⚜️", desc: "Besiege Commander Niall.",               check: s => (s.bossKills["Commander Niall"] || 0) >= 1 },
-    { id: "malenia",    name: "Scarlet Bloom",          icon: "🌸", desc: "Besiege Malenia.",                       check: s => (s.bossKills["Malenia, Goddess of Rot"] || 0) >= 1 },
     { id: "all_bosses", name: "Götterdämmerung",        icon: "🌒", desc: "Besiege jeden Halbgott mindestens einmal.", check: s => HAUPTBOSSE.every(b => (s.bossKills[b] || 0) >= 1) },
     /* --- Runs / Abschluss --- */
     { id: "elden_lord", name: "Elden Lord",             icon: "👑", desc: "Schließe einen Run ab und werde Elden Lord.", check: s => s.gamesCompleted >= 1 },
@@ -268,7 +268,7 @@
               var x = d.data();
               var sc = x[scoreField] || 0;
               if (sc <= 0) return; // keine leeren Einträge im jeweiligen Board
-              rows.push({ name: x.displayName || "Befleckter", score: sc, stage: x[stageField] || 0, bosses: x[bossField] || 0, photo: x.photoURL || "" });
+              rows.push({ name: x.displayName || "Befleckter", score: sc, stage: x[stageField] || 0, bosses: x[bossField] || 0, photo: x.photoURL || "", patch: x.patch || "" });
             });
             cb(rows, true);
           })
@@ -293,8 +293,8 @@
     // lokal – ein bester Eintrag pro Name UND Schwierigkeit
     var b = lsGet(BOARD_KEY, []);
     var mine = b.find(function (x) { return x.name === name && x.local && normDiff(x.difficulty) === diff; });
-    if (mine) { if (score > mine.score) { mine.score = score; mine.stage = meta.stage; mine.bosses = meta.bosses; } }
-    else { b.push({ name: name, score: score, stage: meta.stage, bosses: meta.bosses, difficulty: diff, local: true }); }
+    if (mine) { if (score > mine.score) { mine.score = score; mine.stage = meta.stage; mine.bosses = meta.bosses; mine.patch = PATCH; } }
+    else { b.push({ name: name, score: score, stage: meta.stage, bosses: meta.bosses, difficulty: diff, patch: PATCH, local: true }); }
     lsSet(BOARD_KEY, b);
     // cloud
     cloudPush();
@@ -309,6 +309,7 @@
       photoURL: currentUser.photoURL || "",
       stats: s,
       achievements: getUnlocked(),
+      patch: PATCH,
       bestScore: s.bestScore || 0,
       bestRunBosses: s.bestRunBosses || 0,
       furthestStage: s.furthestStage || 0,
