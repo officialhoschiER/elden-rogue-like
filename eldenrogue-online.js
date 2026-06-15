@@ -66,6 +66,8 @@
     // --- Hard-/Challenge-Fortschritt ---
     hardModeCompletions: 0, hardNoDeath: false,
     challengesCompleted: {},
+    // --- Bestwerte pro Patch: { "1_3": { normal:{score,stage,bosses}, hard:{...} }, "1_4": {...} } ---
+    patchBest: {},
     bossKills: {}
   };
 
@@ -74,6 +76,7 @@
     var s = Object.assign({}, DEFAULT_STATS, lsGet(STATS_KEY, {}));
     s.bossKills = Object.assign({}, s.bossKills || {});
     s.challengesCompleted = Object.assign({}, s.challengesCompleted || {});
+    s.patchBest = JSON.parse(JSON.stringify(s.patchBest || {}));
     return s;
   }
   function saveStats(s) { lsSet(STATS_KEY, s); }
@@ -171,6 +174,8 @@
   function runBump(key, n) { var r = getRun(); r[key] = (r[key] || 0) + (n || 1); saveRun(r); }
 
   function normDiff(d) { return d === "hard" ? "hard" : "normal"; }
+  function patchKey(p) { return String(p || PATCH).replace(/\./g, "_"); } // "1.4" -> "1_4"
+  function leererPatchSlot() { return { normal: { score: 0, stage: 0, bosses: 0 }, hard: { score: 0, stage: 0, bosses: 0 } }; }
 
   /* ====== 5) ÖFFENTLICHE API (window.ER) ====== */
   const ER = {
@@ -192,9 +197,19 @@
       // kombiniert (für die Stat-Anzeige) ...
       setMax("bestScore", score);
       setMax("bestRunBosses", r.bosses || 0);
-      // ... und getrennt nach Schwierigkeit (für die Bestenliste)
+      // ... getrennt nach Schwierigkeit (Stat-Anzeige/Cloud-Kompatibilität) ...
       setMax(diff === "hard" ? "bestScoreHard" : "bestScoreNormal", score);
       setMax(diff === "hard" ? "bestRunBossesHard" : "bestRunBossesNormal", r.bosses || 0);
+      // ... und pro Patch + Schwierigkeit (das ist die Quelle für die Bestenliste)
+      if (score > 0) {
+        var s = getStats();
+        var pk = patchKey(PATCH);
+        s.patchBest = s.patchBest || {};
+        if (!s.patchBest[pk]) s.patchBest[pk] = leererPatchSlot();
+        var slot = s.patchBest[pk][diff];
+        if (score > (slot.score || 0)) { slot.score = score; slot.stage = r.stage || 0; slot.bosses = r.bosses || 0; }
+        saveStats(s);
+      }
       submitToBoard(score, { stage: r.stage || 0, bosses: r.bosses || 0, fights: r.fights || 0, difficulty: diff });
       // Zähler zurücksetzen – Schwierigkeit & hadDeath bleiben bis zum nächsten startRun erhalten
       saveRun({ stage: 0, bosses: 0, fights: 0, difficulty: diff, hadDeath: r.hadDeath });
@@ -250,36 +265,50 @@
     },
     signOut: function () { if (fbAuth) return fbAuth.signOut(); return Promise.resolve(); },
 
-    /* --- Bestenliste (getrennt nach Schwierigkeit) --- */
-    getLeaderboard: function (limit, cb, difficulty) {
+    /* --- Bestenliste (getrennt nach Patch + Schwierigkeit) --- */
+    getLeaderboard: function (limit, cb, difficulty, patch) {
       limit = limit || 20;
       var diff = normDiff(difficulty);
-      var scoreField = diff === "hard" ? "bestScoreHard" : "bestScoreNormal";
-      var stageField = diff === "hard" ? "furthestStageHard" : "furthestStageNormal";
-      var bossField  = diff === "hard" ? "bestRunBossesHard" : "bestRunBossesNormal";
+      var pk = patchKey(patch || PATCH);
+      var scoreField = "lb." + pk + "." + (diff === "hard" ? "hardScore" : "normalScore");
+      var stageField = "lb." + pk + "." + (diff === "hard" ? "hardStage" : "normalStage");
+      var bossField  = "lb." + pk + "." + (diff === "hard" ? "hardBosses" : "normalBosses");
       if (ONLINE && fbDB) {
         fbDB.collection("users").orderBy(scoreField, "desc").limit(limit).get()
           .then(function (snap) {
             var rows = [];
             snap.forEach(function (d) {
               var x = d.data();
-              var sc = x[scoreField] || 0;
+              var box = (x.lb && x.lb[pk]) ? x.lb[pk] : {};
+              var sc = (diff === "hard" ? box.hardScore : box.normalScore) || 0;
               if (sc <= 0) return; // keine leeren Einträge im jeweiligen Board
-              rows.push({ name: x.displayName || "Befleckter", score: sc, stage: x[stageField] || 0, bosses: x[bossField] || 0, photo: x.photoURL || "", patch: x.patch || "" });
+              rows.push({
+                name: x.displayName || "Befleckter",
+                score: sc,
+                stage: (diff === "hard" ? box.hardStage : box.normalStage) || 0,
+                bosses: (diff === "hard" ? box.hardBosses : box.normalBosses) || 0,
+                photo: x.photoURL || "",
+                patch: pk.replace(/_/g, ".")
+              });
             });
             cb(rows, true);
           })
-          .catch(function (e) { console.warn("[ER] Bestenliste online fehlgeschlagen, lokal:", e); cb(localBoard(limit, diff), false); });
+          .catch(function (e) { console.warn("[ER] Bestenliste online fehlgeschlagen, lokal:", e); cb(localBoard(limit, diff, pk), false); });
       } else {
-        cb(localBoard(limit, diff), false);
+        cb(localBoard(limit, diff, pk), false);
       }
     }
   };
 
   /* ====== 6) LOKALE BESTENLISTE ====== */
-  function localBoard(limit, difficulty) {
+  function localBoard(limit, difficulty, patch) {
     var diff = normDiff(difficulty);
-    var b = lsGet(BOARD_KEY, []).filter(function (x) { return normDiff(x.difficulty) === diff; });
+    var pk = patchKey(patch || PATCH);
+    var b = lsGet(BOARD_KEY, []).filter(function (x) {
+      // Einträge ohne Patch-Feld stammen aus der Zeit vor v1.4 -> als "1.3" behandeln
+      var entryPk = patchKey(x.patch || "1.3");
+      return normDiff(x.difficulty) === diff && entryPk === pk;
+    });
     b.sort(function (a, c) { return c.score - a.score; });
     return b.slice(0, limit);
   }
@@ -298,6 +327,40 @@
   }
 
   /* ====== 7) CLOUD-SYNC (Firestore) ====== */
+  // Baut aus stats.patchBest die "lb"-Map, nach der die Online-Bestenliste sortiert.
+  function baueLbMap(s) {
+    var lb = {};
+    var pb = s.patchBest || {};
+    Object.keys(pb).forEach(function (pk) {
+      var slot = pb[pk] || {};
+      var n = slot.normal || {}, h = slot.hard || {};
+      lb[pk] = {
+        normalScore: n.score || 0, normalStage: n.stage || 0, normalBosses: n.bosses || 0,
+        hardScore: h.score || 0,   hardStage: h.stage || 0,   hardBosses: h.bosses || 0
+      };
+    });
+    return lb;
+  }
+
+  // Vereint zwei patchBest-Maps: pro Patch + Schwierigkeit gewinnt der höhere Score.
+  function mergePatchBest(localPB, cloudPB) {
+    localPB = localPB || {}; cloudPB = cloudPB || {};
+    var out = {}, keys = {};
+    Object.keys(localPB).forEach(function (k) { keys[k] = true; });
+    Object.keys(cloudPB).forEach(function (k) { keys[k] = true; });
+    Object.keys(keys).forEach(function (pk) {
+      var lSlot = localPB[pk] || {}, cSlot = cloudPB[pk] || {};
+      out[pk] = {};
+      ["normal", "hard"].forEach(function (diff) {
+        var l = lSlot[diff] || { score: 0, stage: 0, bosses: 0 };
+        var c = cSlot[diff] || { score: 0, stage: 0, bosses: 0 };
+        var win = (l.score || 0) >= (c.score || 0) ? l : c;
+        out[pk][diff] = { score: win.score || 0, stage: win.stage || 0, bosses: win.bosses || 0 };
+      });
+    });
+    return out;
+  }
+
   function cloudPush() {
     if (!ONLINE || !fbDB || !currentUser) return;
     var s = getStats();
@@ -310,13 +373,15 @@
       bestScore: s.bestScore || 0,
       bestRunBosses: s.bestRunBosses || 0,
       furthestStage: s.furthestStage || 0,
-      // getrennte Felder, nach denen die Bestenliste sortiert
+      // Legacy-Felder (Stat-Anzeige / Abwärtskompatibilität)
       bestScoreNormal: s.bestScoreNormal || 0,
       bestScoreHard: s.bestScoreHard || 0,
       bestRunBossesNormal: s.bestRunBossesNormal || 0,
       bestRunBossesHard: s.bestRunBossesHard || 0,
       furthestStageNormal: s.furthestStageNormal || 0,
       furthestStageHard: s.furthestStageHard || 0,
+      // Pro-Patch-Bestwerte – Quelle für die patch-getrennte Bestenliste
+      lb: baueLbMap(s),
       updatedAt: (firebase.firestore && firebase.firestore.FieldValue ? firebase.firestore.FieldValue.serverTimestamp() : Date.now())
     };
     try { fbDB.collection("users").doc(currentUser.uid).set(doc, { merge: true }); } catch (e) { console.warn("[ER] cloudPush:", e); }
@@ -341,12 +406,27 @@
               else if (!(kk in localObj)) mergedObj[kk] = cloudObj[kk];
             });
             merged[k] = mergedObj;
+          } else if (k === "patchBest") {
+            merged.patchBest = mergePatchBest(local.patchBest || {}, cs.patchBest || {});
           } else if (k === "hardNoDeath") {
             merged[k] = !!(local[k] || cs[k]);
           } else {
             merged[k] = Math.max(local[k] || 0, cs[k] || 0);
           }
         });
+        // Einmalige Migration: alte (Pre-1.4-)Cloud-Bestwerte als Patch "1_3" übernehmen,
+        // falls noch kein 1_3-Eintrag existiert. So bleiben alte Online-Läufe unter v1.3 sichtbar.
+        if (!merged.patchBest["1_3"]) {
+          var legacyN = cloud.bestScoreNormal || 0, legacyH = cloud.bestScoreHard || 0;
+          // Ganz alte 1.3-Dokumente hatten nur einen kombinierten bestScore (ohne Schwierigkeit) -> als Normal werten.
+          if (legacyN === 0 && legacyH === 0 && (cloud.bestScore || 0) > 0) legacyN = cloud.bestScore || 0;
+          if (legacyN > 0 || legacyH > 0) {
+            merged.patchBest["1_3"] = {
+              normal: { score: legacyN, stage: cloud.furthestStageNormal || cloud.furthestStage || 0, bosses: cloud.bestRunBossesNormal || cloud.bestRunBosses || 0 },
+              hard:   { score: legacyH, stage: cloud.furthestStageHard   || 0, bosses: cloud.bestRunBossesHard   || 0 }
+            };
+          }
+        }
         saveStats(merged);
         var ach = localAch.slice();
         (cloud.achievements || []).forEach(function (id) { if (ach.indexOf(id) === -1) ach.push(id); });
