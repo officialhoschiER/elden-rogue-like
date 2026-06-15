@@ -1285,7 +1285,7 @@ function updateUI() {
   if (aktiveRune === "morgott") { finalHpMultiplier += 1.0; } 
   
   let finaleAusweichChance = Math.min(hardMode ? 0.65 : 0.75, basisAusweichChance + tStats.extraRolle + runeRollBonus);
-  let finalMaxHp = Math.round((spielerMaxHp + runeHpBonus) * finalHpMultiplier); 
+  let finalMaxHp = berechneFinalMaxHp();
   if (spielerHp > finalMaxHp) spielerHp = finalMaxHp;
 
   let baseWeaponDmg = waffenSchaden + (waffenUpgrade * 5);
@@ -1452,10 +1452,7 @@ function klickeKnoten(ebene, knoten) {
   playerHitsOnEnemy = 0; enemyIsStaggered = false; staggerVisualActive = false; nextHitBonusDamage = false; affinityHits = 0;
 
   if (knoten.typ === 4) {
-    let tStats = berechneTalismanStats(); let runeHpBonus = (aktiveRune === "godrick" ? Math.round(spielerMaxHp * 0.25) : 0) + (aktiveRune === "radahn" ? Math.round(spielerMaxHp * 0.5) : 0);
-    let buffMult = (activeDungeonBuff === "hp" && dungeonBuffRemainingCombats > 0) ? 0.15 : 0.0;
-    let mult = 1.0 + tStats.bonusHpPercent + buffMult + (aktiveRune === "morgott" ? 1.0 : 0.0);
-    spielerHp = Math.round((spielerMaxHp + runeHpBonus) * mult); spielerFlasks = maxKlassenFlasks;
+    spielerHp = berechneFinalMaxHp(); spielerFlasks = maxKlassenFlasks;
     oeffneStatPopup(t("grace_title"), t("grace_desc"), ebene + 1); return;
   }
   if (knoten.typ === 6) { oeffneTalismanPopup(ebene + 1); return; }
@@ -1720,10 +1717,8 @@ function spielerHeilen() {
   if (!imKampf || spielerHp <= 0 || aktionsSperre) return;
   if (spielerFlasks > 0) {
     aktionsSperre = true;
-    let tStats = berechneTalismanStats(); let runeHpBonus = (aktiveRune === "godrick" ? Math.round(spielerMaxHp * 0.25) : 0) + (aktiveRune === "radahn" ? Math.round(spielerMaxHp * 0.5) : 0);
-    let buffMult = (activeDungeonBuff === "hp" && dungeonBuffRemainingCombats > 0) ? 0.15 : 0.0;
-    let mult = 1.0 + tStats.bonusHpPercent + buffMult + (aktiveRune === "morgott" ? 1.0 : 0.0);
-    let finalMaxHp = Math.round((spielerMaxHp + runeHpBonus) * mult);
+    let tStats = berechneTalismanStats();
+    let finalMaxHp = berechneFinalMaxHp();
     let heilWert = Math.round(finalMaxHp * estusHeilProzent * (1 + tStats.bonusHealPercent));
     spielerHp = Math.min(finalMaxHp, spielerHp + heilWert); spielerFlasks--;
     if (window.ER) ER.flaskDrunk();
@@ -1754,10 +1749,7 @@ function spielerHeilen() {
 }
 
 function heileUndRegeneriereVoll(nurHp) {
-  let tStats = berechneTalismanStats(); let runeHpBonus = (aktiveRune === "godrick" ? Math.round(spielerMaxHp * 0.25) : 0) + (aktiveRune === "radahn" ? Math.round(spielerMaxHp * 0.5) : 0);
-  let buffMult = (activeDungeonBuff === "hp" && dungeonBuffRemainingCombats > 0) ? 0.15 : 0.0;
-  let mult = 1.0 + tStats.bonusHpPercent + buffMult + (aktiveRune === "morgott" ? 1.0 : 0.0);
-  spielerHp = Math.round((spielerMaxHp + runeHpBonus) * mult);
+  spielerHp = berechneFinalMaxHp();
   if (!nurHp) spielerFlasks = maxKlassenFlasks;
 }
 
@@ -1870,6 +1862,18 @@ function berechneTalismanStats() {
   let stats = { bonusDmgPercent: 0.0, bonusHpPercent: 0.0, extraRolle: 0.0, bonusHealPercent: 0.0, bonusDmgTakenPercent: 0.0 };
   ausgeruesteteTalismane.forEach(t => { stats.bonusDmgPercent += (t.dmg || 0); stats.bonusHpPercent += (t.hp || 0); stats.extraRolle += (t.dodge || 0); stats.bonusHealPercent += (t.heal || 0); stats.bonusDmgTakenPercent += (t.dmgTaken || 0); });
   return stats;
+}
+
+// Einzige Quelle der Wahrheit für die maximale HP (Talismane + Runen + Dungeon-Buff).
+// Wird überall verwendet (UI, Heilen, Gnade, Boss-Refill, Auto-Heal), damit die Werte nie auseinanderlaufen.
+function berechneFinalMaxHp() {
+  let tStats = berechneTalismanStats();
+  let runeHpBonus = (aktiveRune === "godrick" ? Math.round(spielerMaxHp * 0.25) : 0)
+                  + (aktiveRune === "radahn"  ? Math.round(spielerMaxHp * 0.50) : 0);
+  let mult = 1.0 + tStats.bonusHpPercent
+           + ((activeDungeonBuff === "hp" && dungeonBuffRemainingCombats > 0) ? 0.15 : 0.0)
+           + (aktiveRune === "morgott" ? 1.0 : 0.0);
+  return Math.round((spielerMaxHp + runeHpBonus) * mult);
 }
 
 function oeffneTalismanPopup(naechsteEbene) {
@@ -2092,8 +2096,9 @@ function updateChallengeBadge() {
 // Auto-Battle: Heal-Button auf der Karte (nur außerhalb des Kampfes)
 function mapHeal() {
   if (imKampf || spielerFlasks <= 0) return;
+  let finalMaxHp = berechneFinalMaxHp();
+  if (spielerHp >= finalMaxHp) return; // schon volle HP -> keinen Flakon verschwenden
   let tStats = berechneTalismanStats();
-  let finalMaxHp = Math.round(spielerMaxHp * (1 + tStats.bonusHpPercent));
   let heilWert = Math.round(finalMaxHp * estusHeilProzent * (1 + tStats.bonusHealPercent));
   spielerHp = Math.min(finalMaxHp, spielerHp + heilWert);
   spielerFlasks--;
@@ -2105,10 +2110,18 @@ function mapHeal() {
 function updateMapHealBtn() {
   let btn = document.getElementById("map-heal-btn");
   if (!btn) return;
-  if (activeChallenge === "autobattle" && !imKampf && spielerFlasks > 0 && spielerHp < spielerMaxHp) {
+  // Button ist im Auto-Battle dauerhaft sichtbar, solange man außerhalb eines Kampfes ist
+  // und noch Flakons hat. Bei voller HP bleibt er sichtbar, ist aber deaktiviert (Klick tut nichts).
+  if (activeChallenge === "autobattle" && !imKampf && spielerFlasks > 0) {
+    let voll = spielerHp >= berechneFinalMaxHp();
     btn.style.display = "block";
+    btn.disabled = voll;
+    btn.style.opacity = voll ? "0.45" : "1";
+    btn.style.cursor = voll ? "not-allowed" : "pointer";
     btn.innerText = "🧪 " + t("btn_heal") + " (" + spielerFlasks + ")";
-  } else { btn.style.display = "none"; }
+  } else {
+    btn.style.display = "none";
+  }
 }
 
 function bestaetigeStufe(naechsteEbene) { document.getElementById("popup-overlay").style.display = "none"; aktuelleEbene = naechsteEbene; speichereRun(); updateUI(); }
