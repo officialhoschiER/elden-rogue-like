@@ -86,6 +86,16 @@
     { id: "flask_500",  name: "Estus-süchtig",          icon: "🧪", desc: "Trinke 500 Flakons.",                    check: s => s.flasksDrunk >= 500 }
   ];
 
+  // Übersetzt Name/Beschreibung eines Achievements via i18n (Fallback: hartkodiert)
+  function locAch(a) {
+    var nm = a.name, ds = a.desc;
+    if (window.i18n) {
+      var n = window.i18n.t("ach_" + a.id + "_nm"); if (n && n !== "ach_" + a.id + "_nm") nm = n;
+      var d = window.i18n.t("ach_" + a.id + "_ds"); if (d && d !== "ach_" + a.id + "_ds") ds = d;
+    }
+    return { id: a.id, icon: a.icon, name: nm, desc: ds };
+  }
+
   function checkAchievements() {
     var s = getStats();
     var unlocked = getUnlocked();
@@ -97,7 +107,7 @@
     });
     if (neu.length) {
       saveUnlocked(unlocked);
-      neu.forEach(function (a) { if (typeof window.onERAchievement === "function") { try { window.onERAchievement(a); } catch (e) {} } });
+      neu.forEach(function (a) { if (typeof window.onERAchievement === "function") { try { window.onERAchievement(locAch(a)); } catch (e) {} } });
       cloudPush();
     }
     return neu;
@@ -144,9 +154,9 @@
 
     /* --- Abfragen --- */
     getStats: getStats,
-    getAchievements: function () { var u = getUnlocked(); return ACHIEVEMENTS.map(function (a) { return { id: a.id, name: a.name, icon: a.icon, desc: a.desc, unlocked: u.indexOf(a.id) !== -1 }; }); },
-    getPlayerName: function () { return (currentUser && (currentUser.displayName)) || lsGet(NAME_KEY, "Befleckter"); },
-    setPlayerName: function (n) { lsSet(NAME_KEY, n); },
+    getAchievements: function () { var u = getUnlocked(); return ACHIEVEMENTS.map(function (a) { var l = locAch(a); l.unlocked = u.indexOf(a.id) !== -1; return l; }); },
+    getPlayerName: function () { var custom = lsGet(NAME_KEY, null); if (custom) return custom; return (currentUser && currentUser.displayName) || (window.i18n ? window.i18n.t("lb_th_player") : "Befleckter"); },
+    setPlayerName: function (n) { lsSet(NAME_KEY, n); cloudPush(); },
 
     /* --- Auth --- */
     onUserChange: function (cb) { userListeners.push(cb); try { cb(currentUser); } catch (e) {} },
@@ -235,7 +245,7 @@
         saveUnlocked(ach);
       }
       // Namen aus Google übernehmen, falls vorhanden
-      if (currentUser.displayName) ER.setPlayerName(currentUser.displayName);
+      if (currentUser.displayName && !lsGet(NAME_KEY, null)) lsSet(NAME_KEY, currentUser.displayName);
       checkAchievements();
       cloudPush();
     }).catch(function (e) { console.warn("[ER] Login-Sync:", e); });
