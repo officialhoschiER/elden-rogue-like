@@ -108,8 +108,6 @@
     { id: "morgott",    name: "Omenkönig gefallen",     icon: "👑", desc: "Besiege Morgott.",                       check: s => (s.bossKills["Morgott, der Omenkönig"] || 0) >= 1 },
     { id: "firegiant",  name: "Schmiede erloschen",     icon: "🔥", desc: "Besiege den Feuerriesen.",               check: s => (s.bossKills["Feuerriese"] || 0) >= 1 },
     { id: "maliketh",   name: "Schwarze Klinge",        icon: "🐕", desc: "Besiege Maliketh.",                      check: s => (s.bossKills["Maliketh, die Schwarze Klinge"] || 0) >= 1 },
-    { id: "loretta",    name: "Ritterin gefallen",      icon: "🌹", desc: "Besiege Loretta.",                       check: s => (s.bossKills["Loretta, Knight of the Haligtree"] || 0) >= 1 },
-    { id: "niall",      name: "Kommandant besiegt",     icon: "⚜️", desc: "Besiege Commander Niall.",               check: s => (s.bossKills["Commander Niall"] || 0) >= 1 },
     { id: "all_bosses", name: "Götterdämmerung",        icon: "🌒", desc: "Besiege jeden Halbgott mindestens einmal.", check: s => HAUPTBOSSE.every(b => (s.bossKills[b] || 0) >= 1) },
     /* --- Runs / Abschluss --- */
     { id: "elden_lord", name: "Elden Lord",             icon: "👑", desc: "Schließe einen Run ab und werde Elden Lord.", check: s => s.gamesCompleted >= 1 },
@@ -136,8 +134,7 @@
     /* --- Challenges --- */
     { id: "challenge_auto",      name: "Zuschauer",        icon: "👁️", desc: "Schließe einen Auto-Battle-Run ab.", check: s => !!(s.challengesCompleted && s.challengesCompleted.autobattle) },
     { id: "challenge_noarmor",   name: "Nacktläufer",      icon: "🏃", desc: "Schließe einen No-Armor-Run ab.",     check: s => !!(s.challengesCompleted && s.challengesCompleted.noarmor) },
-    { id: "challenge_noblaidd",  name: "Einsamer Wolf",    icon: "🐺", desc: "Schließe einen No-Blaidd-Run ab.",    check: s => !!(s.challengesCompleted && s.challengesCompleted.noblaidd) },
-    { id: "challenge_haligtree", name: "Lord of the Haligtree", icon: "🌳", desc: "Besiege Malenia im Haligtree-Challenge.", check: s => !!(s.challengesCompleted && s.challengesCompleted.haligtree) }
+    { id: "challenge_noblaidd",  name: "Einsamer Wolf",    icon: "🐺", desc: "Schließe einen No-Blaidd-Run ab.",    check: s => !!(s.challengesCompleted && s.challengesCompleted.noblaidd) }
   ];
 
   // Übersetzt Name/Beschreibung eines Achievements via i18n (Fallback: hartkodiert)
