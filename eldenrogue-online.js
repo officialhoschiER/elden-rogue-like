@@ -4,11 +4,18 @@
    Firebase ist konfiguriert – Login, Online-Bestenliste und
    Cloud-Speicher sind aktiv. Lokaler Fallback greift automatisch,
    falls Firebase nicht erreichbar ist.
+
+   v1.4 – synchron zu game.html / lang.js:
+     • 37 Achievements (vorher 22)
+     • Schwierigkeit (normal/hard) wird durchgängig getrackt
+     • getrennte Bestenlisten für Normal und Hard
+     • neue API: hardCompleted(), challengeCompleted(name)
+     • startRun(difficulty) wertet die Schwierigkeit jetzt aus
    ============================================================ */
 (function () {
   "use strict";
 
-  /* ====== 1) FIREBASE-KONFIG — HIER EINTRAGEN FÜR ONLINE ====== */
+  /* ====== 1) FIREBASE-KONFIG ====== */
   const FIREBASE_CONFIG = {
     apiKey: "AIzaSyBwgP06wTi9uygJxiJA_w5aP-M5JyMule8",
     authDomain: "elden-rogue.firebaseapp.com",
@@ -50,22 +57,48 @@
     fightsWon: 0, bossesKilled: 0, elitesKilled: 0, minibossesKilled: 0, invadersKilled: 0,
     runsStarted: 0, deaths: 0, dungeonsCleared: 0, talismansFound: 0, weaponsFound: 0,
     armorsFound: 0, blaiddDefeats: 0, gamesCompleted: 0, furthestStage: 0,
-    bestRunBosses: 0, bestScore: 0, flasksDrunk: 0, bossKills: {}
+    bestRunBosses: 0, bestScore: 0, flasksDrunk: 0,
+    // --- pro Schwierigkeit getrennt ---
+    bestScoreNormal: 0, bestScoreHard: 0,
+    bestRunBossesNormal: 0, bestRunBossesHard: 0,
+    furthestStageNormal: 0, furthestStageHard: 0,
+    // --- Hard-/Challenge-Fortschritt ---
+    hardModeCompletions: 0, hardNoDeath: false,
+    challengesCompleted: {},
+    bossKills: {}
   };
 
-  function getStats() { return Object.assign({}, DEFAULT_STATS, lsGet(STATS_KEY, {})); }
+  // Objekt-Felder werden kopiert, damit niemals der gemeinsame DEFAULT_STATS mutiert wird
+  function getStats() {
+    var s = Object.assign({}, DEFAULT_STATS, lsGet(STATS_KEY, {}));
+    s.bossKills = Object.assign({}, s.bossKills || {});
+    s.challengesCompleted = Object.assign({}, s.challengesCompleted || {});
+    return s;
+  }
   function saveStats(s) { lsSet(STATS_KEY, s); }
-  function getRun() { return lsGet(RUN_KEY, { stage: 0, bosses: 0, fights: 0 }); }
+  function getRun() { return lsGet(RUN_KEY, { stage: 0, bosses: 0, fights: 0, difficulty: "normal", hadDeath: false }); }
   function saveRun(r) { lsSet(RUN_KEY, r); }
   function getUnlocked() { return lsGet(ACH_KEY, []); }
   function saveUnlocked(a) { lsSet(ACH_KEY, a); }
 
-  /* ====== 3) ACHIEVEMENTS ====== */
+  // Die fünf Haupt-Halbgötter (für "Götterdämmerung")
+  const HAUPTBOSSE = [
+    "Godrick, der Verpflanzte",
+    "Sternengeißel Radahn",
+    "Morgott, der Omenkönig",
+    "Feuerriese",
+    "Maliketh, die Schwarze Klinge"
+  ];
+
+  /* ====== 3) ACHIEVEMENTS (37) ====== */
   const ACHIEVEMENTS = [
+    /* --- Kämpfe --- */
     { id: "first_win",  name: "Erster Sieg",            icon: "⚔️", desc: "Gewinne deinen ersten Kampf.",            check: s => s.fightsWon >= 1 },
     { id: "win_100",    name: "Kriegsveteran",          icon: "🗡️", desc: "Gewinne 100 Kämpfe.",                    check: s => s.fightsWon >= 100 },
     { id: "win_500",    name: "Schlachtenmeister",      icon: "🏹", desc: "Gewinne 500 Kämpfe.",                    check: s => s.fightsWon >= 500 },
     { id: "win_1000",   name: "Tausendsassa",           icon: "👑", desc: "Gewinne 1000 Kämpfe.",                   check: s => s.fightsWon >= 1000 },
+    { id: "win_2500",   name: "Kriegsgott",             icon: "🔱", desc: "Gewinne 2500 Kämpfe.",                   check: s => s.fightsWon >= 2500 },
+    /* --- Bosse --- */
     { id: "boss_1",     name: "Halbgott-Jäger",         icon: "💀", desc: "Besiege deinen ersten Boss.",            check: s => s.bossesKilled >= 1 },
     { id: "boss_10",    name: "Halbgott-Schlächter",    icon: "☠️", desc: "Besiege 10 Bosse.",                      check: s => s.bossesKilled >= 10 },
     { id: "boss_50",    name: "Gott unter Göttern",     icon: "🌟", desc: "Besiege 50 Bosse.",                      check: s => s.bossesKilled >= 50 },
@@ -74,16 +107,37 @@
     { id: "morgott",    name: "Omenkönig gefallen",     icon: "👑", desc: "Besiege Morgott.",                       check: s => (s.bossKills["Morgott, der Omenkönig"] || 0) >= 1 },
     { id: "firegiant",  name: "Schmiede erloschen",     icon: "🔥", desc: "Besiege den Feuerriesen.",               check: s => (s.bossKills["Feuerriese"] || 0) >= 1 },
     { id: "maliketh",   name: "Schwarze Klinge",        icon: "🐕", desc: "Besiege Maliketh.",                      check: s => (s.bossKills["Maliketh, die Schwarze Klinge"] || 0) >= 1 },
+    { id: "loretta",    name: "Ritterin gefallen",      icon: "🌹", desc: "Besiege Loretta.",                       check: s => (s.bossKills["Loretta, Knight of the Haligtree"] || 0) >= 1 },
+    { id: "niall",      name: "Kommandant besiegt",     icon: "⚜️", desc: "Besiege Commander Niall.",               check: s => (s.bossKills["Commander Niall"] || 0) >= 1 },
+    { id: "malenia",    name: "Scarlet Bloom",          icon: "🌸", desc: "Besiege Malenia.",                       check: s => (s.bossKills["Malenia, Goddess of Rot"] || 0) >= 1 },
+    { id: "all_bosses", name: "Götterdämmerung",        icon: "🌒", desc: "Besiege jeden Halbgott mindestens einmal.", check: s => HAUPTBOSSE.every(b => (s.bossKills[b] || 0) >= 1) },
+    /* --- Runs / Abschluss --- */
     { id: "elden_lord", name: "Elden Lord",             icon: "👑", desc: "Schließe einen Run ab und werde Elden Lord.", check: s => s.gamesCompleted >= 1 },
+    { id: "complete_10",name: "Veteran",                icon: "🎖️", desc: "Schließe 10 Runs ab.",                  check: s => s.gamesCompleted >= 10 },
+    { id: "complete_25",name: "Legende",                icon: "🏆", desc: "Schließe 25 Runs ab.",                  check: s => s.gamesCompleted >= 25 },
+    /* --- Tode --- */
     { id: "first_death",name: "Du bist gestorben",      icon: "💀", desc: "Stirb zum ersten Mal.",                  check: s => s.deaths >= 1 },
     { id: "death_50",   name: "Hartnäckig",             icon: "⚰️", desc: "Stirb 50 Mal und gib nicht auf.",        check: s => s.deaths >= 50 },
+    { id: "death_100",  name: "Unsterblich",            icon: "👻", desc: "Stirb 100 Mal.",                         check: s => s.deaths >= 100 },
+    /* --- Dungeons --- */
     { id: "dungeon_1",  name: "Gruft-Plünderer",        icon: "🏰", desc: "Schließe einen Dungeon ab.",             check: s => s.dungeonsCleared >= 1 },
     { id: "dungeon_10", name: "Katakomben-Kenner",      icon: "🗝️", desc: "Schließe 10 Dungeons ab.",              check: s => s.dungeonsCleared >= 10 },
+    /* --- Blaidd --- */
     { id: "blaidd",     name: "Blaidds Gefährte",       icon: "🐺", desc: "Schließe Blaidds Quest ab.",             check: s => s.blaiddDefeats >= 4 },
+    /* --- Sammeln --- */
     { id: "talisman_25",name: "Talisman-Sammler",       icon: "💍", desc: "Finde 25 Talismane.",                    check: s => s.talismansFound >= 25 },
     { id: "weapon_25",  name: "Waffennarr",             icon: "🗡️", desc: "Finde 25 Waffen.",                      check: s => s.weaponsFound >= 25 },
     { id: "armor_10",   name: "Gut gerüstet",           icon: "🛡️", desc: "Finde 10 Rüstungen.",                   check: s => s.armorsFound >= 10 },
-    { id: "flask_500",  name: "Estus-süchtig",          icon: "🧪", desc: "Trinke 500 Flakons.",                    check: s => s.flasksDrunk >= 500 }
+    { id: "flask_500",  name: "Estus-süchtig",          icon: "🧪", desc: "Trinke 500 Flakons.",                    check: s => s.flasksDrunk >= 500 },
+    /* --- Hard Mode --- */
+    { id: "hard_lord",     name: "Wahrer Elden Lord",   icon: "👑", desc: "Schließe einen Hard-Mode-Run ab.",       check: s => (s.hardModeCompletions || 0) >= 1 },
+    { id: "hard_5",        name: "Masochist",           icon: "🩸", desc: "Schließe Hard-Mode 5x ab.",              check: s => (s.hardModeCompletions || 0) >= 5 },
+    { id: "hard_no_death", name: "Flawless",            icon: "✨", desc: "Schließe Hard-Mode ab, ohne zu sterben.", check: s => !!s.hardNoDeath },
+    /* --- Challenges --- */
+    { id: "challenge_auto",      name: "Zuschauer",        icon: "👁️", desc: "Schließe einen Auto-Battle-Run ab.", check: s => !!(s.challengesCompleted && s.challengesCompleted.autobattle) },
+    { id: "challenge_noarmor",   name: "Nacktläufer",      icon: "🏃", desc: "Schließe einen No-Armor-Run ab.",     check: s => !!(s.challengesCompleted && s.challengesCompleted.noarmor) },
+    { id: "challenge_noblaidd",  name: "Einsamer Wolf",    icon: "🐺", desc: "Schließe einen No-Blaidd-Run ab.",    check: s => !!(s.challengesCompleted && s.challengesCompleted.noblaidd) },
+    { id: "challenge_haligtree", name: "Lord of the Haligtree", icon: "🌳", desc: "Besiege Malenia im Haligtree-Challenge.", check: s => !!(s.challengesCompleted && s.challengesCompleted.haligtree) }
   ];
 
   // Übersetzt Name/Beschreibung eines Achievements via i18n (Fallback: hartkodiert)
@@ -119,30 +173,44 @@
 
   function runBump(key, n) { var r = getRun(); r[key] = (r[key] || 0) + (n || 1); saveRun(r); }
 
+  function normDiff(d) { return d === "hard" ? "hard" : "normal"; }
+
   /* ====== 5) ÖFFENTLICHE API (window.ER) ====== */
   const ER = {
     ACHIEVEMENTS: ACHIEVEMENTS,
     isOnline: function () { return ONLINE; },
 
     /* --- Run-Lebenszyklus --- */
-    startRun: function () { saveRun({ stage: 1, bosses: 0, fights: 0 }); bump("runsStarted"); setMax("furthestStage", 1); },
+    startRun: function (difficulty) {
+      var diff = normDiff(difficulty);
+      saveRun({ stage: 1, bosses: 0, fights: 0, difficulty: diff, hadDeath: false });
+      bump("runsStarted");
+      setMax("furthestStage", 1);
+      setMax(diff === "hard" ? "furthestStageHard" : "furthestStageNormal", 1);
+    },
     endRun: function () {
       var r = getRun();
+      var diff = normDiff(r.difficulty);
       var score = (r.stage || 0) * 1000 + (r.bosses || 0) * 200 + (r.fights || 0) * 10;
+      // kombiniert (für die Stat-Anzeige) ...
       setMax("bestScore", score);
       setMax("bestRunBosses", r.bosses || 0);
-      submitToBoard(score, { stage: r.stage || 0, bosses: r.bosses || 0, fights: r.fights || 0 });
-      saveRun({ stage: 0, bosses: 0, fights: 0 });
+      // ... und getrennt nach Schwierigkeit (für die Bestenliste)
+      setMax(diff === "hard" ? "bestScoreHard" : "bestScoreNormal", score);
+      setMax(diff === "hard" ? "bestRunBossesHard" : "bestRunBossesNormal", r.bosses || 0);
+      submitToBoard(score, { stage: r.stage || 0, bosses: r.bosses || 0, fights: r.fights || 0, difficulty: diff });
+      // Zähler zurücksetzen – Schwierigkeit & hadDeath bleiben bis zum nächsten startRun erhalten
+      saveRun({ stage: 0, bosses: 0, fights: 0, difficulty: diff, hadDeath: r.hadDeath });
       return score;
     },
 
     /* --- Einzel-Events --- */
     fightWon:     function () { bump("fightsWon"); runBump("fights"); },
-    bossKilled:   function (name) { bump("bossesKilled"); runBump("bosses"); var s = getStats(); s.bossKills = s.bossKills || {}; s.bossKills[name] = (s.bossKills[name] || 0) + 1; saveStats(s); checkAchievements(); },
+    bossKilled:   function (name) { bump("bossesKilled"); runBump("bosses"); var s = getStats(); s.bossKills[name] = (s.bossKills[name] || 0) + 1; saveStats(s); checkAchievements(); },
     eliteKilled:  function () { bump("elitesKilled"); },
     minibossKilled: function () { bump("minibossesKilled"); },
     invaderKilled:  function () { bump("invadersKilled"); },
-    death:        function () { bump("deaths"); ER.endRun(); },
+    death:        function () { var r = getRun(); r.hadDeath = true; saveRun(r); bump("deaths"); ER.endRun(); },
     dungeonCleared: function () { bump("dungeonsCleared"); },
     talismanFound: function () { bump("talismansFound"); },
     weaponFound:  function () { bump("weaponsFound"); },
@@ -150,7 +218,24 @@
     blaiddDefeat: function () { bump("blaiddDefeats"); },
     gameCompleted: function () { bump("gamesCompleted"); ER.endRun(); },
     flaskDrunk:   function () { bump("flasksDrunk"); },
-    reachStage:   function (n) { if (n) { setMax("furthestStage", n); var r = getRun(); if (n > (r.stage || 0)) { r.stage = n; saveRun(r); } } },
+    reachStage:   function (n) { if (n) { setMax("furthestStage", n); var r = getRun(); var diff = normDiff(r.difficulty); setMax(diff === "hard" ? "furthestStageHard" : "furthestStageNormal", n); if (n > (r.stage || 0)) { r.stage = n; saveRun(r); } } },
+
+    /* --- Hard Mode & Challenges --- */
+    hardCompleted: function () {
+      var s = getStats();
+      s.hardModeCompletions = (s.hardModeCompletions || 0) + 1;
+      if (!getRun().hadDeath) s.hardNoDeath = true; // dieser Run wurde ohne Tod abgeschlossen
+      saveStats(s);
+      checkAchievements();
+    },
+    challengeCompleted: function (name) {
+      if (!name) return;
+      var s = getStats();
+      s.challengesCompleted = s.challengesCompleted || {};
+      s.challengesCompleted[name] = true;
+      saveStats(s);
+      checkAchievements();
+    },
 
     /* --- Abfragen --- */
     getStats: getStats,
@@ -168,37 +253,48 @@
     },
     signOut: function () { if (fbAuth) return fbAuth.signOut(); return Promise.resolve(); },
 
-    /* --- Bestenliste --- */
-    getLeaderboard: function (limit, cb) {
+    /* --- Bestenliste (getrennt nach Schwierigkeit) --- */
+    getLeaderboard: function (limit, cb, difficulty) {
       limit = limit || 20;
+      var diff = normDiff(difficulty);
+      var scoreField = diff === "hard" ? "bestScoreHard" : "bestScoreNormal";
+      var stageField = diff === "hard" ? "furthestStageHard" : "furthestStageNormal";
+      var bossField  = diff === "hard" ? "bestRunBossesHard" : "bestRunBossesNormal";
       if (ONLINE && fbDB) {
-        fbDB.collection("users").orderBy("bestScore", "desc").limit(limit).get()
+        fbDB.collection("users").orderBy(scoreField, "desc").limit(limit).get()
           .then(function (snap) {
             var rows = [];
-            snap.forEach(function (d) { var x = d.data(); rows.push({ name: x.displayName || "Befleckter", score: x.bestScore || 0, stage: x.furthestStage || 0, bosses: x.bestRunBosses || 0, photo: x.photoURL || "" }); });
+            snap.forEach(function (d) {
+              var x = d.data();
+              var sc = x[scoreField] || 0;
+              if (sc <= 0) return; // keine leeren Einträge im jeweiligen Board
+              rows.push({ name: x.displayName || "Befleckter", score: sc, stage: x[stageField] || 0, bosses: x[bossField] || 0, photo: x.photoURL || "" });
+            });
             cb(rows, true);
           })
-          .catch(function (e) { console.warn("[ER] Bestenliste online fehlgeschlagen, lokal:", e); cb(localBoard(limit), false); });
+          .catch(function (e) { console.warn("[ER] Bestenliste online fehlgeschlagen, lokal:", e); cb(localBoard(limit, diff), false); });
       } else {
-        cb(localBoard(limit), false);
+        cb(localBoard(limit, diff), false);
       }
     }
   };
 
   /* ====== 6) LOKALE BESTENLISTE ====== */
-  function localBoard(limit) {
-    var b = lsGet(BOARD_KEY, []);
+  function localBoard(limit, difficulty) {
+    var diff = normDiff(difficulty);
+    var b = lsGet(BOARD_KEY, []).filter(function (x) { return normDiff(x.difficulty) === diff; });
     b.sort(function (a, c) { return c.score - a.score; });
     return b.slice(0, limit);
   }
   function submitToBoard(score, meta) {
     if (score <= 0) return;
     var name = ER.getPlayerName();
-    // lokal
+    var diff = normDiff(meta.difficulty);
+    // lokal – ein bester Eintrag pro Name UND Schwierigkeit
     var b = lsGet(BOARD_KEY, []);
-    var mine = b.find(function (x) { return x.name === name && x.local; });
+    var mine = b.find(function (x) { return x.name === name && x.local && normDiff(x.difficulty) === diff; });
     if (mine) { if (score > mine.score) { mine.score = score; mine.stage = meta.stage; mine.bosses = meta.bosses; } }
-    else { b.push({ name: name, score: score, stage: meta.stage, bosses: meta.bosses, local: true }); }
+    else { b.push({ name: name, score: score, stage: meta.stage, bosses: meta.bosses, difficulty: diff, local: true }); }
     lsSet(BOARD_KEY, b);
     // cloud
     cloudPush();
@@ -216,6 +312,13 @@
       bestScore: s.bestScore || 0,
       bestRunBosses: s.bestRunBosses || 0,
       furthestStage: s.furthestStage || 0,
+      // getrennte Felder, nach denen die Bestenliste sortiert
+      bestScoreNormal: s.bestScoreNormal || 0,
+      bestScoreHard: s.bestScoreHard || 0,
+      bestRunBossesNormal: s.bestRunBossesNormal || 0,
+      bestRunBossesHard: s.bestRunBossesHard || 0,
+      furthestStageNormal: s.furthestStageNormal || 0,
+      furthestStageHard: s.furthestStageHard || 0,
       updatedAt: (firebase.firestore && firebase.firestore.FieldValue ? firebase.firestore.FieldValue.serverTimestamp() : Date.now())
     };
     try { fbDB.collection("users").doc(currentUser.uid).set(doc, { merge: true }); } catch (e) { console.warn("[ER] cloudPush:", e); }
@@ -229,12 +332,19 @@
       if (snap.exists) {
         var cloud = snap.data();
         var cs = cloud.stats || {};
-        // Merge: pro Zahl das Maximum, Achievements vereinen
+        // Merge: Zahlen -> Maximum, Objekte -> vereinen, Booleans -> ODER
         var merged = Object.assign({}, DEFAULT_STATS, local);
         Object.keys(DEFAULT_STATS).forEach(function (k) {
-          if (k === "bossKills") {
-            merged.bossKills = Object.assign({}, cs.bossKills || {}, local.bossKills || {});
-            Object.keys(cs.bossKills || {}).forEach(function (bk) { merged.bossKills[bk] = Math.max(cs.bossKills[bk] || 0, (local.bossKills || {})[bk] || 0); });
+          if (k === "bossKills" || k === "challengesCompleted") {
+            var localObj = local[k] || {}, cloudObj = cs[k] || {};
+            var mergedObj = Object.assign({}, cloudObj, localObj);
+            Object.keys(cloudObj).forEach(function (kk) {
+              if (typeof cloudObj[kk] === "number") mergedObj[kk] = Math.max(cloudObj[kk] || 0, localObj[kk] || 0);
+              else if (!(kk in localObj)) mergedObj[kk] = cloudObj[kk];
+            });
+            merged[k] = mergedObj;
+          } else if (k === "hardNoDeath") {
+            merged[k] = !!(local[k] || cs[k]);
           } else {
             merged[k] = Math.max(local[k] || 0, cs[k] || 0);
           }
