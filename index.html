@@ -9,8 +9,8 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-  <script src="lang.js?v=1.4"></script>
-  <script src="eldenrogue-online.js?v=1.4"></script>
+  <script src="lang.js"></script>
+  <script src="eldenrogue-online.js"></script>
   
   <style>
     @font-face { font-family: 'Mantinia'; src: url('fonts/Mantinia Regular.otf') format('opentype'); font-weight: normal; font-style: normal; }
@@ -296,7 +296,7 @@
       <button class="mode-tab active" id="lb-tab-normal" onclick="switchLbMode('normal')">Normal</button>
       <button class="mode-tab" id="lb-tab-hard" onclick="switchLbMode('hard')">Hard</button>
     </div>
-    <div style="text-align:center; margin:-4px 0 12px;"><select id="lb-patch" onchange="switchLbPatch(this.value)" style="background:#111; color:var(--gold); border:1px solid var(--gold-dark); padding:4px 12px; font-family:'Mantinia',serif; font-size:0.75rem; letter-spacing:1px; border-radius:3px; cursor:pointer;"></select></div>
+    <div style="text-align:center; margin:-4px 0 12px;"><select id="lb-patch" style="background:#111; color:var(--gold); border:1px solid var(--gold-dark); padding:4px 12px; font-family:'Mantinia',serif; font-size:0.75rem; letter-spacing:1px; border-radius:3px; cursor:pointer;"><option value="1.3" selected>PATCH v1.3</option></select></div>
     <div id="lb-status" class="muted">Lade Bestenliste…</div>
     <table class="lb-table hidden" id="lb-table">
       <thead><tr><th>#</th><th id="th-player">Befleckter</th><th id="th-stage">Etappe</th><th id="th-bosses">Bosse</th><th style="text-align:right;" id="th-score">Score</th></tr></thead>
@@ -397,20 +397,7 @@
   });
 
   /* ===== Modal Handling ===== */
-  // Verfügbare Patches in der Bestenliste – erster Eintrag = aktueller Patch.
-  // Bei neuem Patch hier vorne ergänzen (z.B. "1.5" davor).
-  const LB_PATCHES = ["1.4", "1.3"];
-  const LB_LEGACY_PATCH = "1.3"; // Einträge ohne Patch-Markierung gelten als dieser (Alt-Scores vor 1.4)
-  let lbMode = "normal", achMode = "normal", lbPatch = LB_PATCHES[0];
-
-  function initLbPatchDropdown() {
-    var sel = document.getElementById("lb-patch");
-    if (!sel) return;
-    sel.innerHTML = LB_PATCHES.map(function (p) {
-      return '<option value="' + p + '"' + (p === lbPatch ? ' selected' : '') + '>PATCH v' + p + '</option>';
-    }).join("");
-  }
-  function switchLbPatch(p) { lbPatch = p; ladeBestenliste(); }
+  let lbMode = "normal", achMode = "normal";
 
   function switchLbMode(m) {
     lbMode = m;
@@ -487,12 +474,8 @@
     status.classList.remove("hidden"); table.classList.add("hidden");
     status.textContent = window.i18n ? t("lb_loading") : "Lade Bestenliste…";
 
-    ER.getLeaderboard(100, function (rows, online) {
-      // Nach gewähltem Patch filtern (Einträge ohne Markierung gelten als Alt-Patch),
-      // dann auf die Top 20 begrenzen.
-      rows = (rows || []).filter(function (r) { return (r.patch || LB_LEGACY_PATCH) === lbPatch; }).slice(0, 20);
+    ER.getLeaderboard(20, function (rows, online) {
       if (!rows || rows.length === 0) {
-        status.classList.remove("hidden"); table.classList.add("hidden");
         status.textContent = online 
           ? (window.i18n ? t("lb_no_entries_online") : "Noch keine Einträge – sei der Erste!") 
           : (window.i18n ? t("lb_no_entries_local") : "Noch keine lokalen Läufe. Spiel eine Runde!");
@@ -504,7 +487,7 @@
         var tr = document.createElement("tr");
         tr.innerHTML =
           '<td class="lb-rank ' + rankClass + '">' + (i + 1) + '</td>' +
-          '<td><span class="lb-name">' + (r.photo ? '<img src="' + r.photo + '">' : "") + (r.name || (window.i18n ? t("lb_th_player") : "Befleckter")) + '</span></td>' +
+          '<td><span class="lb-name">' + (r.photo ? '<img src="' + r.photo + '">' : "") + (r.name || (window.i18n ? t("lb_th_player") : "Befleckter")) + (r.patch ? ' <span class="lb-patch">v' + r.patch + '</span>' : "") + '</span></td>' +
           '<td>' + (r.stage || 0) + '</td>' +
           '<td>' + (r.bosses || 0) + '</td>' +
           '<td class="lb-score">' + (r.score || 0) + '</td>';
@@ -569,7 +552,6 @@
   // Call initialization logic for translations once
   renderStaticText();
   updateLangSwitcherButtons();
-  initLbPatchDropdown();
 </script>
 </body>
 </html>
