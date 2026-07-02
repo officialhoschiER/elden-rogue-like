@@ -7,8 +7,8 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-  <script src="lang.js?v=1.4"></script>
-  <script src="eldenrogue-online.js?v=1.4"></script>
+  <script src="lang.js?v=1.5"></script>
+  <script src="eldenrogue-online.js?v=1.5"></script>
   <style>
     /* Lokale Font-Einbindung aus dem fonts-Ordner */
     @font-face {
@@ -370,6 +370,7 @@ h1, h2, h3, .btn-menu, .btn-combat, .btn-social, .game-author-tag, #region-displ
 
   <div id="death-screen">
     <div class="death-text" id="ui-death-title">DU BIST GESTORBEN</div>
+    <div class="death-souls" id="death-souls-line" style="color:#cda34f; font-family:sans-serif; margin:6px 0 14px; font-size:1rem; font-weight:bold;"></div>
     <div class="death-actions">
       <button class="death-btn" id="ui-btn-new-run-death" onclick="direktNeustarten()">🔄 Neuen Run starten</button>
       <a href="index.html" class="death-btn" id="ui-btn-main-menu-death">🏰 Hauptmenü</a>
@@ -539,8 +540,38 @@ h1, h2, h3, .btn-menu, .btn-combat, .btn-social, .game-author-tag, #region-displ
 const urlParams = new URLSearchParams(window.location.search);
 const hardMode = urlParams.get("mode") === "hard";
 const resumeRun = urlParams.get("resume") === "true";
+
+// ============================================================
+//  ZENTRALE BALANCE-KONFIGURATION
+//  Alle wichtigen Stellschrauben an einem Ort. Werte hier ändern,
+//  ohne die Spiellogik anfassen zu müssen.
+// ============================================================
+const CONFIG = {
+  // --- Heilung & Ausweichen ---
+  estusHeilProzent: { normal: 0.35, hard: 0.25 },   // Anteil der Max-HP, den ein Flakon heilt
+  ausweichenCap:    { normal: 0.75, hard: 0.65 },   // maximale Ausweichchance
+  // --- Kampf ---
+  staggerTreffer:      { normal: 4, hard: 5 },       // Treffer, bis der Gegner taumelt
+  staggerBonusSchaden: 1.3,                          // Schadensmultiplikator für den Treffer nach dem Stagger
+  buffBonusProStack:   0.15,                         // Bonus je gestapeltem Rucksack-Buff (dmg / dodge / hp)
+  // --- Affinität-Burst (jeder 5. Treffer), je nach abgeschlossenen Dungeons ---
+  affinityBurst: { basis: 0.05, ab2Dungeons: 0.075, ab3Dungeons: 0.10 },
+  // --- Beute ---
+  waffenRarityShift: { proWaechter: 0.05, max: 0.40 }, // bessere Waffen-Chance je besiegtem Wächter
+  // --- Tower-Modus (endloser Aufstieg, Score = höchste Etage) ---
+  tower: {
+    hpBasis: 55,  hpProEtage: 0.16,  hpExpo: 1.025,   // Gegner-HP = hpBasis * (1 + hpProEtage*(etage-1)) * hpExpo^(etage-1)
+    dmgBasis: 9,  dmgProEtage: 0.12, dmgExpo: 1.02,   // Gegner-Schaden analog
+    hardFaktor: 1.35,                                  // zusätzlicher Multiplikator im Hard-Modus
+    minibossAlle: 5,                                   // jede 5. Etage ein Miniboss (mehr HP/Schaden)
+    minibossHpMult: 1.9, minibossDmgMult: 1.4,
+    heilProEtage: 0.30                                 // Anteil der Max-HP, der zwischen den Etagen geheilt wird
+  }
+};
+function diffVal(o){ return o[hardMode ? "hard" : "normal"]; }
+
 let activeChallenge = urlParams.get("challenge") || "";
-let spielerHp = 100; let spielerMaxHp = 100; let spielerFlasks = 3; let maxKlassenFlasks = 3; let estusHeilProzent = hardMode ? 0.25 : 0.35; let gewaehlteKlasse = ""; let basisAusweichChance = 0.0;
+let spielerHp = 100; let spielerMaxHp = 100; let spielerFlasks = 3; let maxKlassenFlasks = 3; let estusHeilProzent = diffVal(CONFIG.estusHeilProzent); let gewaehlteKlasse = ""; let basisAusweichChance = 0.0;
 let waffenName = ""; let waffenSchaden = 0; let waffenUpgrade = 0;
 let waffenRaritaet = "common"; let waffenSchadensarten = ["Normal"];
 let gelagerteWaffen = []; let maxWaffenSlots = hardMode ? 0 : 1;
@@ -559,8 +590,11 @@ let affinityHits = 0;
 let completedDungeonsCount = 0;
 
 let backpackItems = [null, null, null]; 
-let activeDungeonBuff = null; 
-let dungeonBuffRemainingCombats = 0;
+let activeBuffs = [];   // bis zu 3 gleichzeitig aktive, stapelbare Buffs: { type:"hp"|"dodge"|"dmg", remaining }
+let seelenVergeben = false; let letzteRunSeelen = 0;   // Meta-Progression Laufzeit-Flags
+function buffStacks(type) { let n = 0; for (let b of activeBuffs) if (b.type === type && b.remaining > 0) n++; return n; }
+function buffsAktiv() { return activeBuffs.some(b => b.remaining > 0); } 
+
 
 let inSubDungeon = false;
 let mainMapState = null;
@@ -579,9 +613,9 @@ function speichereRun() {
     ausgeruesteteTalismane, maxTalismanSlots,
     hatGodrickRune, hatRadahnRune, hatMorgottRune, aktiveRune,
     questProgress, medallionHalves, fortressPlacedRegions, currentAffinity, affinityHits, completedDungeonsCount,
-    backpackItems, activeDungeonBuff, dungeonBuffRemainingCombats,
+    backpackItems, activeBuffs,
     aktuelleRegion, aktuelleEbene, geloesieKnotenIds, aktuellerKnotenId,
-    netzKarte, inSubDungeon, mainMapState
+    netzKarte, inSubDungeon, mainMapState, towerEtage
   };
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch(e) {}
 }
@@ -600,10 +634,12 @@ function ladeGespeichertenRun() {
     ausgeruesteteTalismane=d.ausgeruesteteTalismane||[]; maxTalismanSlots=d.maxTalismanSlots;
     hatGodrickRune=d.hatGodrickRune; hatRadahnRune=d.hatRadahnRune; hatMorgottRune=d.hatMorgottRune; aktiveRune=d.aktiveRune;
     questProgress=d.questProgress; medallionHalves=d.medallionHalves||0; fortressPlacedRegions=d.fortressPlacedRegions||[]; currentAffinity=d.currentAffinity; affinityHits=d.affinityHits; completedDungeonsCount=d.completedDungeonsCount;
-    backpackItems=d.backpackItems||[null,null,null]; activeDungeonBuff=d.activeDungeonBuff; dungeonBuffRemainingCombats=d.dungeonBuffRemainingCombats;
+    backpackItems=d.backpackItems||[null,null,null]; activeBuffs = Array.isArray(d.activeBuffs) ? d.activeBuffs : (d.activeDungeonBuff ? [{ type:d.activeDungeonBuff, remaining:d.dungeonBuffRemainingCombats||0 }] : []);
     aktuelleRegion=d.aktuelleRegion; aktuelleEbene=d.aktuelleEbene; geloesieKnotenIds=d.geloesieKnotenIds||[]; aktuellerKnotenId=d.aktuellerKnotenId;
     netzKarte=d.netzKarte||[]; inSubDungeon=d.inSubDungeon; mainMapState=d.mainMapState;
     activeChallenge=d.challenge||"";
+    towerEtage=d.towerEtage||0;
+    if (activeChallenge === "tower") { if (!towerEtage) towerEtage = 1; starteTowerKampf(); return true; }
     baueKarteHTML(); updateUI();
     return true;
   } catch(e) { return false; }
@@ -613,10 +649,51 @@ function hatGespeichertenRun() {
 }
 // Expose for index.html
 window.hatGespeichertenRun = hatGespeichertenRun;
+/* ============================================================
+   ⚖️ SEELEN – Meta-Währung (Verdienen im Run; Shop ist im Hauptmenü)
+   Persistiert getrennt vom Run-Save (eigener localStorage-Key), überlebt den Tod.
+   ============================================================ */
+const META_KEY = "eldenRogueMeta";
+const META_RESET_VERSION = 2;   // hochzählen = einmaliger Reset der Freischaltungen für alle Nutzer
+const DEFAULT_WEAPONS = ["Keule","Großaxt","Uchigatana","Dolch","Kurzschwert","Breitschwert","Rapier","Claymore","Bluthundreißzahn","Maltöter Großbeil","Großsterne","Rostiger Anker","Blasphemous Blade"];
+const DEFAULT_ARMOR = ["Albinauric Set","Cleanrot Set","Briar Set","Haligtree Knight Set"];
+function metaDefault() { return { seelen:0, upgrades:{vitalitaet:0,schaerfe:0,wendigkeit:0,seelenfaenger:0,flakon:0}, unlockedWeapons: DEFAULT_WEAPONS.slice(), unlockedArmor: DEFAULT_ARMOR.slice(), unlockedSkins:[], activeSkinId:null, activeSkinFilter:"", resetVersion: META_RESET_VERSION }; }
+function ladeMeta() {
+  try { let m = JSON.parse(localStorage.getItem(META_KEY)); if (m && typeof m === "object") { let d = metaDefault(); let r = Object.assign(d, m, { upgrades: Object.assign(d.upgrades, m.upgrades||{}) });
+      if (m.resetVersion !== META_RESET_VERSION) { r.unlockedWeapons = DEFAULT_WEAPONS.slice(); r.unlockedArmor = DEFAULT_ARMOR.slice(); r.unlockedSkins = []; r.resetVersion = META_RESET_VERSION; speichereMeta(r); }
+      else { r.unlockedWeapons = Array.from(new Set(DEFAULT_WEAPONS.concat(Array.isArray(r.unlockedWeapons)?r.unlockedWeapons:[]))); r.unlockedArmor = Array.from(new Set(DEFAULT_ARMOR.concat(Array.isArray(r.unlockedArmor)?r.unlockedArmor:[]))); }
+      return r; } } catch(e) {}
+  return metaDefault();
+}
+function speichereMeta(m) { try { localStorage.setItem(META_KEY, JSON.stringify(m)); } catch(e) {} }
+function L(de, en) { return (window.i18n && window.i18n.getLang && window.i18n.getLang() === "en") ? en : de; }
+
+const SEELEN_REGION_TIEFE = { Limgrave:0, Caelid:1, Leyndell:2, Mountaintops:3, FarumAzula:4, AshenCapital:5, EldenThrone:6, Haligtree:6 };
+function belohneSeelen(gewonnen) {
+  if (seelenVergeben) return letzteRunSeelen;
+  seelenVergeben = true;
+  let tiefe = SEELEN_REGION_TIEFE[aktuelleRegion] || 0;
+  let bosse = (hatGodrickRune?1:0) + (hatRadahnRune?1:0) + (hatMorgottRune?1:0);
+  let s = 20 + tiefe*25 + bosse*30 + (completedDungeonsCount||0)*15 + (besiegteWaechter||0)*8 + (questProgress||0)*10;
+  if (gewonnen) s += 200;
+  let meta = ladeMeta();
+  s = Math.round(s * (1 + (meta.upgrades.seelenfaenger||0) * 0.10));
+  meta.seelen += s; speichereMeta(meta);
+  letzteRunSeelen = s;
+  return s;
+}
+
 
  
 
 let aktionsSperre = false;
+let autoBattleRunning = false;   // verhindert mehrfach laufende Auto-Battle-Schleifen
+let bossPhaseWechsel = false;    // true, wenn der Gegner gerade in seine nächste Phase gewechselt ist (kein Sofort-Konter)
+let towerEtage = 0;              // aktuelle Etage im Tower-Modus (0 = nicht im Tower)
+
+// Kleiner Promise-Helfer, damit Kampfsequenzen linear mit await statt mit
+// verschachtelten setTimeout-Callbacks geschrieben werden koennen.
+function wait(ms) { return new Promise(res => setTimeout(res, ms)); }
 
 /* ===== i18n / STATIC TEXT RENDERING ===== */
 function t(key, placeholders) {
@@ -704,16 +781,31 @@ function raritaetLabel_t(r) { return t('rarity_'+r); }
 const raritaetLabel  = new Proxy({ common: "Gewöhnlich", rare: "Selten", epic: "Episch", legendary: "Legendär" }, { get(o,k) { let v = window.i18n ? window.i18n.t('rarity_'+k) : null; return (v && v !== 'rarity_'+k) ? v : o[k] || k; } });
 
 const waffenDatenbank = {
-  common: [ { name: "Dolch", basisDmg: 9 }, { name: "Kurzschwert", basisDmg: 11 }, { name: "Breitschwert", basisDmg: 13 }, { name: "Rapier", basisDmg: 11 } ],
-  rare: [ { name: "Claymore", basisDmg: 23 }, { name: "Bluthundreißzahn", basisDmg: 25 }, { name: "Maltöter Großbeil", basisDmg: 27 } ],
-  epic: [ { name: "Großsterne", basisDmg: 35 }, { name: "Rostiger Anker", basisDmg: 39 } ],
+  common: [
+    { name: "Dolch", basisDmg: 9 }, { name: "Kurzschwert", basisDmg: 11 }, { name: "Breitschwert", basisDmg: 13 }, { name: "Rapier", basisDmg: 11 },
+    { name: "Banditenkrummschwert", basisDmg: 12 }, { name: "Estoc", basisDmg: 13 }, { name: "Kettenglied-Flegel", basisDmg: 14 },
+    { name: "Roter Zopf des Riesen", basisDmg: 14 }, { name: "Peitsche", basisDmg: 12 }, { name: "Geisterflammenfackel", basisDmg: 13 }, { name: "Glaive", basisDmg: 15 },
+    { name: "Keule", basisDmg: 11 }, { name: "Großaxt", basisDmg: 15 }, { name: "Uchigatana", basisDmg: 14 }
+  ],
+  rare: [
+    { name: "Claymore", basisDmg: 23 }, { name: "Bluthundreißzahn", basisDmg: 25 }, { name: "Maltöter Großbeil", basisDmg: 27 },
+    { name: "Flamberge", basisDmg: 24 }, { name: "Hellebarde des Verbannten Ritters", basisDmg: 24 }, { name: "Drachenhellebarde", basisDmg: 26 },
+    { name: "Magmaklinge", basisDmg: 26 }, { name: "Bluthundklauen", basisDmg: 26 }, { name: "Golem-Hellebarde", basisDmg: 28 },
+    { name: "Spitzhacke", basisDmg: 28 }, { name: "Wachhund-Großschwert", basisDmg: 30 }
+  ],
+  epic: [
+    { name: "Großsterne", basisDmg: 35 }, { name: "Rostiger Anker", basisDmg: 39 },
+    { name: "Drachenschuppenklinge", basisDmg: 36 }, { name: "Eisrand-Beil", basisDmg: 36 }, { name: "Meteoritenerz-Klinge", basisDmg: 36 },
+    { name: "Geflügelte Sense", basisDmg: 38 }, { name: "Vykes Kriegsspeer", basisDmg: 40 }, { name: "Ghizas Rad", basisDmg: 40 }, { name: "Schlangenjäger", basisDmg: 42 }
+  ],
   legendary: [
     { name: "Blasphemous Blade", basisDmg: 50, schadensarten: ["Magie", "Feuer"] },
     { name: "Malenias Blade", basisDmg: 68, schadensarten: ["Normal"] },
     { name: "Goldene Hellebarde", basisDmg: 50, schadensarten: ["Heilig", "Normal"] },
     { name: "Marikas Hammer", basisDmg: 50, schadensarten: ["Heilig", "Magie"] },
     { name: "Mohgwyns heiliger Speer", basisDmg: 50, schadensarten: ["Feuer", "Normal"] },
-    { name: "Halo Scythe", basisDmg: 52, schadensarten: ["Heilig"] }
+    { name: "Halo Scythe", basisDmg: 52, schadensarten: ["Heilig"] },
+    { name: "Dunkelmondgroßschwert", basisDmg: 55, schadensarten: ["Magie", "Normal"] }
   ]
 };
 
@@ -731,7 +823,16 @@ const waffenBilder = {
   "Maltöter Großbeil": "images/weapons/maltoeter_grossbeil.png", "Großsterne": "images/weapons/grosssterne.png", "Rostiger Anker": "images/weapons/rostiger_anker.png",
   "Blasphemous Blade": "images/weapons/blasphemous_blade.png", "Malenias Blade": "images/weapons/malenias_blade.png",
   "Goldene Hellebarde": "images/weapons/goldene_hellebarde.png", "Marikas Hammer": "images/weapons/marikas_hammer.png",
-  "Mohgwyns heiliger Speer": "images/weapons/mohgwyns_speer.png", "Dunkelmondgroßschwert": "images/weapons/dunkelmondgrossschwert.png"
+  "Mohgwyns heiliger Speer": "images/weapons/mohgwyns_speer.png", "Halo Scythe": "images/weapons/halo_scythe.png",
+  "Dunkelmondgroßschwert": "images/weapons/dunkelmondgrossschwert.png",
+  "Banditenkrummschwert": "images/weapons/bandits_curved.png", "Estoc": "images/weapons/estoc_thrusting.png", "Kettenglied-Flegel": "images/weapons/chainlink_flail.png",
+  "Roter Zopf des Riesen": "images/weapons/giant's_red.png", "Peitsche": "images/weapons/whip_weapon.png", "Geisterflammenfackel": "images/weapons/ghostflame_torch.png",
+  "Glaive": "images/weapons/glaive_halberds.png", "Flamberge": "images/weapons/flamberge_weapon.png", "Hellebarde des Verbannten Ritters": "images/weapons/banished_knights_halberd.png",
+  "Drachenhellebarde": "images/weapons/dragon_halberd.png", "Magmaklinge": "images/weapons/magma_blade.png", "Bluthundklauen": "images/weapons/bloodhound_claws.png",
+  "Golem-Hellebarde": "images/weapons/golems_halberd.png", "Spitzhacke": "images/weapons/pickaxe_warhammer.png", "Wachhund-Großschwert": "images/weapons/watchdogs_greatsword.png",
+  "Drachenschuppenklinge": "images/weapons/dragonscale_blade.png", "Eisrand-Beil": "images/weapons/icerind_hatchet.png", "Meteoritenerz-Klinge": "images/weapons/meteoric_ore_blade.png",
+  "Geflügelte Sense": "images/weapons/winged_scythe.png", "Vykes Kriegsspeer": "images/weapons/vykes_war_spear.png", "Ghizas Rad": "images/weapons/ghiza's_wheel.png",
+  "Schlangenjäger": "images/weapons/serpent-hunter_greatspear.png"
 };
 function gibWaffenBild(name) { return waffenBilder[name] || platzhalterWaffenBild; }
 function waffenNameLoc(name) { if (!window.i18n) return name; let k = "weapon_" + name.toLowerCase().replace(/[^a-zäöüß]/g,"_"); let v = window.i18n.t(k); return (v !== k) ? v : name; }
@@ -743,14 +844,16 @@ function dmgTypIconHtml(art) {
   return `<span class="dmg-type-icon tip" data-tooltip="${t("combat_dmg_type")}: ${dmgArtLoc(art)}"><img src="${datei}" alt="${dmgArtLoc(art)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';"><span class="dmg-fallback" style="display:none; color:${farbe};">${dmgArtLoc(art).slice(0,2)}</span></span>`;
 }
 
+function poolUnlockedWaffe(rarity){ let m=ladeMeta(); let pool=waffenDatenbank[rarity]||[]; let frei=pool.filter(w=>m.unlockedWeapons.indexOf(w.name)>=0); return frei.length?frei:pool; }
+function poolUnlockedRuestung(rarity){ let m=ladeMeta(); let pool=ruestungDatenbank[rarity]||[]; let frei=pool.filter(a=>(m.unlockedArmor||[]).indexOf(a.name)>=0); return frei.length?frei:pool; }
 function rolleZufallsWaffe() {
-  let shift = Math.min(besiegteWaechter * 0.05, 0.40);
+  let shift = Math.min(besiegteWaechter * CONFIG.waffenRarityShift.proWaechter, CONFIG.waffenRarityShift.max);
   let pCommon = 0.50 - shift, pRare = 0.30 + shift * 0.60, pEpic = 0.15 + shift * 0.30;
   let r = Math.random(); let rarity;
   if (r < pCommon) rarity = "common"; else if (r < pCommon + pRare) rarity = "rare";
   else if (r < pCommon + pRare + pEpic) rarity = "epic"; else rarity = "legendary";
 
-  let pool = waffenDatenbank[rarity]; let base = pool[Math.floor(Math.random() * pool.length)];
+  let pool = poolUnlockedWaffe(rarity); let base = pool[Math.floor(Math.random() * pool.length)];
   let waffe = { name: base.name, basisDmg: base.basisDmg, rarity: rarity };
   if (rarity === "legendary") waffe.schadensarten = [...base.schadensarten];
   else waffe.schadensarten = [ schadensArten[Math.floor(Math.random() * schadensArten.length)] ];
@@ -859,7 +962,7 @@ const startRuestungen = {
 function rolleZufallsRuestung(){
   let r = Math.random(); let rarity;
   if (r < 0.50) rarity="common"; else if (r < 0.80) rarity="rare"; else if (r < 0.95) rarity="epic"; else rarity="legendary";
-  let pool = ruestungDatenbank[rarity]; let base = pool[Math.floor(Math.random()*pool.length)];
+  let pool = poolUnlockedRuestung(rarity); let base = pool[Math.floor(Math.random()*pool.length)];
   return { name: base.name, bild: base.bild, rarity: rarity, reduktion: ruestungRaritaetReduktion[rarity] };
 }
 function setzeAusgeruesteteRuestung(r){ ruestungName=r.name; ruestungRaritaet=r.rarity; ruestungReduktion=r.reduktion; ruestungBild=r.bild; }
@@ -923,7 +1026,7 @@ window.addEventListener('resize', zeichneLinien);
 // Haligtree-Challenge: 2 Festungen auf die Karte setzen (max 1 pro Region)
 let fortressPlacedRegions = [];
 function platziereFestungen(karte, regionName) {
-  if (activeChallenge !== "haligtree") return karte;
+  if (activeChallenge !== "" && activeChallenge !== "haligtree") return karte;   // Medaillen-Jagd jetzt im Normal-/Hard-Run (nicht in anderen Challenges)
   if (fortressPlacedRegions.length >= 2) return karte;
   if (fortressPlacedRegions.includes(regionName)) return karte;
   // Regionen 1-5 (Limgrave bis FarumAzula), Chance: 60% pro Region
@@ -1116,6 +1219,9 @@ function oeffneKlassenAuswahl() {
 
 function zeigeTodesBildschirm() {
   loescheRunSave();
+  let __s = belohneSeelen(false);
+  let __sl = document.getElementById("death-souls-line");
+  if (__sl) __sl.innerText = "✨ +" + __s + " " + L("Seelen erbeutet","Souls earned");
   if (window.ER) ER.death();
   let ds = document.getElementById("death-screen");
   if (ds) ds.classList.add("show");
@@ -1134,14 +1240,14 @@ window.onERAchievement = function (a) {
 function direktNeustarten() {
   loescheRunSave();
   let ds = document.getElementById("death-screen"); if (ds) ds.classList.remove("show");
-  spielerHp = 100; spielerMaxHp = 100; spielerFlasks = 3; maxKlassenFlasks = 3; estusHeilProzent = hardMode ? 0.25 : 0.35;
+  spielerHp = 100; spielerMaxHp = 100; spielerFlasks = 3; maxKlassenFlasks = 3; estusHeilProzent = diffVal(CONFIG.estusHeilProzent);
   waffenUpgrade = 0; gelagerteWaffen = []; maxWaffenSlots = hardMode ? 0 : 1; besiegteWaechter = 0; waffenRaritaet = "common"; waffenSchadensarten = ["Normal"];
   ruestungName = t("no_armor"); ruestungRaritaet = "common"; ruestungReduktion = 0; ruestungBild = "";
   ausgeruesteteTalismane = []; maxTalismanSlots = hardMode ? 2 : 3; hatGodrickRune = false; hatRadahnRune = false; hatMorgottRune = false; aktiveRune = "keine";
   questProgress = 0; medallionHalves = 0; fortressPlacedRegions = []; imKampf = false; gewaehlteKlasse = ""; aktionsSperre = false;
   playerHitsOnEnemy = 0; enemyIsStaggered = false; staggerVisualActive = false; nextHitBonusDamage = false;
   currentAffinity = "Keine"; affinityHits = 0; completedDungeonsCount = 0;
-  backpackItems = [null, null, null]; activeDungeonBuff = null; dungeonBuffRemainingCombats = 0; inSubDungeon = false; mainMapState = null;
+  backpackItems = [null, null, null]; activeBuffs = []; inSubDungeon = false; mainMapState = null; towerEtage = 0;
   oeffneKlassenAuswahl();
 }
 
@@ -1156,9 +1262,19 @@ function waehleKlasseEngine(klasse) {
   if (klasse === 'schwertkaempfer') { spielerMaxHp = 150; maxKlassenFlasks = hardMode ? 2 : 3; spielerFlasks = maxKlassenFlasks; basisAusweichChance = 0.30; playerImageStr = "images/tarnished_ritter.webp"; }
   else if (klasse === 'samurai') { spielerMaxHp = 110; maxKlassenFlasks = hardMode ? 1 : 2; spielerFlasks = maxKlassenFlasks; basisAusweichChance = 0.40; playerImageStr = "images/tarnished_samurai.webp"; }
   else if (klasse === 'nackt') { spielerMaxHp = 90; maxKlassenFlasks = hardMode ? 0 : 1; spielerFlasks = maxKlassenFlasks; basisAusweichChance = 0.50; playerImageStr = "images/tarnished_nackt.webp"; }
+  // ⚜️ Meta-Upgrades (Roundtable) anwenden
+  let __meta = ladeMeta(); let __up = __meta.upgrades || {};
+  spielerMaxHp += (__up.vitalitaet||0) * 15;
+  maxKlassenFlasks += (__up.flakon||0); spielerFlasks = maxKlassenFlasks;
+  waffenUpgrade += (__up.schaerfe||0);
+  basisAusweichChance = Math.min(0.75, basisAusweichChance + (__up.wendigkeit||0) * 0.025);
+  seelenVergeben = false;
   spielerHp = spielerMaxHp; document.getElementById("popup-content").classList.remove("klassen-modal"); document.getElementById("popup-overlay").style.display = "none";
-  if (window.ER) ER.startRun(hardMode ? "hard" : "normal");
+  // Kategorie mitgeben, damit Challenge-Runs (tower/noarmor/noblaidd/autobattle/haligtree)
+  // in ihrer eigenen Bestenliste landen. Leeres activeChallenge -> normCat fällt auf normal/hard zurück.
+  if (window.ER) ER.startRun(hardMode ? "hard" : "normal", activeChallenge);
   speichereRun();
+  if (activeChallenge === "tower") { starteTowerModus(); return; }   // Tower: direkt in den Aufstieg statt Regionskarte
   updateUI();
 }
 
@@ -1261,12 +1377,16 @@ function updateUI() {
   let finalHpMultiplier = 1.0 + tStats.bonusHpPercent;
 
   let bpStatus = document.getElementById("backpack-active-status");
-  if (dungeonBuffRemainingCombats > 0 && activeDungeonBuff) {
+  if (buffsAktiv()) {
     bpStatus.style.display = "block";
     let cmpText = (window.i18n && window.i18n.getLang() === 'en') ? 'Battles' : 'Kämpfe';
-    if (activeDungeonBuff === "hp") { finalHpMultiplier += 0.15; bpStatus.innerText = `❤️ HP Buff (${dungeonBuffRemainingCombats} ${cmpText})`; } 
-    else if (activeDungeonBuff === "dodge") { runeRollBonus += 0.15; bpStatus.innerText = `💨 Dodge Buff (${dungeonBuffRemainingCombats} ${cmpText})`; } 
-    else if (activeDungeonBuff === "dmg") { bpStatus.innerText = `⚔️ DMG Buff (${dungeonBuffRemainingCombats} ${cmpText})`; }
+    finalHpMultiplier += CONFIG.buffBonusProStack * buffStacks("hp");
+    runeRollBonus += CONFIG.buffBonusProStack * buffStacks("dodge");
+    let teile = activeBuffs.filter(b => b.remaining > 0).map(b => {
+      let ico = b.type === "hp" ? "❤️" : (b.type === "dodge" ? "💨" : "⚔️");
+      return ico + " (" + b.remaining + ")";
+    });
+    bpStatus.innerText = teile.join("  ") + "  · " + cmpText;
   } else { bpStatus.style.display = "none"; }
 
   for (let i = 0; i < 3; i++) {
@@ -1284,13 +1404,13 @@ function updateUI() {
   if (aktiveRune === "radahn")  { runeHpBonus += Math.round(spielerMaxHp * 0.50); runeDmgBonus += 20; }
   if (aktiveRune === "morgott") { finalHpMultiplier += 1.0; } 
   
-  let finaleAusweichChance = Math.min(hardMode ? 0.65 : 0.75, basisAusweichChance + tStats.extraRolle + runeRollBonus);
+  let finaleAusweichChance = Math.min(diffVal(CONFIG.ausweichenCap), basisAusweichChance + tStats.extraRolle + runeRollBonus);
   let finalMaxHp = berechneFinalMaxHp();
   if (spielerHp > finalMaxHp) spielerHp = finalMaxHp;
 
   let baseWeaponDmg = waffenSchaden + (waffenUpgrade * 5);
   let finalDmgMultiplier = 1.0 + tStats.bonusDmgPercent;
-  if (dungeonBuffRemainingCombats > 0 && activeDungeonBuff === "dmg") finalDmgMultiplier += 0.15;
+  finalDmgMultiplier += CONFIG.buffBonusProStack * buffStacks("dmg");
   let finalDmg = Math.round((baseWeaponDmg + runeDmgBonus) * finalDmgMultiplier);
 
   document.getElementById("player-hp-bar").max = finalMaxHp; document.getElementById("player-hp-bar").value = spielerHp;
@@ -1301,7 +1421,7 @@ function updateUI() {
   // Medallion display
   let medalDisp = document.getElementById("medallion-display");
   if (medalDisp) {
-    if (activeChallenge === "haligtree") {
+    if (activeChallenge === "" || activeChallenge === "haligtree") {
       medalDisp.style.display = "block";
       document.getElementById("medal-left").style.opacity = medallionHalves >= 1 ? "1" : "0.15";
       document.getElementById("medal-right").style.opacity = medallionHalves >= 2 ? "1" : "0.15";
@@ -1383,7 +1503,9 @@ function updateUI() {
 
   if (imKampf) {
     document.getElementById("battle-view").style.display = "flex"; document.getElementById("map-view").style.display = "none";
-    if (activeChallenge === "autobattle") setTimeout(autoBattleTick, 600);
+    // Hinweis: Der Auto-Battle-Loop wird NICHT mehr hier gestartet (das erzeugte
+    // pro updateUI eine neue, parallele Timer-Kette). Start erfolgt einmalig am
+    // Kampfbeginn; autoBattleTick() ist gegen Mehrfachstart abgesichert.
     if (activeChallenge === "autobattle") { document.getElementById("atk-btn").style.display = "none"; document.getElementById("heal-btn").style.display = "none"; }
     document.getElementById("battle-player-hp").max = finalMaxHp; document.getElementById("battle-player-hp").value = spielerHp;
     document.getElementById("arena-player-hp-text").innerText = `${spielerHp} / ${finalMaxHp}`;
@@ -1424,6 +1546,7 @@ function updateUI() {
     }
 
     document.getElementById("player-combat-img").src = playerImageStr;
+    { let __f = ladeMeta().activeSkinFilter || ""; let __pi = document.getElementById("player-combat-img"); if (__pi) __pi.style.filter = __f; }
     document.getElementById("atk-btn").disabled = aktionsSperre;
     document.getElementById("heal-btn").disabled = aktionsSperre || spielerFlasks <= 0;
     document.getElementById("heal-btn").innerHTML = `🧪 ${t("btn_heal")} (${spielerFlasks})`;
@@ -1440,7 +1563,7 @@ function waehleTurmRuneAusSidePanel(runeKey) {
 
 function useBackpackItem(slotIndex) {
   if (imKampf || !backpackItems[slotIndex]) return;
-  let item = backpackItems[slotIndex]; activeDungeonBuff = item.type; dungeonBuffRemainingCombats = 10; backpackItems[slotIndex] = null; updateUI();
+  let item = backpackItems[slotIndex]; activeBuffs.push({ type: item.type, remaining: 10 }); backpackItems[slotIndex] = null; updateUI();
   oeffneStatPopup(t("item_used_title"), t("item_used_desc", { name: item.name }), aktuelleEbene);
 }
 
@@ -1480,7 +1603,12 @@ function klickeKnoten(ebene, knoten) {
   if (knoten.typ === 11) { gegnerName = "Dungeon Skelett"; gegnerMaxHp = Math.round(25 * rMult); gegnerSchaden = Math.round(5 * rMult); }
   else if (knoten.typ === 9) {
     if (activeChallenge === "noblaidd") { oeffneStatPopup(t("challenge_noblaidd_skip_title"), t("challenge_noblaidd_skip_desc"), ebene + 1); return; }
-    gegnerName = "Blaidd, der Halbwolf"; let bScale = 1 + questProgress * (hardMode ? 0.75 : 0.5); gegnerMaxHp = Math.round(80 * rMult * bScale); gegnerSchaden = Math.round(15 * rMult * bScale); }
+    gegnerName = "Blaidd, der Halbwolf";
+    // Begegnung 3 & 4 waren zu stark: abnehmende (sqrt) statt lineare Skalierung,
+    // und Blaidds Schaden wächst langsamer als seine HP, damit er die Regionsbosse nicht überholt.
+    let bHpScale  = 1 + (hardMode ? 0.55 : 0.40) * Math.sqrt(questProgress);
+    let bDmgScale = 1 + (hardMode ? 0.32 : 0.22) * Math.sqrt(questProgress);
+    gegnerMaxHp = Math.round(80 * rMult * bHpScale); gegnerSchaden = Math.round(15 * rMult * bDmgScale); }
   else if (knoten.typ === 15) {
     // Festungskampf (Haligtree Challenge) — wie ein normaler Kampf
     if (medallionHalves === 0) { gegnerName = "Loretta, Knight of the Haligtree"; gegnerMaxHp = Math.round(280 * rMult); gegnerSchaden = Math.round(35 * rMult); }
@@ -1495,10 +1623,6 @@ function klickeKnoten(ebene, knoten) {
       else if (aktuelleRegion === "Leyndell") { gegnerName = "Morgott, der Omenkönig"; gegnerMaxHp = 680; gegnerSchaden = 45; }
       else if (aktuelleRegion === "Mountaintops") { gegnerName = "Feuerriese"; gegnerMaxHp = 920; gegnerSchaden = 58; }
       else if (aktuelleRegion === "FarumAzula") { gegnerName = "Maliketh, die Schwarze Klinge"; gegnerMaxHp = 1350; gegnerSchaden = 75; }
-      else if (aktuelleRegion === "AshenCapital" && activeChallenge === "haligtree" && medallionHalves >= 2) {
-        aktuelleRegion = "Haligtree"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null; netzKarte = generiereRautenNetz("Haligtree");
-        oeffneStatPopup(t("haligtree_enter_title"), t("haligtree_enter_desc"), 1); return;
-      }
       else if (aktuelleRegion === "AshenCapital") { gegnerName = "Gideon Ofnir, der Allwissende"; gegnerMaxHp = 1600; gegnerSchaden = 85; }
       else if (aktuelleRegion === "Haligtree") {
         gegnerName = "Malenia, Blade of Miquella"; gegnerMaxHp = Math.round(2800 * rMult); gegnerSchaden = Math.round(120 * rMult);
@@ -1510,6 +1634,7 @@ function klickeKnoten(ebene, knoten) {
     }
   }
   gegnerHp = gegnerMaxHp; imKampf = true; aktionsSperre = false; document.getElementById("battle-log").innerText = t("log_start") + gegnerNameLoc(gegnerName) + "!"; updateUI();
+  if (activeChallenge === "autobattle") autoBattleTick();   // Auto-Battle-Schleife einmalig starten
 }
 
 function oeffneDungeonEintrittPopup() {
@@ -1643,7 +1768,68 @@ function zeigeBurstEffekt(wrapper, affinity) {
   });
 }
 
-function spielerAngriff() {
+// ============================================================
+//  Gemeinsamer Gegner-Konter nach einer Spieler-Aktion.
+//  Wird von spielerAngriff() UND spielerHeilen() genutzt, damit die
+//  Ausweich-/Konter-Logik nur an EINER Stelle gepflegt werden muss.
+//  opts:
+//    windup       – true: Gegner holt sichtbar aus (nur nach Angriff)
+//    dmgVariance  – Funktion, die die Schadensstreuung liefert
+//    logSuccess / logFail / logStagger – i18n-Keys fuer die Logzeile
+//    cleanupDelay – ms bis Trefferanimation/Klassen entfernt werden
+// ============================================================
+async function gegnerKonter(opts) {
+  let playerWrapper = document.getElementById("player-sprite-wrapper");
+  let enemyWrapper  = document.getElementById("enemy-sprite-wrapper");
+
+  // Kampf bereits entschieden -> kein Konter mehr.
+  if (gegnerHp <= 0 || spielerHp <= 0) return;
+
+  // Gegner taumelt -> setzt mit seinem Angriff aus.
+  if (enemyIsStaggered) {
+    enemyIsStaggered = false;
+    document.getElementById("battle-log").innerText += t(opts.logStagger);
+    return;
+  }
+
+  // Optionale Aushol-Animation (nur nach einem Spieler-Angriff).
+  if (opts.windup) {
+    enemyWrapper.style.transform = "translateX(-40px)";
+    await wait(150);
+    enemyWrapper.style.transform = "translateX(0)";
+  }
+
+  let tStats = berechneTalismanStats();
+  let runeRollBonus = (aktiveRune === "godrick" ? 0.15 : 0.0) + CONFIG.buffBonusProStack * buffStacks("dodge");
+  let finaleAusweichChance = Math.min(diffVal(CONFIG.ausweichenCap), basisAusweichChance + tStats.extraRolle + runeRollBonus);
+  let ausgewichen = Math.random() < finaleAusweichChance;
+
+  if (ausgewichen) {
+    playerWrapper.classList.add("player-rolling");
+    zeigeFloatingZahl(playerWrapper, t("float_dodged"), "dmg-dodge");
+    document.getElementById("battle-log").innerText += t(opts.logSuccess);
+    updateUI();
+  } else {
+    let gSchaden = gegnerSchaden + opts.dmgVariance();
+    gSchaden = Math.round(gSchaden * (1 + tStats.bonusDmgTakenPercent) * (1 - ruestungReduktion));
+    gSchaden = Math.max(1, gSchaden);
+    spielerHp = Math.max(0, spielerHp - gSchaden);
+    playerWrapper.classList.add("enemy-hurt");
+    zeigeFloatingZahl(playerWrapper, "-" + gSchaden, "dmg-enemy");
+    document.getElementById("battle-log").innerText += t(opts.logFail, { name: gegnerNameLoc(gegnerName), dmg: gSchaden });
+    updateUI();
+  }
+
+  await wait(opts.cleanupDelay);
+  playerWrapper.classList.remove("enemy-hurt");
+  playerWrapper.classList.remove("player-rolling");
+  if (spielerHp <= 0) {
+    document.getElementById("battle-log").innerText = t("log_death");
+    zeigeTodesBildschirm();
+  }
+}
+
+async function spielerAngriff() {
   if (!imKampf || spielerHp <= 0 || aktionsSperre) return;
   staggerVisualActive = false;
   aktionsSperre = true; updateUI();
@@ -1652,17 +1838,17 @@ function spielerAngriff() {
   let tStats = berechneTalismanStats(); let runeDmgBonus = aktiveRune === "godrick" ? 10 : (aktiveRune === "radahn" ? 20 : 0);
   let baseWeaponDmg = waffenSchaden + (waffenUpgrade * 5);
   let finalDmgMultiplier = 1.0 + tStats.bonusDmgPercent;
-  if (dungeonBuffRemainingCombats > 0 && activeDungeonBuff === "dmg") finalDmgMultiplier += 0.15;
+  finalDmgMultiplier += CONFIG.buffBonusProStack * buffStacks("dmg");
   let finalDmg = Math.round((baseWeaponDmg + runeDmgBonus) * finalDmgMultiplier);
   let bossMod = gibBossSchadensModifikator(); if (bossMod !== 0) finalDmg = Math.round(finalDmg * (1 + bossMod));
 
   let warBurst = false; let warBonus = false;
-  if (nextHitBonusDamage) { finalDmg = Math.round(finalDmg * 1.3); nextHitBonusDamage = false; warBonus = true; }
+  if (nextHitBonusDamage) { finalDmg = Math.round(finalDmg * CONFIG.staggerBonusSchaden); nextHitBonusDamage = false; warBonus = true; }
 
   if (currentAffinity !== "Keine") {
     affinityHits++;
     if (affinityHits === 5) {
-      let burstPct = completedDungeonsCount >= 3 ? 0.10 : (completedDungeonsCount === 2 ? 0.075 : 0.05);
+      let burstPct = completedDungeonsCount >= 3 ? CONFIG.affinityBurst.ab3Dungeons : (completedDungeonsCount === 2 ? CONFIG.affinityBurst.ab2Dungeons : CONFIG.affinityBurst.basis);
       let extraAffinityDamage = Math.round(finalDmg * burstPct); finalDmg += extraAffinityDamage; affinityHits = 0; warBurst = true;
       setTimeout(() => { document.getElementById("battle-log").innerText += t("affinity_burst_log", { aff: affLabel(currentAffinity), dmg: extraAffinityDamage }); }, 100);
     }
@@ -1673,79 +1859,64 @@ function spielerAngriff() {
 
   if (gegnerHp > 0) {
     playerHitsOnEnemy++;
-    if (playerHitsOnEnemy === (hardMode ? 5 : 4)) { enemyIsStaggered = true; staggerVisualActive = true; nextHitBonusDamage = true; playerHitsOnEnemy = 0; }
+    if (playerHitsOnEnemy === diffVal(CONFIG.staggerTreffer)) { enemyIsStaggered = true; staggerVisualActive = true; nextHitBonusDamage = true; playerHitsOnEnemy = 0; }
   }
 
-  setTimeout(() => { 
-    enemyWrapper.classList.add("enemy-hurt"); 
-    let zusatz = bossMod > 0 ? `  🎯 ${t("combat_weakness")} (+${Math.round(bossMod*100)}%)` : (bossMod < 0 ? `  🛡️ ${t("combat_resistance")} (${Math.round(bossMod*100)}%)` : "");
-    document.getElementById("battle-log").innerText = t("combat_attack_log", { weapon: waffenNameLoc(waffenName), dmg: schaden }) + zusatz; 
-    let floatKlasse = "dmg-normal";
-    if (bossMod > 0) floatKlasse = "dmg-weak"; else if (warBurst || warBonus) floatKlasse = "dmg-big"; else if (bossMod < 0) floatKlasse = "dmg-resist";
-    zeigeFloatingZahl(enemyWrapper, "-" + schaden, floatKlasse);
-    if (warBurst) zeigeBurstEffekt(enemyWrapper, currentAffinity); updateUI(); 
-  }, 150);
-  
-  setTimeout(() => { playerWrapper.classList.remove("attack-dash"); enemyWrapper.classList.remove("enemy-hurt"); if (gegnerHp <= 0) { kampfGewonnen(); } }, 350);
+  // --- Treffer-Animation (+150 ms) ---
+  await wait(150);
+  enemyWrapper.classList.add("enemy-hurt");
+  let zusatz = bossMod > 0 ? `  🎯 ${t("combat_weakness")} (+${Math.round(bossMod*100)}%)` : (bossMod < 0 ? `  🛡️ ${t("combat_resistance")} (${Math.round(bossMod*100)}%)` : "");
+  document.getElementById("battle-log").innerText = t("combat_attack_log", { weapon: waffenNameLoc(waffenName), dmg: schaden }) + zusatz;
+  let floatKlasse = "dmg-normal";
+  if (bossMod > 0) floatKlasse = "dmg-weak"; else if (warBurst || warBonus) floatKlasse = "dmg-big"; else if (bossMod < 0) floatKlasse = "dmg-resist";
+  zeigeFloatingZahl(enemyWrapper, "-" + schaden, floatKlasse);
+  if (warBurst) zeigeBurstEffekt(enemyWrapper, currentAffinity);
+  updateUI();
 
-  setTimeout(() => {
-    if (gegnerHp <= 0 || spielerHp <= 0) { aktionsSperre = false; return; }
-    if (enemyIsStaggered) {
-      enemyIsStaggered = false; document.getElementById("battle-log").innerText += t("stagger_alert");
-      aktionsSperre = false; updateUI(); return; 
-    }
+  // --- Anim-Reset + Sieg-Pruefung (+350 ms gesamt) ---
+  await wait(200);
+  playerWrapper.classList.remove("attack-dash"); enemyWrapper.classList.remove("enemy-hurt");
+  if (gegnerHp <= 0) { kampfGewonnen(); }   // kann gegnerHp neu fuellen (Boss-Phase) oder imKampf=false setzen
 
-    enemyWrapper.style.transform = "translateX(-40px)"; let runeRollBonus = aktiveRune === "godrick" ? 0.15 : 0.0;
-    if (dungeonBuffRemainingCombats > 0 && activeDungeonBuff === "dodge") runeRollBonus += 0.15;
-    let finaleAusweichChance = Math.min(hardMode ? 0.65 : 0.75, basisAusweichChance + tStats.extraRolle + runeRollBonus);
-    let wuerfel = Math.random(); let ausgewichen = wuerfel < finaleAusweichChance;
-
-    setTimeout(() => {
-      enemyWrapper.style.transform = "translateX(0)";
-      if (ausgewichen) { playerWrapper.classList.add("player-rolling"); zeigeFloatingZahl(playerWrapper, t("float_dodged"), "dmg-dodge"); document.getElementById("battle-log").innerText += t("roll_success"); updateUI(); } 
-      else {
-        let gSchaden = gegnerSchaden + Math.floor(Math.random() * 4) - 1; gSchaden = Math.round(gSchaden * (1 + tStats.bonusDmgTakenPercent) * (1 - ruestungReduktion)); gSchaden = Math.max(1, gSchaden);
-        spielerHp = Math.max(0, spielerHp - gSchaden); playerWrapper.classList.add("enemy-hurt"); zeigeFloatingZahl(playerWrapper, "-" + gSchaden, "dmg-enemy");
-        document.getElementById("battle-log").innerText += t("roll_fail", { name: gegnerNameLoc(gegnerName), dmg: gSchaden }); updateUI();
-      }
-    }, 150);
-    setTimeout(() => { playerWrapper.classList.remove("enemy-hurt"); playerWrapper.classList.remove("player-rolling"); if (spielerHp <= 0) { document.getElementById("battle-log").innerText = t("log_death"); zeigeTodesBildschirm(); } aktionsSperre = false; updateUI(); }, 450);
-  }, 700);
+  // --- Gegner-Konter (+700 ms gesamt) ---
+  await wait(350);
+  if (bossPhaseWechsel) { bossPhaseWechsel = false; aktionsSperre = false; updateUI(); return; }  // frisch verwandelter Boss greift diese Runde nicht an
+  if (gegnerHp <= 0 || spielerHp <= 0) { aktionsSperre = false; return; }
+  await gegnerKonter({
+    windup: true,
+    dmgVariance: () => Math.floor(Math.random() * 4) - 1,
+    logSuccess: "roll_success",
+    logFail: "roll_fail",
+    logStagger: "stagger_alert",
+    cleanupDelay: 300
+  });
+  aktionsSperre = false; updateUI();
 }
 
-function spielerHeilen() {
+async function spielerHeilen() {
   if (!imKampf || spielerHp <= 0 || aktionsSperre) return;
-  if (spielerFlasks > 0) {
-    aktionsSperre = true;
-    let tStats = berechneTalismanStats();
-    let finalMaxHp = berechneFinalMaxHp();
-    let heilWert = Math.round(finalMaxHp * estusHeilProzent * (1 + tStats.bonusHealPercent));
-    spielerHp = Math.min(finalMaxHp, spielerHp + heilWert); spielerFlasks--;
-    if (window.ER) ER.flaskDrunk();
-    document.getElementById("battle-log").innerText = t("heal_log", { hp: heilWert }); updateUI();
-    let playerWrapper = document.getElementById("player-sprite-wrapper"); let enemyWrapper = document.getElementById("enemy-sprite-wrapper");
-    zeigeFloatingZahl(playerWrapper, "+" + heilWert, "dmg-heal");
+  if (spielerFlasks <= 0) return;
+  aktionsSperre = true;
+  let tStats = berechneTalismanStats();
+  let finalMaxHp = berechneFinalMaxHp();
+  let heilWert = Math.round(finalMaxHp * estusHeilProzent * (1 + tStats.bonusHealPercent));
+  spielerHp = Math.min(finalMaxHp, spielerHp + heilWert); spielerFlasks--;
+  if (window.ER) ER.flaskDrunk();
+  document.getElementById("battle-log").innerText = t("heal_log", { hp: heilWert }); updateUI();
+  let playerWrapper = document.getElementById("player-sprite-wrapper");
+  zeigeFloatingZahl(playerWrapper, "+" + heilWert, "dmg-heal");
 
-    setTimeout(() => {
-      if (gegnerHp <= 0 || spielerHp <= 0) { aktionsSperre = false; return; }
-      if (enemyIsStaggered) {
-        enemyIsStaggered = false; document.getElementById("battle-log").innerText += t("stagger_stuck");
-        aktionsSperre = false; updateUI(); return;
-      }
-      let runeRollBonus = aktiveRune === "godrick" ? 0.15 : 0.0;
-      if (dungeonBuffRemainingCombats > 0 && activeDungeonBuff === "dodge") runeRollBonus += 0.15;
-      let finaleAusweichChance = Math.min(hardMode ? 0.65 : 0.75, basisAusweichChance + tStats.extraRolle + runeRollBonus);
-      let wuerfel = Math.random(); let ausgewichen = wuerfel < finaleAusweichChance;
-
-      if (ausgewichen) { playerWrapper.classList.add("player-rolling"); zeigeFloatingZahl(playerWrapper, t("float_dodged"), "dmg-dodge"); document.getElementById("battle-log").innerText += t("heal_roll_success"); updateUI(); } 
-      else {
-        let gSchaden = gegnerSchaden + Math.floor(Math.random() * 3); gSchaden = Math.round(gSchaden * (1 + tStats.bonusDmgTakenPercent) * (1 - ruestungReduktion));
-        gSchaden = Math.max(1, gSchaden); spielerHp = Math.max(0, spielerHp - gSchaden);
-        playerWrapper.classList.add("enemy-hurt"); zeigeFloatingZahl(playerWrapper, "-" + gSchaden, "dmg-enemy"); document.getElementById("battle-log").innerText += t("heal_roll_fail", { name: gegnerNameLoc(gegnerName), dmg: gSchaden }); updateUI();
-      }
-      setTimeout(() => { playerWrapper.classList.remove("enemy-hurt"); playerWrapper.classList.remove("player-rolling"); if (spielerHp <= 0) { document.getElementById("battle-log").innerText = t("log_death"); zeigeTodesBildschirm(); } aktionsSperre = false; updateUI(); }, 450);
-    }, 400);
-  }
+  // --- Gegner-Konter (+400 ms), Heilen hat keine Aushol-Animation ---
+  await wait(400);
+  await gegnerKonter({
+    windup: false,
+    dmgVariance: () => Math.floor(Math.random() * 3),
+    logSuccess: "heal_roll_success",
+    logFail: "heal_roll_fail",
+    logStagger: "stagger_stuck",
+    cleanupDelay: 450
+  });
+  aktionsSperre = false; updateUI();
 }
 
 function heileUndRegeneriereVoll(nurHp) {
@@ -1753,13 +1924,177 @@ function heileUndRegeneriereVoll(nurHp) {
   if (!nurHp) spielerFlasks = maxKlassenFlasks;
 }
 
+// ============================================================
+//  TOWER-MODUS  (challenge=tower)
+//  Endloser Aufstieg: Etage für Etage ein skalierender Kampf, dazwischen
+//  eine Belohnungswahl. Es gibt kein Ende – der Score ist die höchste Etage.
+// ============================================================
+const TOWER_REGIONEN = ["Limgrave", "Caelid", "Leyndell", "Mountaintops", "FarumAzula", "AshenCapital", "Haligtree"];
+let towerAngeboteneBelohnungen = [];
+
+// Optik wird alle 3 Etagen „härter", danach bleibt sie bei der letzten Region.
+function towerRegionFuerEtage(etage) {
+  let idx = Math.min(Math.floor((etage - 1) / 3), TOWER_REGIONEN.length - 1);
+  return TOWER_REGIONEN[idx];
+}
+
+function towerGegnerStats(etage) {
+  let c = CONFIG.tower;
+  let hardF = hardMode ? c.hardFaktor : 1;
+  let hp  = Math.round(c.hpBasis  * (1 + c.hpProEtage  * (etage - 1)) * Math.pow(c.hpExpo,  etage - 1) * hardF);
+  let dmg = Math.round(c.dmgBasis * (1 + c.dmgProEtage * (etage - 1)) * Math.pow(c.dmgExpo, etage - 1) * hardF);
+  return { hp: Math.max(1, hp), dmg: Math.max(1, dmg) };
+}
+
+function starteTowerModus() {
+  towerEtage = 1;
+  netzKarte = [];               // kein Regions-Netz -> Karten-Render wird zum No-Op
+  inSubDungeon = false; mainMapState = null;
+  besiegteWaechter = 0; questProgress = 0; completedDungeonsCount = 0;
+  starteTowerKampf();
+}
+
+function starteTowerKampf() {
+  document.getElementById("popup-overlay").style.display = "none";
+  let etage = towerEtage;
+  aktuelleRegion = towerRegionFuerEtage(etage);
+  let stats = towerGegnerStats(etage);
+  let istMiniboss = (etage % CONFIG.tower.minibossAlle) === 0;
+
+  // Kampf-Flags zurücksetzen (analog klickeKnoten)
+  playerHitsOnEnemy = 0; enemyIsStaggered = false; staggerVisualActive = false;
+  nextHitBonusDamage = false; affinityHits = 0; bossPhaseWechsel = false;
+
+  if (istMiniboss) {
+    let mb = gibAktuellenMiniboss();   // richtet sich nach der Etagen-Region -> Name & Bild bleiben konsistent zu updateUI
+    aktuellerKnotenTyp = 14;
+    gegnerName = mb.name;
+    gegnerMaxHp = Math.round(stats.hp * CONFIG.tower.minibossHpMult);
+    gegnerSchaden = Math.round(stats.dmg * CONFIG.tower.minibossDmgMult);
+  } else {
+    // wechselnde Gegnertypen: Wächter (2) / Elite (1) / Invader (3)
+    let typen = [2, 1, 3];
+    aktuellerKnotenTyp = typen[etage % typen.length];
+    let cfg = gebietsGegnerKonfig[aktuelleRegion] || gebietsGegnerKonfig.Limgrave;
+    gegnerName = aktuellerKnotenTyp === 1 ? cfg.eliteName : (aktuellerKnotenTyp === 3 ? cfg.invaderName : cfg.waechterName);
+    gegnerMaxHp = stats.hp; gegnerSchaden = stats.dmg;
+  }
+
+  gegnerHp = gegnerMaxHp; imKampf = true; aktionsSperre = false;
+  document.getElementById("battle-log").innerText = t("log_start") + gegnerNameLoc(gegnerName) + "!";
+  speichereRun(); updateUI();
+}
+
+function towerKampfGewonnen() {
+  if (window.ER) {
+    ER.fightWon();
+    ER.towerReached(towerEtage);
+    if ((towerEtage % CONFIG.tower.minibossAlle) === 0) ER.minibossKilled();
+  }
+  activeBuffs.forEach(b => { if (b.remaining > 0) b.remaining--; }); activeBuffs = activeBuffs.filter(b => b.remaining > 0);
+
+  imKampf = false; aktionsSperre = false;
+
+  // Teil-Heilung zwischen den Etagen
+  let finalMaxHp = berechneFinalMaxHp();
+  spielerHp = Math.min(finalMaxHp, spielerHp + Math.round(finalMaxHp * CONFIG.tower.heilProEtage));
+
+  let geschafft = towerEtage;
+  towerEtage++;
+  oeffneTowerBelohnung(geschafft);
+}
+
+// Pool an möglichen Belohnungen; tier steigt mit der Höhe (bessere Talismane).
+function towerBelohnungsPool(etage) {
+  let tier = Math.min(3, Math.floor(etage / 6));
+  let pool = [
+    { icon: "⚔️", titel: L("Waffe schärfen (+1)", "Sharpen weapon (+1)"),        apply: () => { waffenUpgrade++; } },
+    { icon: "🗡️", titel: L("Neue Zufallswaffe", "New random weapon"),            apply: () => { setzeAusgeruesteteWaffe(rolleZufallsWaffe()); } },
+    { icon: "❤️", titel: L("Max-HP +10 %", "Max HP +10%"),                       apply: () => { let b = Math.round(spielerMaxHp * 0.10); spielerMaxHp += b; spielerHp += b; } },
+    { icon: "🧪", titel: L("Voll heilen + Flakons", "Full heal + flasks"),        apply: () => { heileUndRegeneriereVoll(false); } },
+    { icon: "🔥", titel: L("Kampf-Buff (10 Kämpfe)", "Combat buff (10 fights)"),   apply: () => { let ty = ["dmg", "dodge", "hp"][Math.floor(Math.random() * 3)]; activeBuffs.push({ type: ty, remaining: 10 }); } },
+    { icon: "💍", titel: L("Talisman finden", "Find a talisman"),                  apply: () => {
+        let id = guteTalismanIds[Math.floor(Math.random() * guteTalismanIds.length)];
+        let tal = erzeugeGutenTalisman(id, tier);
+        let idx = -1;
+        for (let i = 0; i < maxTalismanSlots; i++) { if (!ausgeruesteteTalismane[i]) { idx = i; break; } }
+        if (idx < 0) idx = 0;
+        ausgeruesteteTalismane[idx] = tal;
+      } }
+  ];
+  return pool;
+}
+
+function oeffneTowerBelohnung(etage) {
+  let overlay = document.getElementById("popup-overlay"); let content = document.getElementById("popup-content");
+  let pool = towerBelohnungsPool(etage);
+  for (let i = pool.length - 1; i > 0; i--) { let j = Math.floor(Math.random() * (i + 1)); let tmp = pool[i]; pool[i] = pool[j]; pool[j] = tmp; }
+  towerAngeboteneBelohnungen = pool.slice(0, 3);
+
+  let karten = towerAngeboteneBelohnungen.map(function (b, i) {
+    return '<div onclick="towerBelohnungWaehlen(' + i + ')" '
+      + 'style="cursor:pointer; width:120px; padding:18px 10px; background:rgba(0,0,0,0.4); border:1px solid var(--border-color); border-radius:7px; transition:all 0.15s ease; text-transform:none; font-family:sans-serif;" '
+      + 'onmouseover="this.style.borderColor=\'var(--gold)\'; this.style.background=\'rgba(205,163,79,0.14)\'; this.style.transform=\'translateY(-3px)\';" '
+      + 'onmouseout="this.style.borderColor=\'var(--border-color)\'; this.style.background=\'rgba(0,0,0,0.4)\'; this.style.transform=\'translateY(0)\';">'
+      + '<div style="font-size:2.1rem; line-height:1;">' + b.icon + '</div>'
+      + '<div style="margin-top:10px; font-size:0.82rem; color:#e6dcc4; font-weight:bold;">' + b.titel + '</div>'
+      + '</div>';
+  }).join("");
+
+  content.innerHTML =
+    '<div style="font-size:0.72rem; letter-spacing:3px; color:#8c6d2d; text-transform:uppercase; font-family:sans-serif;">🗼 ' + L("Turm des Aufstiegs", "Ascension Tower") + '</div>'
+    + '<h3 style="color: var(--gold); font-size:1.7rem; margin:6px 0 2px; letter-spacing:2px; font-family: \'Mantinia\', serif;">' + L("Etage", "Floor") + ' ' + etage + ' ' + L("bezwungen", "cleared") + '</h3>'
+    + '<p style="color:#aaa; font-size:0.9rem; font-family:sans-serif; margin-top:4px;">' + L("Wähle eine Belohnung für den weiteren Aufstieg.", "Choose one reward to aid your ascent.") + '</p>'
+    + '<div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin:18px 0 4px;">' + karten + '</div>';
+  overlay.style.display = "flex";
+}
+
+function towerBelohnungWaehlen(i) {
+  let b = towerAngeboteneBelohnungen[i];
+  if (b && typeof b.apply === "function") b.apply();
+  starteTowerKampf();
+}
+
+// ============================================================
+//  HALIGTREE-WAHL  (nach Gideon, wenn beide Medaillonhälften gefunden wurden)
+//  Optionaler Abstecher: Haligtree betreten und sich Malenia stellen (alternatives
+//  Ende), oder direkt zum Eldenthron weiterziehen.
+// ============================================================
+function oeffneHaligtreeWahl() {
+  let overlay = document.getElementById("popup-overlay"); let content = document.getElementById("popup-content");
+  content.innerHTML =
+    '<div style="font-size:0.72rem; letter-spacing:3px; color:#2e8b57; text-transform:uppercase; font-family:sans-serif;">🌳 ' + L("Geheimer Pfad", "Secret Path") + '</div>'
+    + '<h3 style="color:#2ecc71; font-size:1.6rem; margin:6px 0 2px; letter-spacing:1px; font-family:\'Mantinia\', serif;">' + L("Der Haligtree ruft", "The Haligtree Calls") + '</h3>'
+    + '<p style="color:#b5a98f; font-size:0.9rem; font-family:sans-serif; margin-top:6px; line-height:1.5;">' + L("Du trägst beide Hälften des geheimen Medaillons. Betrete den verborgenen Haligtree und stelle dich <b>Malenia</b> – oder ziehe direkt weiter zum Eldenthron.", "You carry both halves of the secret medallion. Enter the hidden Haligtree and face <b>Malenia</b> — or press on to the Elden Throne.") + '</p>'
+    + '<div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin:20px 0 4px;">'
+    +   '<button class="btn-modal-action" style="border-color:#2ecc71; color:#2ecc71;" onclick="betreteHaligtreeVonWahl()">🌳 ' + L("Haligtree betreten", "Enter the Haligtree") + '</button>'
+    +   '<button class="btn-modal-action" onclick="weiterZumThronVonWahl()">👑 ' + L("Weiter zum Eldenthron", "On to the Elden Throne") + '</button>'
+    + '</div>'
+    + '<p style="color:#666; font-size:0.74rem; font-family:sans-serif; margin-top:8px;">' + L("Achtung: Malenia ist ein brutaler optionaler Bosskampf. Überlebst du ihn, geht es normal weiter zum Eldenthron.", "Beware: Malenia is a brutal optional fight. Survive her and you continue on to the Elden Throne.") + '</p>';
+  overlay.style.display = "flex";
+}
+
+function betreteHaligtreeVonWahl() {
+  aktuelleRegion = "Haligtree"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null; netzKarte = generiereRautenNetz("Haligtree");
+  speichereRun();
+  oeffneStatPopup(t("haligtree_enter_title"), t("haligtree_enter_desc"), 1);
+}
+
+function weiterZumThronVonWahl() {
+  aktuelleRegion = "EldenThrone"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null; netzKarte = generiereRautenNetz("EldenThrone");
+  speichereRun();
+  oeffneStatPopup(t("boss_gideon_title"), t("boss_gideon_win"), 1);
+}
+
 function kampfGewonnen() {
+  if (activeChallenge === "tower") { towerKampfGewonnen(); return; }
   if (gegnerName === "Radagon von der Goldenen Ordnung") {
     gegnerName = "Eldenbiest"; gegnerMaxHp = 2500; gegnerHp = 2500; gegnerSchaden = 120;
+    bossPhaseWechsel = true;   // frisch verwandelter Boss greift nicht sofort an
     document.getElementById("battle-log").innerText = t("elden_beast_transition"); aktionsSperre = false; updateUI(); return;
   }
 
-  if (dungeonBuffRemainingCombats > 0) dungeonBuffRemainingCombats--;
+  activeBuffs.forEach(b => { if (b.remaining > 0) b.remaining--; }); activeBuffs = activeBuffs.filter(b => b.remaining > 0);
 
   if (window.ER) {
     ER.fightWon();
@@ -1804,12 +2139,16 @@ function kampfGewonnen() {
   if (gegnerName === "Morgott, der Omenkönig") { hatMorgottRune = true; if (hardMode) maxTalismanSlots = Math.max(maxTalismanSlots, 3); aktuelleRegion = "Mountaintops"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null; netzKarte = generiereRautenNetz("Mountaintops"); oeffneStatPopup(t("boss_morgott_title"), t("boss_morgott_win"), 1); return; }
   if (gegnerName === "Feuerriese") { maxWaffenSlots = hardMode ? 1 : 2; aktuelleRegion = "FarumAzula"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null; netzKarte = generiereRautenNetz("FarumAzula"); oeffneStatPopup(t("boss_giant_title"), t("boss_giant_win"), 1); return; }
   if (gegnerName === "Maliketh, die Schwarze Klinge") { maxTalismanSlots = 4; aktuelleRegion = "AshenCapital"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null; netzKarte = generiereRautenNetz("AshenCapital"); oeffneStatPopup(t("boss_maliketh_title"), t("boss_maliketh_win"), 1); return; }
-  if (gegnerName === "Gideon Ofnir, der Allwissende") { aktuelleRegion = "EldenThrone"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null; netzKarte = generiereRautenNetz("EldenThrone"); oeffneStatPopup(t("boss_gideon_title"), t("boss_gideon_win"), 1); return; }
+  if (gegnerName === "Gideon Ofnir, der Allwissende") {
+    if (medallionHalves >= 2) { oeffneHaligtreeWahl(); return; }   // beide Medaillonhälften -> Haligtree als Option anbieten
+    aktuelleRegion = "EldenThrone"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null; netzKarte = generiereRautenNetz("EldenThrone"); oeffneStatPopup(t("boss_gideon_title"), t("boss_gideon_win"), 1); return;
+  }
   if (gegnerName === "Godfrey, der Erste Eldenlord") { oeffneStatPopup(t("boss_godfrey_title"), t("boss_godfrey_win"), naechsteEbene); return; }
   // Malenia Phase 2
   if (gegnerName === "Malenia, Blade of Miquella") {
     document.getElementById("battle-log").innerText = t("malenia_phase2_transition");
     gegnerName = "Malenia, Goddess of Rot"; gegnerMaxHp = Math.round(gegnerMaxHp * 1.3); gegnerHp = gegnerMaxHp; gegnerSchaden = Math.round(gegnerSchaden * 1.4);
+    bossPhaseWechsel = true;   // Phasenwechsel -> kein Sofort-Konter
     document.getElementById("enemy-name").innerText = gegnerNameLoc(gegnerName);
     document.getElementById("enemy-img").src = "images/malenia-2nd-phase-flying.avif";
     document.getElementById("battle-enemy-hp").max = gegnerMaxHp; document.getElementById("battle-enemy-hp").value = gegnerHp;
@@ -1817,10 +2156,11 @@ function kampfGewonnen() {
     if (activeChallenge === "autobattle") setTimeout(autoBattleTick, 900);
     aktionsSperre = false; updateUI(); return;
   }
-  // Malenia Phase 2 besiegt = Haligtree Ending
+  // Malenia Phase 2 besiegt -> weiter zum Eldenthron (Kill wird oben im ER-Statistikblock erfasst; kein gameCompleted, der Run läuft weiter)
   if (gegnerName === "Malenia, Goddess of Rot") {
-    if (window.ER) { ER.bossKilled("Malenia, Goddess of Rot"); ER.gameCompleted(); if (activeChallenge) ER.challengeCompleted(activeChallenge); }
-    oeffneAbschlussPopup(t("malenia_victory_title"), t("malenia_victory_desc")); return;
+    aktuelleRegion = "EldenThrone"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null; netzKarte = generiereRautenNetz("EldenThrone");
+    oeffneStatPopup(L("Malenia bezwungen", "Malenia Defeated"), L("Die Klinge Miquellas ist gefallen. Nun führt dein Weg zum Eldenthron.", "Miquella's blade has fallen. Now your path leads on to the Elden Throne."), 1);
+    return;
   }
 
   if (gegnerName === "Eldenbiest") { oeffneAbschlussPopup(t("elden_lord_title"), t("boss_beast_win")); return; }
@@ -1871,7 +2211,7 @@ function berechneFinalMaxHp() {
   let runeHpBonus = (aktiveRune === "godrick" ? Math.round(spielerMaxHp * 0.25) : 0)
                   + (aktiveRune === "radahn"  ? Math.round(spielerMaxHp * 0.50) : 0);
   let mult = 1.0 + tStats.bonusHpPercent
-           + ((activeDungeonBuff === "hp" && dungeonBuffRemainingCombats > 0) ? 0.15 : 0.0)
+           + (CONFIG.buffBonusProStack * buffStacks("hp"))
            + (aktiveRune === "morgott" ? 1.0 : 0.0);
   return Math.round((spielerMaxHp + runeHpBonus) * mult);
 }
@@ -1916,9 +2256,10 @@ function oeffneTalismanPopup(naechsteEbene) {
         ? `<img src="${tal.bild}" alt="" style="width:40px;height:40px;flex-shrink:0;object-fit:contain;border:1px solid ${tFarbe};border-radius:5px;background:rgba(0,0,0,0.5);" onerror="this.replaceWith(document.createTextNode('💍'))">`
         : `<span style="font-size:1.6rem;flex-shrink:0;">💍</span>`;
       let slotLabel = window.i18n ? window.i18n.t("talisman_replace_slot", { i: i + 1 }) : ("Ersetze Slot " + (i + 1) + ":");
+      let descHtml = tal.desc ? `<br><span style="color:#9aa0a6;font-size:0.78rem;font-style:italic;line-height:1.35;">${tal.desc}</span>` : "";
       return `<div class="tower-rune-option unlocked" style="display:flex;align-items:center;gap:12px;text-align:left;" onclick="ersetzeTalismanSlot(${i}, ${tJson}, ${naechsteEbene})">
         ${bildHtml}
-        <div><strong>${slotLabel}</strong><br><span style="color:${tFarbe};">${talismanNameLoc(tal.name)}</span></div>
+        <div><strong>${slotLabel}</strong><br><span style="color:${tFarbe};font-weight:bold;">${talismanNameLoc(tal.name)}</span>${descHtml}</div>
       </div>`;
     }).join("");
     let wegwerfenBtn = istVerflucht ? "" : `<div class="tower-rune-option unlocked" style="border-color: #e74c3c; background-color: #2b1111;" onclick="bestaetigeStufe(${naechsteEbene})"><strong style="color: #e74c3c;">${t("talisman_discard_new")}</strong></div>`;
@@ -2057,10 +2398,12 @@ function oeffneStatPopup(titel, text, naechsteEbene) {
 // Zeigt nur einen Button zurück ins Hauptmenü.
 function oeffneAbschlussPopup(titel, text) {
   loescheRunSave(); // abgeschlossener Run wird nicht mehr gespeichert/fortgesetzt
+  let __s = belohneSeelen(true);
   let overlay = document.getElementById("popup-overlay"); let content = document.getElementById("popup-content");
   content.innerHTML = `
     <h3 style="color: var(--gold); font-size:1.6rem; margin-top:0; letter-spacing:2px; font-family: 'Mantinia', serif;">${titel}</h3>
     <p style="color:#ddd; font-size:0.95rem; font-family: sans-serif; white-space: pre-line; line-height:1.5;">${text}</p>
+    <div style="color:#cda34f;font-weight:bold;font-family:sans-serif;margin:14px 0;font-size:1.05rem;">✨ +${__s} ${L("Seelen erbeutet","Souls earned")}</div>
     <a href="index.html" class="btn-modal-action" style="display:inline-block; text-decoration:none;" onclick="loescheRunSave()">${t("btn_main_menu")}</a>
   `;
   overlay.style.display = "flex";
@@ -2075,11 +2418,23 @@ function toggleBattleLog() {
 }
 
 // Auto-Battle
-function autoBattleTick() {
-  if (!imKampf || spielerHp <= 0 || gegnerHp <= 0) return;
-  if (aktionsSperre) { setTimeout(autoBattleTick, 300); return; }
-  spielerAngriff();
-  setTimeout(autoBattleTick, 900);
+// Eine einzige selbstlaufende Schleife. Das autoBattleRunning-Flag stellt
+// sicher, dass nie zwei Schleifen gleichzeitig laufen, egal wie oft
+// autoBattleTick() aufgerufen wird (z.B. bei Boss-Phasenwechseln).
+async function autoBattleTick() {
+  if (autoBattleRunning) return;
+  autoBattleRunning = true;
+  try {
+    while (imKampf && spielerHp > 0 && activeChallenge === "autobattle") {
+      // Warten, bis der Gegner wieder vorhanden und keine Aktion gesperrt ist
+      // (deckt Boss-Phasenwechsel ab, bei denen gegnerHp kurz 0 ist).
+      if (gegnerHp <= 0 || aktionsSperre) { await wait(250); continue; }
+      await spielerAngriff();
+      await wait(500);
+    }
+  } finally {
+    autoBattleRunning = false;
+  }
 }
 
 // Challenge-Badge im Spiel anzeigen
@@ -2088,6 +2443,7 @@ function updateChallengeBadge() {
   if (!badge) return;
   if (activeChallenge) {
     badge.style.display = "block";
+    if (activeChallenge === "tower") { badge.innerText = "🗼 " + L("ETAGE", "FLOOR") + " " + (towerEtage || 1); return; }
     let labels = { noarmor: "🛡️ NO ARMOR", noblaidd: "🐺 NO BLAIDD", autobattle: "⚡ AUTO-BATTLE", haligtree: "🌳 HALIGTREE" };
     badge.innerText = labels[activeChallenge] || ("🏴 " + activeChallenge.toUpperCase());
   } else { badge.style.display = "none"; }
