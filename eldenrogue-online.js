@@ -208,22 +208,7 @@
     { id:"Malenia, Goddess of Rot",           cat:"bosse", name:"Malenia, Goddess of Rot",           img:"images/bosse/malenia-2nd-phase-flying.avif" },
     { id:"Blaidd, der Halbwolf",              cat:"bosse", name:"Blaidd, der Halbwolf",              img:"images/Gegner/blaidd.avif" },
     { id:"Cemetery Shade",                    cat:"bosse", name:"Cemetery Shade",                    img:"images/bosse/catacomb_boss.jpg" },
-    { id:"Promised Consort Radahn",           cat:"bosse", name:"Promised Consort Radahn",           img:"images/bosse/pcr.webp" },
-    { id:"Ahnengeist",                         cat:"bosse", name:"Ahnengeist",                         img:"images/bosse/ancestor_spirit.jpg" },
-    { id:"Schwarzklingen-Attentäter",          cat:"bosse", name:"Schwarzklingen-Attentäter",          img:"images/bosse/black_knife_assassin.jpg" },
-    { id:"Kristallian",                        cat:"bosse", name:"Kristallian",                        img:"images/bosse/crystallian.jpg" },
-    { id:"Todesvogel",                         cat:"bosse", name:"Todesvogel",                         img:"images/bosse/deathbird.jpg" },
-    { id:"Todesritusvogel",                    cat:"bosse", name:"Todesritusvogel",                    img:"images/bosse/death_rite_bird.jpg" },
-    { id:"Erdbaum-Grabwächter",                cat:"bosse", name:"Erdbaum-Grabwächter",                img:"images/bosse/erdtree_burial_watchdog.jpg" },
-    { id:"Sternschnuppenbestie",               cat:"bosse", name:"Sternschnuppenbestie",               img:"images/bosse/fallingstar_beast.jpg" },
-    { id:"Götterhaut-Apostel",                 cat:"bosse", name:"Götterhaut-Apostel",                 img:"images/bosse/godskin_apostle.jpg" },
-    { id:"Magma-Wyrm",                         cat:"bosse", name:"Magma-Wyrm",                         img:"images/bosse/magma_wyrm.jpg" },
-    { id:"Mohg, Herr des Blutes",              cat:"bosse", name:"Mohg, Herr des Blutes",              img:"images/bosse/mohg.jpg" },
-    { id:"Nachtkavallerie",                    cat:"bosse", name:"Nachtkavallerie",                    img:"images/bosse/night_cavalry.jpg" },
-    { id:"Onyx-Lord",                          cat:"bosse", name:"Onyx-Lord",                          img:"images/bosse/onyx_lord.jpg" },
-    { id:"Fauliger Kristallian",               cat:"bosse", name:"Fauliger Kristallian",               img:"images/bosse/putrid_crystallian.jpg" },
-    { id:"Runenbär",                           cat:"bosse", name:"Runenbär",                           img:"images/bosse/runebear.jpg" },
-    { id:"Blutadeliger",                       cat:"bosse", name:"Blutadeliger",                       img:"images/bosse/sanguine_noble.jpg" }
+    { id:"Promised Consort Radahn",           cat:"bosse", name:"Promised Consort Radahn",           img:"images/bosse/pcr.webp" }
   ];
   const ELDENDEX_IDS = ELDENDEX.map(function (e) { return e.id; });
 
