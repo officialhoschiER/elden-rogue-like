@@ -820,7 +820,7 @@
     var m = ladeMeta();
     updateShopButtonSouls();
     var bar = document.getElementById("shop-souls-bar");
-    if (bar) bar.innerHTML = '✨ <b style="color:#cda34f;">' + m.seelen + '</b> ' + shopL("Seelen","Souls") + ' <span style="color:#777;font-size:0.8rem;">· ' + shopL("in jedem Run verdient","earned every run") + '</span>';
+    if (bar) bar.innerHTML = '✨ <b style="color:#cda34f;">' + m.seelen + '</b> ' + shopL("Seelen","Souls");
     var tabs = document.getElementById("shop-tabs");
     if (tabs) tabs.innerHTML = shopTabBtn("upgrades","⚒️ "+shopL("Upgrades","Upgrades")) + shopTabBtn("truhen","📦 "+shopL("Truhen","Chests")) + shopTabBtn("skins","🎭 "+shopL("Skins","Skins"));
     var body = document.getElementById("shop-body"); if (!body) return;
