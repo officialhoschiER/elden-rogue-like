@@ -3,12 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <title>Elden Rogue - Spielbereich</title>
-  <link rel="icon" type="image/png" href="images/favicon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="images/icons/favicon-32.png?v=17">
+  <link rel="icon" type="image/png" sizes="64x64" href="images/icons/favicon.png?v=17">
+  <link rel="apple-touch-icon" href="images/icons/favicon.png?v=17">
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-  <script src="lang.js?v=1.5"></script>
-  <script src="eldenrogue-online.js?v=1.5"></script>
+  <script src="lang.js?v=1.5.1"></script>
+  <script src="eldenrogue-online.js?v=1.5.1"></script>
   <style>
     /* Lokale Font-Einbindung aus dem fonts-Ordner */
     @font-face {
@@ -381,6 +383,7 @@ h1, h2, h3, .btn-menu, .btn-combat, .btn-social, .game-author-tag, #region-displ
 
   <div class="side-panel left-panel">
     <div style="font-size:0.85rem; color:var(--gold); text-transform:uppercase; letter-spacing:3px; text-align:center; font-family:'Mantinia',serif; margin-bottom:4px; border-bottom:1px solid var(--border-color); padding-bottom:4px;" id="ui-status-heading">STATUS</div>
+    <div id="run-timer" style="text-align:center; font-family:'Mantinia',serif; color:#cdbfa3; font-size:0.92rem; letter-spacing:2px; margin-bottom:6px;">⏱ 0:00</div>
     <div class="player-card">
       <div class="vitals-row">
         <div style="flex:1; min-width:0;">
@@ -603,8 +606,9 @@ let mainMapState = null;
 const SAVE_KEY = "eldenRogueSave";
 function speichereRun() {
   if (!gewaehlteKlasse) return;
+  try { tickTimer(); } catch(e) {}
   let save = {
-    v: 1, hardMode: hardMode, challenge: activeChallenge, ts: Date.now(),
+    v: 1, hardMode: hardMode, challenge: activeChallenge, ts: Date.now(), runPlayMs: runPlayMs,
     spielerHp, spielerMaxHp, spielerFlasks, maxKlassenFlasks, estusHeilProzent,
     gewaehlteKlasse, basisAusweichChance, playerImageStr,
     waffenName, waffenSchaden, waffenUpgrade, waffenRaritaet, waffenSchadensarten,
@@ -639,6 +643,8 @@ function ladeGespeichertenRun() {
     netzKarte=d.netzKarte||[]; inSubDungeon=d.inSubDungeon; mainMapState=d.mainMapState;
     activeChallenge=d.challenge||"";
     towerEtage=d.towerEtage||0;
+    runPlayMs = d.runPlayMs || 0; startRunTimer();
+    window.__attr = (ladeMeta().attr) || {};   // Attribut-Schadensbonus auch nach Fortsetzen aktiv
     if (activeChallenge === "tower") { if (!towerEtage) towerEtage = 1; starteTowerKampf(); return true; }
     baueKarteHTML(); updateUI();
     return true;
@@ -657,11 +663,35 @@ const META_KEY = "eldenRogueMeta";
 const META_RESET_VERSION = 2;   // hochzählen = einmaliger Reset der Freischaltungen für alle Nutzer
 const DEFAULT_WEAPONS = ["Keule","Großaxt","Uchigatana","Dolch","Kurzschwert","Breitschwert","Rapier","Claymore","Bluthundreißzahn","Maltöter Großbeil","Großsterne","Rostiger Anker","Blasphemous Blade"];
 const DEFAULT_ARMOR = ["Albinauric Set","Cleanrot Set","Briar Set","Haligtree Knight Set"];
-function metaDefault() { return { seelen:0, upgrades:{vitalitaet:0,schaerfe:0,wendigkeit:0,seelenfaenger:0,flakon:0}, unlockedWeapons: DEFAULT_WEAPONS.slice(), unlockedArmor: DEFAULT_ARMOR.slice(), unlockedSkins:[], activeSkinId:null, activeSkinFilter:"", resetVersion: META_RESET_VERSION }; }
+function attrDefault() { return { vgr:0, str:0, end:0, mnd:0, luck:0 }; }
+function sumAttr(a) { let t=0; for (let k in a) t += (a[k]||0); return t; }
+function metaDefault() { return { seelen:0, level:1, attr:attrDefault(), unspent:0, attrMigrated:false, attrVer:2, upgrades:{vitalitaet:0,schaerfe:0,wendigkeit:0,seelenfaenger:0,flakon:0}, unlockedWeapons: DEFAULT_WEAPONS.slice(), unlockedArmor: DEFAULT_ARMOR.slice(), unlockedSkins:[], activeSkinId:null, activeSkinFilter:"", resetVersion: META_RESET_VERSION }; }
+function migrateAttr(r, m) {
+  let old = m.attr || {};
+  let A = attrDefault();
+  A.vgr = old.vgr||0; A.str = old.str||0; A.end = old.end||0; A.mnd = old.mnd||0; A.luck = old.luck||0;
+  let changed = false;
+  if (!m.attrMigrated) {
+    let up = m.upgrades || {};
+    A.vgr += (up.vitalitaet||0); A.str += (up.schaerfe||0); A.end += (up.wendigkeit||0);
+    A.luck += (up.seelenfaenger||0); A.mnd += (up.flakon||0);
+    changed = true;
+  }
+  if (m.attrMigrated && m.attrVer !== 2) {
+    A.str += (old.dex||0) + (old.int||0) + (old.fth||0);
+    A.luck += (old.arc||0);
+    changed = true;
+  }
+  r.attr = A; r.attrMigrated = true; r.attrVer = 2;
+  if (typeof r.level !== "number" || changed) r.level = 1 + sumAttr(A);
+  if (typeof r.unspent !== "number") r.unspent = 0;
+  return r;
+}
 function ladeMeta() {
   try { let m = JSON.parse(localStorage.getItem(META_KEY)); if (m && typeof m === "object") { let d = metaDefault(); let r = Object.assign(d, m, { upgrades: Object.assign(d.upgrades, m.upgrades||{}) });
+      migrateAttr(r, m);
       if (m.resetVersion !== META_RESET_VERSION) { r.unlockedWeapons = DEFAULT_WEAPONS.slice(); r.unlockedArmor = DEFAULT_ARMOR.slice(); r.unlockedSkins = []; r.resetVersion = META_RESET_VERSION; speichereMeta(r); }
-      else { r.unlockedWeapons = Array.from(new Set(DEFAULT_WEAPONS.concat(Array.isArray(r.unlockedWeapons)?r.unlockedWeapons:[]))); r.unlockedArmor = Array.from(new Set(DEFAULT_ARMOR.concat(Array.isArray(r.unlockedArmor)?r.unlockedArmor:[]))); }
+      else { r.unlockedWeapons = Array.from(new Set(DEFAULT_WEAPONS.concat(Array.isArray(r.unlockedWeapons)?r.unlockedWeapons:[]))); r.unlockedArmor = Array.from(new Set(DEFAULT_ARMOR.concat(Array.isArray(r.unlockedArmor)?r.unlockedArmor:[]))); if (!m.attrMigrated) speichereMeta(r); }
       return r; } } catch(e) {}
   return metaDefault();
 }
@@ -677,7 +707,7 @@ function belohneSeelen(gewonnen) {
   let s = 20 + tiefe*25 + bosse*30 + (completedDungeonsCount||0)*15 + (besiegteWaechter||0)*8 + (questProgress||0)*10;
   if (gewonnen) s += 200;
   let meta = ladeMeta();
-  s = Math.round(s * (1 + (meta.upgrades.seelenfaenger||0) * 0.10));
+  s = Math.round(s * (1 + ((meta.attr && meta.attr.luck)||0) * 0.08));   // Glück: +8% Seelen/Pkt
   meta.seelen += s; speichereMeta(meta);
   letzteRunSeelen = s;
   return s;
@@ -862,6 +892,11 @@ function rolleZufallsWaffe() {
 
 function setzeAusgeruesteteWaffe(w) { waffenName = w.name; waffenSchaden = w.basisDmg; waffenRaritaet = w.rarity || "common"; waffenSchadensarten = w.schadensarten ? [...w.schadensarten] : ["Normal"]; }
 function gibAusgeruesteteWaffe() { return { name: waffenName, basisDmg: waffenSchaden, rarity: waffenRaritaet, schadensarten: [...waffenSchadensarten] }; }
+/* Attribut-Schadensbonus: Stärke erhöht den Schaden aller Waffen (+3%/Pkt) */
+function attrDamageBonus() {
+  let a = window.__attr || {};
+  return (a.str||0) * 0.03;
+}
 
 const bossResistenzen = {
   "Malenia, Blade of Miquella":      { Normal: 0, Magie: 0, Feuer: 0.2, Heilig: -0.2 },
@@ -982,7 +1017,7 @@ function gibAktuellenMiniboss(){ return minibosseProStage[gibStageNummer()] || m
 
 const gebietsGegnerKonfig = {
   Haligtree: {
-    elite: "images/haligtree_knight.webp", waechter: "images/putrid_avatar.webp", invader: "images/millicent.webp",
+    elite: "images/miniboss_cleanrot_knight.png", waechter: "images/miniboss_erdtree_avatar.webp", invader: "images/loretta-knight-of-haligtree.jpg",
     waechterName: "Putrid Avatar", eliteName: "Haligtree Knight", invaderName: "Millicent",
     gegnerBasis: { elite: { hp: 220, dmg: 55 }, waechter: { hp: 300, dmg: 50 }, invader: { hp: 250, dmg: 60 }, skelett: { hp: 80, dmg: 25 } }
   },
@@ -1219,12 +1254,52 @@ function oeffneKlassenAuswahl() {
 
 function zeigeTodesBildschirm() {
   loescheRunSave();
+  stopRunTimer();
   let __s = belohneSeelen(false);
   let __sl = document.getElementById("death-souls-line");
   if (__sl) __sl.innerText = "✨ +" + __s + " " + L("Seelen erbeutet","Souls earned");
   if (window.ER) ER.death();
   let ds = document.getElementById("death-screen");
   if (ds) ds.classList.add("show");
+}
+
+/* ===== Run-Timer ===== */
+let runPlayMs = 0, _timerLastTick = null, _timerInterval = null;
+function fmtRunTime(ms) {
+  let s = Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), ss = s % 60;
+  let mm = (h > 0) ? String(m).padStart(2, "0") : String(m);
+  return (h > 0 ? h + ":" : "") + mm + ":" + String(ss).padStart(2, "0");
+}
+function updateTimerDisplay() { let el = document.getElementById("run-timer"); if (el) el.textContent = "⏱ " + fmtRunTime(runPlayMs); }
+function tickTimer() { if (_timerLastTick != null) { runPlayMs += Date.now() - _timerLastTick; _timerLastTick = Date.now(); } updateTimerDisplay(); }
+function startRunTimer() { _timerLastTick = Date.now(); if (_timerInterval) clearInterval(_timerInterval); _timerInterval = setInterval(tickTimer, 1000); updateTimerDisplay(); }
+function stopRunTimer() { tickTimer(); if (_timerInterval) { clearInterval(_timerInterval); _timerInterval = null; } _timerLastTick = null; }
+
+/* ===== Hall of Fame: abgeschlossenen Run mit Ausrüstung + Zeit sichern ===== */
+function recordHallOfFame() {
+  try {
+    tickTimer();
+    let run = {}; try { run = JSON.parse(localStorage.getItem("eldenRogueRun")) || {}; } catch (e) {}
+    let weaponImg = "";
+    if (window.ER && ER.ELDENDEX) { for (let i = 0; i < ER.ELDENDEX.length; i++) { if (ER.ELDENDEX[i].id === "w:" + waffenName) { weaponImg = ER.ELDENDEX[i].img; break; } } }
+    let entry = {
+      ts: Date.now(),
+      difficulty: hardMode ? "hard" : "normal",
+      challenge: activeChallenge || "",
+      klasse: gewaehlteKlasse || "",
+      bosses: run.bosses || 0,
+      fights: run.fights || 0,
+      score: (run.stage || 0) * 1000 + (run.bosses || 0) * 200 + (run.fights || 0) * 10,
+      timeMs: runPlayMs,
+      weapon: { name: waffenName, upgrade: waffenUpgrade || 0, rarity: waffenRaritaet || "common", img: weaponImg },
+      armor: (typeof hatRuestungAusgeruestet === "function" && hatRuestungAusgeruestet()) ? { name: ruestungName, rarity: ruestungRaritaet || "common", img: ruestungBild || "" } : null
+    };
+    let key = "eldenRogueHallOfFame", arr = [];
+    try { arr = JSON.parse(localStorage.getItem(key)) || []; } catch (e) {}
+    arr.unshift(entry);
+    if (arr.length > 50) arr = arr.slice(0, 50);
+    localStorage.setItem(key, JSON.stringify(arr));
+  } catch (e) {}
 }
 
 window.onERAchievement = function (a) {
@@ -1263,16 +1338,17 @@ function waehleKlasseEngine(klasse) {
   else if (klasse === 'samurai') { spielerMaxHp = 110; maxKlassenFlasks = hardMode ? 1 : 2; spielerFlasks = maxKlassenFlasks; basisAusweichChance = 0.40; playerImageStr = "images/tarnished_samurai.webp"; }
   else if (klasse === 'nackt') { spielerMaxHp = 90; maxKlassenFlasks = hardMode ? 0 : 1; spielerFlasks = maxKlassenFlasks; basisAusweichChance = 0.50; playerImageStr = "images/tarnished_nackt.webp"; }
   // ⚜️ Meta-Upgrades (Roundtable) anwenden
-  let __meta = ladeMeta(); let __up = __meta.upgrades || {};
-  spielerMaxHp += (__up.vitalitaet||0) * 15;
-  maxKlassenFlasks += (__up.flakon||0); spielerFlasks = maxKlassenFlasks;
-  waffenUpgrade += (__up.schaerfe||0);
-  basisAusweichChance = Math.min(0.75, basisAusweichChance + (__up.wendigkeit||0) * 0.025);
+  let __meta = ladeMeta(); let __a = __meta.attr || {};
+  window.__attr = __a;                                                 // für Schadensberechnung im Kampf
+  spielerMaxHp += (__a.vgr||0) * 10;                                   // Lebenskraft: +10 HP/Pkt
+  maxKlassenFlasks += Math.floor((__a.mnd||0) / 3); spielerFlasks = maxKlassenFlasks;  // Verstand: +1 Flakon je 3 Pkt
+  basisAusweichChance = Math.min(0.75, basisAusweichChance + (__a.end||0) * 0.01);      // Ausdauer: +1% Ausweichen/Pkt
   seelenVergeben = false;
   spielerHp = spielerMaxHp; document.getElementById("popup-content").classList.remove("klassen-modal"); document.getElementById("popup-overlay").style.display = "none";
   // Kategorie mitgeben, damit Challenge-Runs (tower/noarmor/noblaidd/autobattle/haligtree)
   // in ihrer eigenen Bestenliste landen. Leeres activeChallenge -> normCat fällt auf normal/hard zurück.
   if (window.ER) ER.startRun(hardMode ? "hard" : "normal", activeChallenge);
+  runPlayMs = 0; startRunTimer();
   speichereRun();
   if (activeChallenge === "tower") { starteTowerModus(); return; }   // Tower: direkt in den Aufstieg statt Regionskarte
   updateUI();
@@ -1409,7 +1485,7 @@ function updateUI() {
   if (spielerHp > finalMaxHp) spielerHp = finalMaxHp;
 
   let baseWeaponDmg = waffenSchaden + (waffenUpgrade * 5);
-  let finalDmgMultiplier = 1.0 + tStats.bonusDmgPercent;
+  let finalDmgMultiplier = 1.0 + tStats.bonusDmgPercent + attrDamageBonus(waffenSchadensarten);
   finalDmgMultiplier += CONFIG.buffBonusProStack * buffStacks("dmg");
   let finalDmg = Math.round((baseWeaponDmg + runeDmgBonus) * finalDmgMultiplier);
 
@@ -1815,6 +1891,15 @@ async function gegnerKonter(opts) {
     let gSchaden = gegnerSchaden + opts.dmgVariance();
     gSchaden = Math.round(gSchaden * (1 + tStats.bonusDmgTakenPercent) * (1 - ruestungReduktion));
     gSchaden = Math.max(1, gSchaden);
+    // Malenia: Schaden skaliert mit der Max-HP des Spielers, damit sie auch bei hoher Meta-HP bedrohlich
+    // bleibt (gefaehrlicher als Radagon) — aber durch das 55%-Cap NIE ein One-Shot. Ruestung/Talismane wirken weiter.
+    if (gegnerName === "Malenia, Blade of Miquella" || gegnerName === "Malenia, Goddess of Rot") {
+      let finalMaxHp = berechneFinalMaxHp();
+      let pct = (gegnerName === "Malenia, Goddess of Rot") ? 0.40 : 0.30;
+      let malDmg = Math.round(finalMaxHp * pct * (1 - ruestungReduktion) * (1 + tStats.bonusDmgTakenPercent));
+      gSchaden = Math.min(Math.max(gSchaden, malDmg), Math.round(finalMaxHp * 0.55));
+      gSchaden = Math.max(1, gSchaden);
+    }
     spielerHp = Math.max(0, spielerHp - gSchaden);
     playerWrapper.classList.add("enemy-hurt");
     zeigeFloatingZahl(playerWrapper, "-" + gSchaden, "dmg-enemy");
@@ -1839,7 +1924,7 @@ async function spielerAngriff() {
   playerWrapper.classList.add("attack-dash");
   let tStats = berechneTalismanStats(); let runeDmgBonus = aktiveRune === "godrick" ? 10 : (aktiveRune === "radahn" ? 20 : 0);
   let baseWeaponDmg = waffenSchaden + (waffenUpgrade * 5);
-  let finalDmgMultiplier = 1.0 + tStats.bonusDmgPercent;
+  let finalDmgMultiplier = 1.0 + tStats.bonusDmgPercent + attrDamageBonus(waffenSchadensarten);
   finalDmgMultiplier += CONFIG.buffBonusProStack * buffStacks("dmg");
   let finalDmg = Math.round((baseWeaponDmg + runeDmgBonus) * finalDmgMultiplier);
   let bossMod = gibBossSchadensModifikator(); if (bossMod !== 0) finalDmg = Math.round(finalDmg * (1 + bossMod));
@@ -2100,7 +2185,7 @@ function kampfGewonnen() {
 
   if (window.ER) {
     ER.fightWon();
-    if (gegnerName === "Eldenbiest") { ER.bossKilled("Eldenbiest"); ER.gameCompleted();
+    if (gegnerName === "Eldenbiest") { ER.bossKilled("Eldenbiest"); recordHallOfFame(); ER.gameCompleted(); stopRunTimer();
       if (hardMode) ER.hardCompleted();
       if (activeChallenge) ER.challengeCompleted(activeChallenge);
     }
@@ -2150,13 +2235,15 @@ function kampfGewonnen() {
   if (gegnerName === "Malenia, Blade of Miquella") {
     document.getElementById("battle-log").innerText = t("malenia_phase2_transition");
     gegnerName = "Malenia, Goddess of Rot"; gegnerMaxHp = Math.round(gegnerMaxHp * 1.3); gegnerHp = gegnerMaxHp; gegnerSchaden = Math.round(gegnerSchaden * 1.1);
+    imKampf = true;   // Phase 2 aktiv halten (kampfGewonnen() hat imKampf oben auf false gesetzt)
     bossPhaseWechsel = true;   // Phasenwechsel -> kein Sofort-Konter
-    document.getElementById("enemy-name").innerText = gegnerNameLoc(gegnerName);
-    document.getElementById("enemy-img").src = "images/malenia-2nd-phase-flying.avif";
-    document.getElementById("battle-enemy-hp").max = gegnerMaxHp; document.getElementById("battle-enemy-hp").value = gegnerHp;
-    document.getElementById("arena-enemy-hp-text").innerText = gegnerHp + " / " + gegnerMaxHp;
+    aktionsSperre = false;
+    // FIX: updateUI() setzt Name (arena-enemy-name), HP-Balken (enemy-hp-bar), HP-Text und Bild korrekt.
+    // Die alten manuellen Zeilen nutzten nicht existierende IDs (enemy-name / battle-enemy-hp) -> warfen eine
+    // Exception -> Phase-2-Anzeige fror ein (Name/HP/Bild blieben Phase 1, Buttons gesperrt).
+    updateUI();
     if (activeChallenge === "autobattle") setTimeout(autoBattleTick, 900);
-    aktionsSperre = false; updateUI(); return;
+    return;
   }
   // Malenia Phase 2 besiegt -> weiter zum Eldenthron (Kill wird oben im ER-Statistikblock erfasst; kein gameCompleted, der Run läuft weiter)
   if (gegnerName === "Malenia, Goddess of Rot") {
@@ -2513,6 +2600,10 @@ function bestaetigeStufe(naechsteEbene) { document.getElementById("popup-overlay
   function devApply(){
     // Sauberen Karten-Zustand erzwingen, damit die Knoten wieder anklickbar sind
     imKampf = false; aktionsSperre = false;
+    // FIX: Wenn der Spieler (durch einen Testkampf) tot ist, bleiben sonst ALLE Karten-Knoten
+    // gesperrt (Klickbarkeit verlangt spielerHp > 0). Im Dev-Panel wiederbeleben + Todesbildschirm schliessen.
+    if (spielerHp <= 0) { try { spielerHp = berechneFinalMaxHp(); } catch(e){ spielerHp = spielerMaxHp; } }
+    try { var ds=document.getElementById("death-screen"); if(ds) ds.classList.remove("show"); }catch(e){}
     try{
       var bv=document.getElementById("battle-view"); if(bv) bv.style.display="none";
       var mv=document.getElementById("map-view"); if(mv) mv.style.display="flex";
@@ -2548,6 +2639,8 @@ function bestaetigeStufe(naechsteEbene) { document.getElementById("popup-overlay
   function devMalenia(){ devEnsureRun(); medallionHalves = 2; devGoto("Haligtree"); }
   function devBlaiddBelohnung(){ devEnsureRun(); devClosePopups(); try{ oeffneQuestRewardPopup(aktuelleEbene + 1); }catch(e){ alert(e); } }
   function devHeal(){ devEnsureRun(); spielerHp = spielerMaxHp; spielerFlasks = maxKlassenFlasks; devApply(); }
+  // Schnelltest-Button: HP und Waffenschaden sofort auf 999 (Spieler wird quasi unsterblich + oneshottet Gegner)
+  function devGott(){ devEnsureRun(); spielerMaxHp = 999; spielerHp = 999; maxKlassenFlasks = Math.max(maxKlassenFlasks, 5); spielerFlasks = maxKlassenFlasks; waffenSchaden = 999; devApply(); }
   function devRunen(){ devEnsureRun(); hatGodrickRune = hatRadahnRune = hatMorgottRune = true; devApply(); }
   function devSetSeelen(){
     var akt = 0; try{ akt = ladeMeta().seelen || 0; }catch(e){}
@@ -2616,6 +2709,7 @@ function bestaetigeStufe(naechsteEbene) { document.getElementById("popup-overlay
     panel.appendChild(sektion("Sonstiges"));
     panel.appendChild(b("✨ Seelen setzen", devSetSeelen, "#cda34f"));
     panel.appendChild(b("❤ Voll heilen + Flakons", devHeal, "#2ecc71"));
+    panel.appendChild(b("⚡ 999 HP + Schaden (Godmode)", devGott, "#f1c40f"));
     panel.appendChild(b("🗝 Alle Story-Runen", devRunen));
     panel.appendChild(b("🔄 Run neu starten", ()=>{ try{ direktNeustarten(); }catch(e){} devRefresh(); }, "#e67e22"));
 
