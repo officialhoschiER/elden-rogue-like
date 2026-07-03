@@ -1470,7 +1470,7 @@ function updateUI() {
     document.getElementById("player-armor-res").innerText = hatRuestungAusgeruestet() ? t("armor_reduction_label", { pct: Math.round(ruestungReduktion*100) }) : "";
   }
 
-  if(questProgress >= 4) document.getElementById("quest-progress-text").innerText = t("quest_ready");
+  if(questProgress >= (hardMode ? 5 : 4)) document.getElementById("quest-progress-text").innerText = t("quest_ready");
   else document.getElementById("quest-progress-text").innerText = `Blaidd: ${questProgress} / ${hardMode ? 5 : 4}`;
 
   for(let i=0; i<4; i++) {
@@ -2131,7 +2131,7 @@ function kampfGewonnen() {
   if (gegnerName === "Blaidd, der Halbwolf") {
     questProgress++;
     if (questProgress >= (hardMode ? 5 : 4)) { oeffneQuestRewardPopup(naechsteEbene); return; }
-    else { oeffneStatPopup(t("blaidd_progress_title"), t("blaidd_progress_desc", { n: questProgress }), naechsteEbene); return; }
+    else { oeffneStatPopup(t("blaidd_progress_title"), t("blaidd_progress_desc", { n: questProgress, z: hardMode ? 5 : 4 }), naechsteEbene); return; }
   }
   
   if (gegnerName === "Godrick, der Verpflanzte") { hatGodrickRune = true; aktuelleRegion = "Caelid"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null; netzKarte = generiereRautenNetz("Caelid"); oeffneStatPopup(t("boss_godrick_title"), t("boss_godrick_win"), 1); return; }
@@ -2277,7 +2277,7 @@ function oeffneTalismanPopup(naechsteEbene) {
 function ersetzeTalismanSlot(index, talismanObj, naechsteEbene) { ausgeruesteteTalismane[index] = talismanObj; bestaetigeStufe(naechsteEbene); }
 
 function oeffneQuestRewardPopup(naechsteEbene) {
-  questProgress = 0; medallionHalves = 0; fortressPlacedRegions = []; let overlay = document.getElementById("popup-overlay"); let content = document.getElementById("popup-content");
+  questProgress = 0; /* FIX: medallionHalves & fortressPlacedRegions NICHT zuruecksetzen -> sonst gehen gesammelte Medaillons verloren und Gideon bietet Malenia nicht an */ let overlay = document.getElementById("popup-overlay"); let content = document.getElementById("popup-content");
   content.innerHTML = `
     <h3 style="color: #3498db; font-size:1.6rem; margin-top:0; letter-spacing:2px; font-family: 'Mantinia', serif;">${t("quest_title")}</h3>
     <p style="color:#aaa; font-size:0.95rem; margin-bottom:20px;">${t("quest_desc")}</p>
@@ -2493,6 +2493,140 @@ function bestaetigeStufe(naechsteEbene) { document.getElementById("popup-overlay
   }
   function hideTip() { tip.style.display = "none"; }
   for (let i = 0; i < 4; i++) { const slot = document.getElementById("talisman-slot-" + i); slot.addEventListener("mouseenter", showTip); slot.addEventListener("mouseleave", hideTip); }
+})();
+
+/* =====================================================================
+   DEV-/TEST-PANEL  —  Umschalten mit Taste  `  (Backtick, links neben 1)
+   oder URL-Parameter  ?dev=1  anhaengen.
+   Nutzt nur bestehende Spielfunktionen. Nur zum Testen gedacht.
+   ===================================================================== */
+(function(){
+  const REGIONEN = ["Limgrave","Caelid","Leyndell","Mountaintops","FarumAzula","AshenCapital","EldenThrone","Haligtree"];
+
+  function devEnsureRun(){
+    // Falls noch keine Klasse gewaehlt (Spiel nicht gestartet), automatisch starten
+    if (!gewaehlteKlasse) { try { waehleKlasseEngine('schwertkaempfer'); } catch(e){ console.warn(e); } }
+  }
+  function devClosePopups(){ const o=document.getElementById("popup-overlay"); if(o) o.style.display="none"; }
+  function devApply(){ try{ speichereRun(); }catch(e){} try{ updateUI(); }catch(e){} devRefresh(); }
+
+  // Story-Runen passend bis zur Zielregion vergeben, damit Regionslogik konsistent ist
+  function devRunenBis(region){
+    const idx = REGIONEN.indexOf(region);
+    hatGodrickRune = idx >= REGIONEN.indexOf("Caelid");
+    hatRadahnRune  = idx >= REGIONEN.indexOf("Leyndell");
+    hatMorgottRune = idx >= REGIONEN.indexOf("Mountaintops");
+  }
+
+  function devGoto(region){
+    devEnsureRun(); devRunenBis(region);
+    aktuelleRegion = region; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null;
+    netzKarte = generiereRautenNetz(region);
+    devClosePopups(); devApply();
+  }
+  function devSetMedaillons(n){ devEnsureRun(); medallionHalves = Math.max(0, Math.min(2, n)); devApply(); }
+  function devSetBlaidd(n){ devEnsureRun(); questProgress = Math.max(0, n); devApply(); }
+
+  // Testet exakt das Popup, das vorher gebuggt war: Gideon fragt nach Malenia/Haligtree
+  function devGideonWahl(){ devEnsureRun(); medallionHalves = 2; devApply(); try{ oeffneHaligtreeWahl(); }catch(e){ alert("oeffneHaligtreeWahl() Fehler: "+e); } }
+  // Direkt in die Haligtree-Region (dort ist der Boss = Malenia)
+  function devMalenia(){ devEnsureRun(); medallionHalves = 2; devGoto("Haligtree"); }
+  function devBlaiddBelohnung(){ devEnsureRun(); devClosePopups(); try{ oeffneQuestRewardPopup(aktuelleEbene + 1); }catch(e){ alert(e); } }
+  function devHeal(){ devEnsureRun(); spielerHp = spielerMaxHp; spielerFlasks = maxKlassenFlasks; devApply(); }
+  function devRunen(){ devEnsureRun(); hatGodrickRune = hatRadahnRune = hatMorgottRune = true; devApply(); }
+
+  function b(label, fn, farbe){
+    const el = document.createElement("button");
+    el.textContent = label;
+    el.style.cssText = "font:600 11px sans-serif;cursor:pointer;padding:5px 8px;margin:2px;border-radius:5px;"
+      + "background:#1a1a1a;color:"+(farbe||"#ddd")+";border:1px solid "+(farbe||"#444")+";";
+    el.onclick = fn;
+    return el;
+  }
+  function sektion(titel){
+    const d = document.createElement("div");
+    d.style.cssText = "margin:8px 0 2px;font:700 9px sans-serif;letter-spacing:1px;text-transform:uppercase;color:#c9a24b;";
+    d.textContent = titel; return d;
+  }
+
+  let panel, statusZeile;
+  function bauePanel(){
+    panel = document.createElement("div");
+    panel.id = "dev-panel";
+    panel.style.cssText = "position:fixed;left:10px;bottom:10px;z-index:99999;width:270px;max-height:85vh;overflow:auto;"
+      + "background:rgba(12,12,14,0.96);border:1px solid #c9a24b;border-radius:8px;padding:10px 12px;"
+      + "box-shadow:0 4px 20px rgba(0,0,0,0.6);display:none;";
+
+    const kopf = document.createElement("div");
+    kopf.style.cssText = "font:700 12px 'Mantinia',serif;letter-spacing:2px;color:#c9a24b;display:flex;justify-content:space-between;align-items:center;";
+    kopf.innerHTML = "<span>⚙ DEV / TEST</span>";
+    const zu = b("✕", ()=>toggle(false), "#888"); zu.style.margin="0";
+    kopf.appendChild(zu);
+    panel.appendChild(kopf);
+
+    statusZeile = document.createElement("div");
+    statusZeile.style.cssText = "margin:6px 0;font:11px/1.5 sans-serif;color:#9fb; white-space:pre-wrap;";
+    panel.appendChild(statusZeile);
+
+    panel.appendChild(sektion("Malenia / Medaillons"));
+    panel.appendChild(b("🌸 Malenia-Kampf betreten", devMalenia, "#e05a8a"));
+    panel.appendChild(b("👁 Gideon→Malenia-Wahl testen", devGideonWahl, "#e05a8a"));
+    const medRow = document.createElement("div");
+    medRow.appendChild(b("Medaillons 0", ()=>devSetMedaillons(0)));
+    medRow.appendChild(b("1", ()=>devSetMedaillons(1)));
+    medRow.appendChild(b("2", ()=>devSetMedaillons(2), "#2ecc71"));
+    panel.appendChild(medRow);
+
+    panel.appendChild(sektion("Blaidd-Quest"));
+    const blRow = document.createElement("div");
+    [0,1,2,3,4].forEach(n=> blRow.appendChild(b("Blaidd "+n, ()=>devSetBlaidd(n))));
+    panel.appendChild(blRow);
+    panel.appendChild(b("🐺 Blaidd-Belohnung öffnen", devBlaiddBelohnung, "#3498db"));
+
+    panel.appendChild(sektion("Region springen"));
+    const regRow = document.createElement("div");
+    REGIONEN.forEach(r=> regRow.appendChild(b(r, ()=>devGoto(r))));
+    panel.appendChild(regRow);
+
+    panel.appendChild(sektion("Sonstiges"));
+    panel.appendChild(b("❤ Voll heilen + Flakons", devHeal, "#2ecc71"));
+    panel.appendChild(b("🗝 Alle Story-Runen", devRunen));
+    panel.appendChild(b("🔄 Run neu starten", ()=>{ try{ direktNeustarten(); }catch(e){} devRefresh(); }, "#e67e22"));
+
+    const hint = document.createElement("div");
+    hint.style.cssText="margin-top:8px;font:9px sans-serif;color:#666;";
+    hint.textContent = "Taste ` zum Ein-/Ausblenden. Hardmode via ?mode=hard in der URL.";
+    panel.appendChild(hint);
+
+    document.body.appendChild(panel);
+  }
+
+  window.devRefresh = function(){
+    if(!statusZeile) return;
+    statusZeile.textContent =
+      "Region: " + (typeof aktuelleRegion!=="undefined"?aktuelleRegion:"-") + "  (Ebene " + (aktuelleEbene||"-") + ")\n"
+      + "Modus: " + (hardMode ? "HARD" : "Normal") + "   Klasse: " + (gewaehlteKlasse||"—") + "\n"
+      + "Medaillons: " + (medallionHalves||0) + "/2    Blaidd: " + (questProgress||0) + "/" + (hardMode?5:4) + "\n"
+      + "HP: " + Math.round(spielerHp||0) + "/" + Math.round(spielerMaxHp||0) + "   Flakons: " + (spielerFlasks||0) + "\n"
+      + "Runen: " + [hatGodrickRune&&"Godrick",hatRadahnRune&&"Radahn",hatMorgottRune&&"Morgott"].filter(Boolean).join(", ");
+  };
+
+  function toggle(on){
+    if(!panel) bauePanel();
+    const sichtbar = on !== undefined ? on : panel.style.display === "none";
+    panel.style.display = sichtbar ? "block" : "none";
+    if(sichtbar) devRefresh();
+  }
+
+  document.addEventListener("keydown", function(e){
+    // Backtick / ^  toggelt das Panel (nicht in Textfeldern)
+    if((e.key === "`" || e.key === "^" || e.code === "Backquote") && !/^(input|textarea)$/i.test((e.target.tagName||""))){
+      e.preventDefault(); toggle();
+    }
+  });
+
+  // Auto-Anzeige bei ?dev=1
+  try{ if(new URLSearchParams(location.search).get("dev")==="1"){ window.addEventListener("load", ()=>toggle(true)); } }catch(e){}
 })();
 </script>
 </body>
