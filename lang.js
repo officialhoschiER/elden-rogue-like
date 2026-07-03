@@ -126,6 +126,8 @@
       tower_title: "☤ Der Heilige Turm",
       tower_desc: "Wähle eine erbeutete Große Rune, um sie an diesem Altar exklusiv zu aktivieren.",
       tower_leave: "Turm verlassen ➔",
+      tower_btn: "🏯 Battle Tower",
+      dex_title: "Eldendex",
 
       // Rewards & Boss Transitions
       grace_title: "✨ Segen der Gnade",
@@ -515,6 +517,8 @@
       tower_title: "☤ Divine Tower",
       tower_desc: "Present a reclaimed Great Rune at this holy altar to permanently activate its blessing.",
       tower_leave: "Leave Tower ➔",
+      tower_btn: "🏯 Battle Tower",
+      dex_title: "Eldendex",
 
       // Rewards & Boss Transitions
       grace_title: "✨ Grace Restored",
