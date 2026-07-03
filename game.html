@@ -2549,6 +2549,16 @@ function bestaetigeStufe(naechsteEbene) { document.getElementById("popup-overlay
   function devBlaiddBelohnung(){ devEnsureRun(); devClosePopups(); try{ oeffneQuestRewardPopup(aktuelleEbene + 1); }catch(e){ alert(e); } }
   function devHeal(){ devEnsureRun(); spielerHp = spielerMaxHp; spielerFlasks = maxKlassenFlasks; devApply(); }
   function devRunen(){ devEnsureRun(); hatGodrickRune = hatRadahnRune = hatMorgottRune = true; devApply(); }
+  function devSetSeelen(){
+    var akt = 0; try{ akt = ladeMeta().seelen || 0; }catch(e){}
+    var eingabe = prompt("Seelen setzen (aktuell: " + akt + "):", akt);
+    if (eingabe === null) return;
+    var n = parseInt(eingabe, 10);
+    if (isNaN(n) || n < 0) { alert("Bitte eine gültige Zahl >= 0 eingeben."); return; }
+    try { var m = ladeMeta(); m.seelen = n; speichereMeta(m); }catch(e){ alert("Fehler: "+e); return; }
+    devRefresh();
+    alert("Seelen gesetzt auf " + n + ".\n(Sichtbar im Roundtable im Hauptmenü.)");
+  }
 
   function b(label, fn, farbe){
     const el = document.createElement("button");
@@ -2604,6 +2614,7 @@ function bestaetigeStufe(naechsteEbene) { document.getElementById("popup-overlay
     panel.appendChild(regRow);
 
     panel.appendChild(sektion("Sonstiges"));
+    panel.appendChild(b("✨ Seelen setzen", devSetSeelen, "#cda34f"));
     panel.appendChild(b("❤ Voll heilen + Flakons", devHeal, "#2ecc71"));
     panel.appendChild(b("🗝 Alle Story-Runen", devRunen));
     panel.appendChild(b("🔄 Run neu starten", ()=>{ try{ direktNeustarten(); }catch(e){} devRefresh(); }, "#e67e22"));
@@ -2623,6 +2634,7 @@ function bestaetigeStufe(naechsteEbene) { document.getElementById("popup-overlay
       + "Modus: " + (hardMode ? "HARD" : "Normal") + "   Klasse: " + (gewaehlteKlasse||"—") + "\n"
       + "Medaillons: " + (medallionHalves||0) + "/2    Blaidd: " + (questProgress||0) + "/" + (hardMode?5:4) + "\n"
       + "HP: " + Math.round(spielerHp||0) + "/" + Math.round(spielerMaxHp||0) + "   Flakons: " + (spielerFlasks||0) + "\n"
+      + "Seelen: " + (function(){ try{ return ladeMeta().seelen||0; }catch(e){ return "?"; } })() + "\n"
       + "Runen: " + [hatGodrickRune&&"Godrick",hatRadahnRune&&"Radahn",hatMorgottRune&&"Morgott"].filter(Boolean).join(", ");
   };
 
