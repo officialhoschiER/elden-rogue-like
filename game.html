@@ -528,7 +528,6 @@ h1, h2, h3, .btn-menu, .btn-combat, .btn-social, .game-author-tag, #region-displ
 
     <div class="map-wrapper-relative">
       <div id="map-view" class="map-scroll-area" style="position:relative;">
-        <button id="map-heal-btn" class="btn-combat btn-heal" style="display:none; position:absolute; bottom:12px; left:12px; padding:10px 18px; z-index:10;" onclick="mapHeal()">🧪</button>
         <svg id="map-lines"></svg>
         <div id="map-grid"></div>
       </div>
@@ -1341,7 +1340,7 @@ function waehleKlasseEngine(klasse) {
   let __meta = ladeMeta(); let __a = __meta.attr || {};
   window.__attr = __a;                                                 // für Schadensberechnung im Kampf
   spielerMaxHp += (__a.vgr||0) * 10;                                   // Lebenskraft: +10 HP/Pkt
-  maxKlassenFlasks += Math.floor((__a.mnd||0) / 3); spielerFlasks = maxKlassenFlasks;  // Verstand: +1 Flakon je 3 Pkt
+  maxKlassenFlasks += (__a.mnd||0); spielerFlasks = maxKlassenFlasks;  // Verstand: +1 Flakon pro Punkt
   basisAusweichChance = Math.min(0.75, basisAusweichChance + (__a.end||0) * 0.01);      // Ausdauer: +1% Ausweichen/Pkt
   seelenVergeben = false;
   spielerHp = spielerMaxHp; document.getElementById("popup-content").classList.remove("klassen-modal"); document.getElementById("popup-overlay").style.display = "none";
@@ -1907,6 +1906,10 @@ async function gegnerKonter(opts) {
     updateUI();
   }
 
+  // Anti-Save-Scum: HP nach jedem Gegner-Angriff sichern. So setzt ein Menü-Exit den erlittenen
+  // Schaden NICHT zurück – ein Neuversuch startet den Boss frisch, aber mit der reduzierten HP (nie besser).
+  if (imKampf) { try { speichereRun(); } catch(e){} }
+
   await wait(opts.cleanupDelay);
   playerWrapper.classList.remove("enemy-hurt");
   playerWrapper.classList.remove("player-rolling");
@@ -2180,6 +2183,16 @@ function kampfGewonnen() {
     bossPhaseWechsel = true;   // frisch verwandelter Boss greift nicht sofort an
     document.getElementById("battle-log").innerText = t("elden_beast_transition"); aktionsSperre = false; updateUI(); return;
   }
+  // Malenia Phase 1 -> Phase 2: VOR dem ER-Block, damit P1 NICHT als eigener Boss/Kampf zählt
+  // (wie Radagon -> Eldenbiest). Verhindert Doppelzählung und das Farmen von Boss-Kills via P1.
+  if (gegnerName === "Malenia, Blade of Miquella") {
+    document.getElementById("battle-log").innerText = t("malenia_phase2_transition");
+    gegnerName = "Malenia, Goddess of Rot"; gegnerMaxHp = Math.round(gegnerMaxHp * 1.3); gegnerHp = gegnerMaxHp; gegnerSchaden = Math.round(gegnerSchaden * 1.1);
+    bossPhaseWechsel = true; aktionsSperre = false;
+    updateUI();
+    if (activeChallenge === "autobattle") setTimeout(autoBattleTick, 900);
+    return;
+  }
 
   activeBuffs.forEach(b => { if (b.remaining > 0) b.remaining--; }); activeBuffs = activeBuffs.filter(b => b.remaining > 0);
 
@@ -2231,21 +2244,8 @@ function kampfGewonnen() {
     aktuelleRegion = "EldenThrone"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null; netzKarte = generiereRautenNetz("EldenThrone"); oeffneStatPopup(t("boss_gideon_title"), t("boss_gideon_win"), 1); return;
   }
   if (gegnerName === "Godfrey, der Erste Eldenlord") { oeffneStatPopup(t("boss_godfrey_title"), t("boss_godfrey_win"), naechsteEbene); return; }
-  // Malenia Phase 2
-  if (gegnerName === "Malenia, Blade of Miquella") {
-    document.getElementById("battle-log").innerText = t("malenia_phase2_transition");
-    gegnerName = "Malenia, Goddess of Rot"; gegnerMaxHp = Math.round(gegnerMaxHp * 1.3); gegnerHp = gegnerMaxHp; gegnerSchaden = Math.round(gegnerSchaden * 1.1);
-    imKampf = true;   // Phase 2 aktiv halten (kampfGewonnen() hat imKampf oben auf false gesetzt)
-    bossPhaseWechsel = true;   // Phasenwechsel -> kein Sofort-Konter
-    aktionsSperre = false;
-    // FIX: updateUI() setzt Name (arena-enemy-name), HP-Balken (enemy-hp-bar), HP-Text und Bild korrekt.
-    // Die alten manuellen Zeilen nutzten nicht existierende IDs (enemy-name / battle-enemy-hp) -> warfen eine
-    // Exception -> Phase-2-Anzeige fror ein (Name/HP/Bild blieben Phase 1, Buttons gesperrt).
-    updateUI();
-    if (activeChallenge === "autobattle") setTimeout(autoBattleTick, 900);
-    return;
-  }
-  // Malenia Phase 2 besiegt -> weiter zum Eldenthron (Kill wird oben im ER-Statistikblock erfasst; kein gameCompleted, der Run läuft weiter)
+  // Malenia Phase 1 -> Phase 2 wird oben (vor dem ER-Block) behandelt.
+  // Malenia Phase 2 besiegt -> weiter zum Eldenthron (zählt hier oben im ER-Block als EIN Boss)
   if (gegnerName === "Malenia, Goddess of Rot") {
     aktuelleRegion = "EldenThrone"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null; netzKarte = generiereRautenNetz("EldenThrone");
     oeffneStatPopup(L("Malenia bezwungen", "Malenia Defeated"), L("Die Klinge Miquellas ist gefallen. Nun führt dein Weg zum Eldenthron.", "Miquella's blade has fallen. Now your path leads on to the Elden Throne."), 1);
@@ -2584,171 +2584,6 @@ function bestaetigeStufe(naechsteEbene) { document.getElementById("popup-overlay
   for (let i = 0; i < 4; i++) { const slot = document.getElementById("talisman-slot-" + i); slot.addEventListener("mouseenter", showTip); slot.addEventListener("mouseleave", hideTip); }
 })();
 
-/* =====================================================================
-   DEV-/TEST-PANEL  —  Umschalten mit Taste  `  (Backtick, links neben 1)
-   oder URL-Parameter  ?dev=1  anhaengen.
-   Nutzt nur bestehende Spielfunktionen. Nur zum Testen gedacht.
-   ===================================================================== */
-(function(){
-  const REGIONEN = ["Limgrave","Caelid","Leyndell","Mountaintops","FarumAzula","AshenCapital","EldenThrone","Haligtree"];
-
-  function devEnsureRun(){
-    // Falls noch keine Klasse gewaehlt (Spiel nicht gestartet), automatisch starten
-    if (!gewaehlteKlasse) { try { waehleKlasseEngine('schwertkaempfer'); } catch(e){ console.warn(e); } }
-  }
-  function devClosePopups(){ const o=document.getElementById("popup-overlay"); if(o) o.style.display="none"; }
-  function devApply(){
-    // Sauberen Karten-Zustand erzwingen, damit die Knoten wieder anklickbar sind
-    imKampf = false; aktionsSperre = false;
-    // FIX: Wenn der Spieler (durch einen Testkampf) tot ist, bleiben sonst ALLE Karten-Knoten
-    // gesperrt (Klickbarkeit verlangt spielerHp > 0). Im Dev-Panel wiederbeleben + Todesbildschirm schliessen.
-    if (spielerHp <= 0) { try { spielerHp = berechneFinalMaxHp(); } catch(e){ spielerHp = spielerMaxHp; } }
-    try { var ds=document.getElementById("death-screen"); if(ds) ds.classList.remove("show"); }catch(e){}
-    try{
-      var bv=document.getElementById("battle-view"); if(bv) bv.style.display="none";
-      var mv=document.getElementById("map-view"); if(mv) mv.style.display="flex";
-      var ab=document.getElementById("atk-btn"); if(ab) ab.style.display="";
-      var hb=document.getElementById("heal-btn"); if(hb) hb.style.display="";
-    }catch(e){}
-    try{ if(gewaehlteKlasse) baueKarteHTML(); }catch(e){ console.warn("baueKarteHTML:",e); }
-    try{ updateUI(); }catch(e){ console.warn("updateUI:",e); }
-    try{ speichereRun(); }catch(e){}
-    devRefresh();
-  }
-
-  // Story-Runen passend bis zur Zielregion vergeben, damit Regionslogik konsistent ist
-  function devRunenBis(region){
-    const idx = REGIONEN.indexOf(region);
-    hatGodrickRune = idx >= REGIONEN.indexOf("Caelid");
-    hatRadahnRune  = idx >= REGIONEN.indexOf("Leyndell");
-    hatMorgottRune = idx >= REGIONEN.indexOf("Mountaintops");
-  }
-
-  function devGoto(region){
-    devEnsureRun(); devRunenBis(region);
-    aktuelleRegion = region; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null;
-    netzKarte = generiereRautenNetz(region);
-    devClosePopups(); devApply();
-  }
-  function devSetMedaillons(n){ devEnsureRun(); medallionHalves = Math.max(0, Math.min(2, n)); devApply(); }
-  function devSetBlaidd(n){ devEnsureRun(); questProgress = Math.max(0, n); devApply(); }
-
-  // Testet exakt das Popup, das vorher gebuggt war: Gideon fragt nach Malenia/Haligtree
-  function devGideonWahl(){ devEnsureRun(); medallionHalves = 2; devApply(); try{ oeffneHaligtreeWahl(); }catch(e){ alert("oeffneHaligtreeWahl() Fehler: "+e); } }
-  // Direkt in die Haligtree-Region (dort ist der Boss = Malenia)
-  function devMalenia(){ devEnsureRun(); medallionHalves = 2; devGoto("Haligtree"); }
-  function devBlaiddBelohnung(){ devEnsureRun(); devClosePopups(); try{ oeffneQuestRewardPopup(aktuelleEbene + 1); }catch(e){ alert(e); } }
-  function devHeal(){ devEnsureRun(); spielerHp = spielerMaxHp; spielerFlasks = maxKlassenFlasks; devApply(); }
-  // Schnelltest-Button: HP und Waffenschaden sofort auf 999 (Spieler wird quasi unsterblich + oneshottet Gegner)
-  function devGott(){ devEnsureRun(); spielerMaxHp = 999; spielerHp = 999; maxKlassenFlasks = Math.max(maxKlassenFlasks, 5); spielerFlasks = maxKlassenFlasks; waffenSchaden = 999; devApply(); }
-  function devRunen(){ devEnsureRun(); hatGodrickRune = hatRadahnRune = hatMorgottRune = true; devApply(); }
-  function devSetSeelen(){
-    var akt = 0; try{ akt = ladeMeta().seelen || 0; }catch(e){}
-    var eingabe = prompt("Seelen setzen (aktuell: " + akt + "):", akt);
-    if (eingabe === null) return;
-    var n = parseInt(eingabe, 10);
-    if (isNaN(n) || n < 0) { alert("Bitte eine gültige Zahl >= 0 eingeben."); return; }
-    try { var m = ladeMeta(); m.seelen = n; speichereMeta(m); }catch(e){ alert("Fehler: "+e); return; }
-    devRefresh();
-    alert("Seelen gesetzt auf " + n + ".\n(Sichtbar im Roundtable im Hauptmenü.)");
-  }
-
-  function b(label, fn, farbe){
-    const el = document.createElement("button");
-    el.textContent = label;
-    el.style.cssText = "font:600 11px sans-serif;cursor:pointer;padding:5px 8px;margin:2px;border-radius:5px;"
-      + "background:#1a1a1a;color:"+(farbe||"#ddd")+";border:1px solid "+(farbe||"#444")+";";
-    el.onclick = fn;
-    return el;
-  }
-  function sektion(titel){
-    const d = document.createElement("div");
-    d.style.cssText = "margin:8px 0 2px;font:700 9px sans-serif;letter-spacing:1px;text-transform:uppercase;color:#c9a24b;";
-    d.textContent = titel; return d;
-  }
-
-  let panel, statusZeile;
-  function bauePanel(){
-    panel = document.createElement("div");
-    panel.id = "dev-panel";
-    panel.style.cssText = "position:fixed;left:10px;bottom:10px;z-index:99999;width:270px;max-height:85vh;overflow:auto;"
-      + "background:rgba(12,12,14,0.96);border:1px solid #c9a24b;border-radius:8px;padding:10px 12px;"
-      + "box-shadow:0 4px 20px rgba(0,0,0,0.6);display:none;";
-
-    const kopf = document.createElement("div");
-    kopf.style.cssText = "font:700 12px 'Mantinia',serif;letter-spacing:2px;color:#c9a24b;display:flex;justify-content:space-between;align-items:center;";
-    kopf.innerHTML = "<span>⚙ DEV / TEST</span>";
-    const zu = b("✕", ()=>toggle(false), "#888"); zu.style.margin="0";
-    kopf.appendChild(zu);
-    panel.appendChild(kopf);
-
-    statusZeile = document.createElement("div");
-    statusZeile.style.cssText = "margin:6px 0;font:11px/1.5 sans-serif;color:#9fb; white-space:pre-wrap;";
-    panel.appendChild(statusZeile);
-
-    panel.appendChild(sektion("Malenia / Medaillons"));
-    panel.appendChild(b("🌸 Malenia-Kampf betreten", devMalenia, "#e05a8a"));
-    panel.appendChild(b("👁 Gideon→Malenia-Wahl testen", devGideonWahl, "#e05a8a"));
-    const medRow = document.createElement("div");
-    medRow.appendChild(b("Medaillons 0", ()=>devSetMedaillons(0)));
-    medRow.appendChild(b("1", ()=>devSetMedaillons(1)));
-    medRow.appendChild(b("2", ()=>devSetMedaillons(2), "#2ecc71"));
-    panel.appendChild(medRow);
-
-    panel.appendChild(sektion("Blaidd-Quest"));
-    const blRow = document.createElement("div");
-    [0,1,2,3,4].forEach(n=> blRow.appendChild(b("Blaidd "+n, ()=>devSetBlaidd(n))));
-    panel.appendChild(blRow);
-    panel.appendChild(b("🐺 Blaidd-Belohnung öffnen", devBlaiddBelohnung, "#3498db"));
-
-    panel.appendChild(sektion("Region springen"));
-    const regRow = document.createElement("div");
-    REGIONEN.forEach(r=> regRow.appendChild(b(r, ()=>devGoto(r))));
-    panel.appendChild(regRow);
-
-    panel.appendChild(sektion("Sonstiges"));
-    panel.appendChild(b("✨ Seelen setzen", devSetSeelen, "#cda34f"));
-    panel.appendChild(b("❤ Voll heilen + Flakons", devHeal, "#2ecc71"));
-    panel.appendChild(b("⚡ 999 HP + Schaden (Godmode)", devGott, "#f1c40f"));
-    panel.appendChild(b("🗝 Alle Story-Runen", devRunen));
-    panel.appendChild(b("🔄 Run neu starten", ()=>{ try{ direktNeustarten(); }catch(e){} devRefresh(); }, "#e67e22"));
-
-    const hint = document.createElement("div");
-    hint.style.cssText="margin-top:8px;font:9px sans-serif;color:#666;";
-    hint.textContent = "Taste ` zum Ein-/Ausblenden. Hardmode via ?mode=hard in der URL.";
-    panel.appendChild(hint);
-
-    document.body.appendChild(panel);
-  }
-
-  window.devRefresh = function(){
-    if(!statusZeile) return;
-    statusZeile.textContent =
-      "Region: " + (typeof aktuelleRegion!=="undefined"?aktuelleRegion:"-") + "  (Ebene " + (aktuelleEbene||"-") + ")\n"
-      + "Modus: " + (hardMode ? "HARD" : "Normal") + "   Klasse: " + (gewaehlteKlasse||"—") + "\n"
-      + "Medaillons: " + (medallionHalves||0) + "/2    Blaidd: " + (questProgress||0) + "/" + (hardMode?5:4) + "\n"
-      + "HP: " + Math.round(spielerHp||0) + "/" + Math.round(spielerMaxHp||0) + "   Flakons: " + (spielerFlasks||0) + "\n"
-      + "Seelen: " + (function(){ try{ return ladeMeta().seelen||0; }catch(e){ return "?"; } })() + "\n"
-      + "Runen: " + [hatGodrickRune&&"Godrick",hatRadahnRune&&"Radahn",hatMorgottRune&&"Morgott"].filter(Boolean).join(", ");
-  };
-
-  function toggle(on){
-    if(!panel) bauePanel();
-    const sichtbar = on !== undefined ? on : panel.style.display === "none";
-    panel.style.display = sichtbar ? "block" : "none";
-    if(sichtbar) devRefresh();
-  }
-
-  document.addEventListener("keydown", function(e){
-    // Backtick / ^  toggelt das Panel (nicht in Textfeldern)
-    if((e.key === "`" || e.key === "^" || e.code === "Backquote") && !/^(input|textarea)$/i.test((e.target.tagName||""))){
-      e.preventDefault(); toggle();
-    }
-  });
-
-  // Auto-Anzeige bei ?dev=1
-  try{ if(new URLSearchParams(location.search).get("dev")==="1"){ window.addEventListener("load", ()=>toggle(true)); } }catch(e){}
-})();
 </script>
 </body>
 </html>
