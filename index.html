@@ -4,25 +4,42 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Elden Rogue - Hauptmenü</title>
-  <link rel="icon" type="image/png" href="images/icons/flavicon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="images/icons/favicon-32.png?v=17">
+  <link rel="icon" type="image/png" sizes="64x64" href="images/icons/favicon.png?v=17">
+  <link rel="apple-touch-icon" href="images/icons/favicon.png?v=17">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&display=swap">
   
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-  <script src="lang.js?v=1.5"></script>
-  <script src="eldenrogue-online.js?v=1.5"></script>
+  <script src="lang.js?v=1.5.1"></script>
+  <script src="eldenrogue-online.js?v=1.5.1"></script>
   
   <style>
-    @font-face { font-family: 'Mantinia'; src: url('fonts/Mantinia Regular.otf') format('opentype'); font-weight: normal; font-style: normal; }
     :root { --gold: #cda34f; --gold-dark: #8c6d2d; --bg-dark: #0b0b0b; --border-color: #3a3224; --panel: #161616; }
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
+    html, body { height: 100%; }
     body {
       background-color: var(--bg-dark); color: #ede6d4; font-family: 'Georgia', serif;
-      min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
-      background-image: linear-gradient(to bottom, rgba(5,5,5,0.7), rgba(5,5,5,0.92) 60%, rgba(5,5,5,1)),
-                         url('images/background/limgrave.jpg');
-      background-size: cover; background-position: center top; background-attachment: fixed;
+      height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      overflow: hidden;
+    }
+
+    /* ===== Animierter Hintergrund (Ken-Burns + Scrim + Vignette + Glut) ===== */
+    .bg-layer { position: fixed; inset: -5%; z-index: -3; background-image: url('images/background/limgrave.jpg');
+      background-size: cover; background-position: center top; animation: kenburns 46s ease-in-out infinite alternate; will-change: transform; }
+    .bg-scrim { position: fixed; inset: 0; z-index: -2; pointer-events: none;
+      background: linear-gradient(to bottom, rgba(5,5,5,0.55), rgba(5,5,5,0.9) 62%, rgba(5,5,5,1)); }
+    .vignette { position: fixed; inset: 0; z-index: -1; pointer-events: none;
+      box-shadow: inset 0 0 240px 70px rgba(0,0,0,0.92); animation: vigPulse 9s ease-in-out infinite; }
+    #ember-canvas { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+    @keyframes kenburns { from { transform: scale(1.06) translateY(0); } to { transform: scale(1.18) translateY(-2.5%); } }
+    @keyframes vigPulse { 0%,100% { opacity: 0.82; } 50% { opacity: 1; } }
+    @media (prefers-reduced-motion: reduce) {
+      .bg-layer, .vignette { animation: none; }
     }
 
     /* ===== ABSOLUTER SPRACHSCHALTER OBEN RECHTS ===== */
@@ -56,17 +73,32 @@
     }
 
     /* ===== Header ===== */
-    .menu-wrap { width: 100%; max-width: 520px; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; }
+    .menu-wrap { position: relative; z-index: 2; width: 100%; max-width: 520px; display: flex; flex-direction: column; align-items: center; padding: 16px 20px; }
 
-    h1 { font-family: 'Mantinia', serif; color: var(--gold); font-size: 3.2rem; letter-spacing: 8px; text-transform: uppercase; text-align: center;
-         text-shadow: 0 0 40px rgba(205,163,79,0.3), 0 2px 4px rgba(0,0,0,0.8); }
-    .author-tag { font-family: 'Mantinia', serif; color: #777; font-size: 0.85rem; letter-spacing: 3px; text-transform: uppercase; margin-top: 4px; }
+    h1 { font-family: 'Cinzel', serif; color: var(--gold); font-size: clamp(1.7rem, 7.5vw, 3.2rem); letter-spacing: 0.16em; text-transform: uppercase; text-align: center; white-space: nowrap;
+         text-shadow: 0 0 40px rgba(205,163,79,0.3), 0 2px 4px rgba(0,0,0,0.8);
+         animation: titleIn 1.5s cubic-bezier(.19,1,.22,1) both, titleGlow 6s ease-in-out 1.6s infinite; }
+    @keyframes titleIn { from { opacity: 0; transform: translateY(22px); letter-spacing: 0.05em; filter: blur(8px); }
+                          to   { opacity: 1; transform: none; letter-spacing: 0.16em; filter: none; } }
+    @keyframes titleGlow { 0%,100% { text-shadow: 0 0 40px rgba(205,163,79,0.25), 0 2px 4px rgba(0,0,0,0.8); }
+                            50%     { text-shadow: 0 0 64px rgba(205,163,79,0.55), 0 2px 4px rgba(0,0,0,0.8); } }
+    .author-tag { font-family: 'Cinzel', serif; color: #bfa76a; font-size: 0.92rem; letter-spacing: 3px; text-transform: uppercase; margin-top: 6px; text-shadow: 0 1px 3px rgba(0,0,0,0.9); }
+
+    /* ===== Gestaffeltes Einblenden der Menü-Elemente ===== */
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+    .reveal { opacity: 0; animation: fadeUp .8s ease forwards; }
+    .reveal.d1 { animation-delay: .5s; } .reveal.d2 { animation-delay: .7s; }
+    .reveal.d3 { animation-delay: .9s; } .reveal.d4 { animation-delay: 1.1s; }
+    .reveal.d5 { animation-delay: 1.3s; } .reveal.d6 { animation-delay: 1.5s; }
+    @media (prefers-reduced-motion: reduce) {
+      h1 { animation: none; } .reveal { opacity: 1; animation: none; }
+    }
 
     /* ===== Spielprinzip ===== */
     .game-desc { text-align: center; color: #b5a98f; font-size: 0.88rem; line-height: 1.65; margin: 28px 0 36px; max-width: 420px; font-family: sans-serif; }
 
     /* ===== Buttons ===== */
-    .btn-main { display: block; width: 100%; max-width: 340px; padding: 16px; font-family: 'Mantinia', serif; font-weight: bold; font-size: 1.15rem; letter-spacing: 3px; cursor: pointer; border-radius: 4px; text-align: center; text-transform: uppercase; text-decoration: none; transition: all 0.2s ease; }
+    .btn-main { display: block; width: 100%; max-width: 340px; padding: 16px; font-family: 'Cinzel', serif; font-weight: bold; font-size: 1.15rem; letter-spacing: 3px; cursor: pointer; border-radius: 4px; text-align: center; text-transform: uppercase; text-decoration: none; transition: all 0.2s ease; }
     .btn-main + .btn-main { margin-top: 12px; }
 
     .btn-normal { background: #2c2214; color: var(--gold); border: 1px solid var(--gold); }
@@ -91,6 +123,18 @@
     .coming-soon-btn #btn-tower-label { filter: grayscale(1); opacity: 0.7; }
     .cs-badge { display:inline-block; margin-left:10px; padding:2px 9px; border:1px solid #e6a23c; border-radius:20px; background:rgba(230,162,60,0.16); color:#e6a23c; font-family:sans-serif; font-size:0.62rem; font-weight:bold; letter-spacing:1.5px; vertical-align:middle; }
 
+    /* ===== Grace-Motiv als Trenner über den Aktionen ===== */
+    .grace-divider { display: flex; align-items: center; gap: 14px; width: 100%; max-width: 340px; margin: 18px 0 16px; color: rgba(205,163,79,0.5); }
+    .grace-divider::before, .grace-divider::after { content: ""; flex: 1; height: 1px; background: linear-gradient(to right, transparent, rgba(205,163,79,0.45), transparent); }
+    .grace-divider img { width: 26px; height: 26px; opacity: 0.85; filter: drop-shadow(0 0 8px rgba(205,163,79,0.7)); animation: gracePulse 4s ease-in-out infinite; }
+    @keyframes gracePulse { 0%,100% { opacity: 0.7; transform: scale(1); } 50% { opacity: 1; transform: scale(1.12); } }
+
+    /* ===== Primärer Hero-CTA + Duo-Reihe (Hard / Tower) ===== */
+    .btn-hero { padding: 20px; font-size: 1.32rem; box-shadow: 0 0 0 1px rgba(205,163,79,0.22), 0 10px 34px rgba(0,0,0,0.55); }
+    .btn-duo { display: flex; gap: 12px; width: 100%; max-width: 340px; margin-top: 12px; align-items: stretch; }
+    .btn-duo > .btn-main { flex: 1; margin-top: 0 !important; max-width: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; line-height: 1.2; }
+    .btn-duo .cs-badge, .btn-duo .lock-badge { margin-left: 0; }
+
     .tower-guide-list { list-style: none; padding: 0; margin: 16px 0; text-align: left; }
     .tower-guide-list li { font-family: sans-serif; font-size: 0.86rem; color: #cdbfa3; line-height: 1.5; padding: 9px 0 9px 26px; border-bottom: 1px solid rgba(230,162,60,0.12); position: relative; }
     .tower-guide-list li:last-child { border-bottom: none; }
@@ -99,18 +143,18 @@
     @keyframes continuePulse { 0%,100% { box-shadow: 0 0 8px rgba(46,204,113,0.3); } 50% { box-shadow: 0 0 18px rgba(46,204,113,0.6); } }
     .challenge-card { background: #0f0f0f; border: 1px solid var(--border-color); border-radius: 6px; padding: 16px; display: flex; align-items: center; gap: 14px; margin-bottom: 10px; }
     .challenge-card .ch-icon { font-size: 2rem; width: 44px; text-align: center; flex-shrink: 0; }
-    .challenge-card .ch-name { font-family: 'Mantinia', serif; color: var(--gold); font-size: 1rem; letter-spacing: 1px; }
+    .challenge-card .ch-name { font-family: 'Cinzel', serif; color: var(--gold); font-size: 1rem; letter-spacing: 1px; }
     .challenge-card .ch-desc { font-size: 0.76rem; color: #b5a98f; font-family: sans-serif; margin-top: 2px; }
     .challenge-card .ch-btns { margin-left: auto; display: flex; gap: 6px; flex-shrink: 0; }
 
     .btn-row { display: flex; gap: 12px; margin-top: 22px; width: 100%; max-width: 340px; justify-content: center; }
-    .btn-secondary { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 10px; font-family: 'Mantinia', serif; font-size: 0.85rem; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; border-radius: 4px; transition: all 0.2s ease;
+    .btn-secondary { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 10px; font-family: 'Cinzel', serif; font-size: 0.85rem; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; border-radius: 4px; transition: all 0.2s ease;
       background: var(--panel); color: #b5a98f; border: 1px solid var(--border-color); }
-    .btn-secondary:hover { border-color: var(--gold); color: var(--gold); }
+    .btn-secondary:hover { border-color: var(--gold); color: var(--gold); transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,0.45), 0 0 14px rgba(205,163,79,0.18); }
     .btn-secondary .btn-icon { font-size: 1.1rem; }
 
     /* ===== Account Bar ===== */
-    .account-section { margin-top: 28px; width: 100%; max-width: 340px; }
+    .account-section { margin-top: 18px; width: 100%; max-width: 340px; }
     .account-bar { background: var(--panel); border: 1px solid var(--border-color); border-radius: 4px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
     .account-left { display: flex; align-items: center; gap: 10px; }
     .account-left img { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--gold-dark); }
@@ -124,8 +168,8 @@
     .name-input { background: #0e0e0e; border: 1px solid var(--border-color); color: #ede6d4; border-radius: 4px; padding: 7px 8px; font-family: sans-serif; font-size: 0.8rem; width: 120px; }
 
     /* ===== Social ===== */
-    .social-row { display: flex; gap: 12px; margin-top: 28px; width: 100%; max-width: 340px; }
-    .btn-social { flex: 1; padding: 10px; font-family: 'Mantinia', serif; font-weight: bold; font-size: 0.8rem; cursor: pointer; border-radius: 4px; text-decoration: none; text-align: center; text-transform: uppercase; letter-spacing: 1px; transition: all 0.2s ease; }
+    .social-row { display: flex; gap: 12px; margin-top: 16px; width: 100%; max-width: 340px; }
+    .btn-social { flex: 1; padding: 10px; font-family: 'Cinzel', serif; font-weight: bold; font-size: 0.8rem; cursor: pointer; border-radius: 4px; text-decoration: none; text-align: center; text-transform: uppercase; letter-spacing: 1px; transition: all 0.2s ease; }
     .btn-twitch { background: #6441a5; color: #fff; border: 1px solid #7d5bbe; }
     .btn-twitch:hover { background: #7d5bbe; box-shadow: 0 0 15px rgba(100,65,165,0.6); }
     .btn-discord { background: #5865F2; color: #fff; border: 1px solid #727efd; }
@@ -137,13 +181,13 @@
     .modal-box { background: var(--panel); border: 1px solid var(--gold); border-radius: 6px; padding: 28px; width: 100%; max-width: 700px; max-height: 85vh; overflow-y: auto; position: relative; box-shadow: 0 0 40px rgba(0,0,0,0.8); }
     .modal-close { position: absolute; top: 12px; right: 16px; background: none; border: none; color: #888; font-size: 1.6rem; cursor: pointer; line-height: 1; }
     .modal-close:hover { color: var(--gold); }
-    .modal-title { font-family: 'Mantinia', serif; color: var(--gold); font-size: 1.3rem; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 18px; text-align: center; }
+    .modal-title { font-family: 'Cinzel', serif; color: var(--gold); font-size: 1.3rem; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 18px; text-align: center; }
 
     /* ===== Bestenliste ===== */
     .lb-table { width: 100%; border-collapse: collapse; font-family: sans-serif; }
     .lb-table th { text-align: left; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: #888; padding: 8px 10px; border-bottom: 1px solid var(--border-color); }
     .lb-table td { padding: 10px; border-bottom: 1px solid #1d1a13; font-size: 0.92rem; }
-    .lb-rank { font-family: 'Mantinia', serif; color: var(--gold); width: 42px; }
+    .lb-rank { font-family: 'Cinzel', serif; color: var(--gold); width: 42px; }
     .lb-rank.gold { color: #ffd24a; } .lb-rank.silver { color: #cfd2d6; } .lb-rank.bronze { color: #cd7f32; }
     .lb-name { display: flex; align-items: center; gap: 8px; }
     .lb-name img { width: 24px; height: 24px; border-radius: 50%; }
@@ -157,7 +201,7 @@
     .muted { color: #888; font-family: sans-serif; font-size: 0.85rem; text-align: center; padding: 16px; }
     .hidden { display: none; }
     .mode-tabs { display: flex; justify-content: center; gap: 6px; margin: -8px 0 14px; }
-    .mode-tab { background: transparent; color: #888; border: 1px solid var(--border-color); padding: 6px 18px; font-family: 'Mantinia', serif; font-size: 0.8rem; letter-spacing: 1px; cursor: pointer; border-radius: 4px; transition: all 0.15s ease; }
+    .mode-tab { background: transparent; color: #888; border: 1px solid var(--border-color); padding: 6px 18px; font-family: 'Cinzel', serif; font-size: 0.8rem; letter-spacing: 1px; cursor: pointer; border-radius: 4px; transition: all 0.15s ease; }
     .mode-tab.active { background: var(--gold); color: #111; border-color: var(--gold); }
     .mode-tab:last-child.active { background: #e74c3c; border-color: #e74c3c; color: #fff; }
 
@@ -166,82 +210,263 @@
     .ach-card { display: flex; gap: 12px; align-items: center; background: #0f0f0f; border: 1px solid var(--border-color); border-radius: 6px; padding: 12px; }
     .ach-card.locked { opacity: 0.45; filter: grayscale(0.7); }
     .ach-card .ic { font-size: 2rem; width: 44px; text-align: center; flex-shrink: 0; }
-    .ach-card .nm { font-family: 'Mantinia', serif; color: var(--gold); font-size: 1rem; letter-spacing: 1px; }
+    .ach-card .nm { font-family: 'Cinzel', serif; color: var(--gold); font-size: 1rem; letter-spacing: 1px; }
     .ach-card .ds { font-size: 0.76rem; color: #b5a98f; font-family: sans-serif; margin-top: 2px; }
     .ach-progress { text-align: center; color: var(--gold); font-family: sans-serif; font-size: 0.85rem; margin-bottom: 16px; }
     .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
     .stat-box { background: #0f0f0f; border: 1px solid var(--border-color); border-radius: 6px; padding: 12px; text-align: center; }
-    .stat-box .v { font-family: 'Mantinia', serif; color: var(--gold); font-size: 1.5rem; }
+    .stat-box .v { font-family: 'Cinzel', serif; color: var(--gold); font-size: 1.5rem; }
     .stat-box .l { font-size: 0.68rem; color: #888; font-family: sans-serif; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 3px; }
 
     .modal-center-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100%; height: 100%; margin: 0; background: rgba(5,5,5,0.92); z-index: 600; display: none; justify-content: center; align-items: center; padding: 16px; box-sizing: border-box; }
     .modal-center-overlay.open { display: flex; }
     .email-box { background: var(--panel); border: 1px solid var(--gold); border-radius: 8px; padding: 28px 32px; width: 340px; text-align: center; }
 
+    /* ===== Linke Sidebar (auf-/zuklappbar) ===== */
+    .sidebar { position: fixed; top: 0; left: 0; height: 100vh; width: 58px; z-index: 900;
+      background: linear-gradient(to right, rgba(12,12,12,0.97), rgba(12,12,12,0.9)); border-right: 1px solid var(--border-color);
+      display: flex; flex-direction: column; gap: 6px; padding: 12px 9px; transition: width 0.25s ease; overflow: hidden; }
+    .sidebar.open { width: 220px; box-shadow: 6px 0 34px rgba(0,0,0,0.55); }
+    .sb-toggle { background: transparent; border: 1px solid var(--border-color); color: var(--gold); border-radius: 6px;
+      height: 40px; min-width: 40px; cursor: pointer; font-size: 1.15rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-bottom: 8px; transition: all 0.15s ease; }
+    .sb-toggle:hover { border-color: var(--gold); box-shadow: 0 0 12px rgba(205,163,79,0.25); }
+    .sb-item { background: transparent; border: 1px solid transparent; color: #b5a98f; border-radius: 6px; height: 44px; flex-shrink: 0;
+      display: flex; align-items: center; gap: 14px; padding: 0 9px; cursor: pointer; font-family: 'Cinzel', serif; font-size: 0.9rem; letter-spacing: 1px; white-space: nowrap; transition: all 0.15s ease; text-align: left; width: 100%; }
+    .sb-item .sb-ic { font-size: 1.25rem; min-width: 24px; text-align: center; flex-shrink: 0; }
+    .sb-item .sb-label { opacity: 0; transition: opacity 0.2s ease; }
+    .sidebar.open .sb-item .sb-label { opacity: 1; }
+    .sb-item:hover { background: #1c1710; border-color: var(--border-color); color: var(--gold); }
+    .sb-spacer { flex: 1; }
+    .sb-brand { font-family: 'Cinzel', serif; color: var(--gold-dark); font-size: 0.68rem; letter-spacing: 2px; text-align: center; opacity: 0; transition: opacity 0.2s; padding-bottom: 2px; white-space: nowrap; }
+    .sidebar.open .sb-brand { opacity: 0.7; }
+
+    /* ===== Hard-Mode-Sperre (eingerahmt statt nackt) ===== */
+    .btn-hard-locked { position: relative;
+      background: repeating-linear-gradient(45deg, #1c1313, #1c1313 10px, #201515 10px, #201515 20px);
+      color: #c07a72; border: 1px solid rgba(231,76,60,0.5); opacity: 0.92; cursor: not-allowed; font-size: 1rem; }
+    .btn-hard-locked:hover { background: repeating-linear-gradient(45deg, #211616, #211616 10px, #251818 10px, #251818 20px); box-shadow: none; transform: none; border-color: rgba(231,76,60,0.7); }
+    .lock-badge { display: inline-block; padding: 2px 10px; border: 1px solid rgba(231,76,60,0.6); border-radius: 20px;
+      background: rgba(231,76,60,0.15); color: #e07b70; font-family: sans-serif; font-size: 0.58rem; font-weight: bold; letter-spacing: 1.5px; }
+
+    /* ===== Disclaimer-Fußzeile ===== */
+    .disclaimer { position: fixed; bottom: 10px; left: 66px; right: 12px; text-align: center; font-family: sans-serif;
+      font-size: 0.8rem; color: #9c917a; letter-spacing: 0.3px; line-height: 1.55; z-index: 400; pointer-events: none; }
+    .disclaimer b { color: var(--gold); font-weight: bold; }
+    .disclaimer .disc-copy { font-size: 0.66rem; color: #6b6455; }
+
+    /* ===== Toast-Hinweis (statt hässlichem alert) ===== */
+    .er-toast { position: fixed; left: 50%; bottom: 46px; transform: translateX(-50%) translateY(18px); z-index: 1200;
+      background: linear-gradient(180deg, rgba(22,18,10,0.98), rgba(12,10,6,0.98)); border: 1px solid var(--gold-dark);
+      color: #ede6d4; font-family: 'Georgia', serif; font-size: 0.95rem; line-height: 1.4; padding: 13px 22px; border-radius: 6px;
+      box-shadow: 0 10px 34px rgba(0,0,0,0.65), 0 0 24px rgba(205,163,79,0.14); max-width: 88vw; text-align: left;
+      display: flex; align-items: center; gap: 12px; opacity: 0; pointer-events: none;
+      transition: opacity .3s ease, transform .3s ease; }
+    .er-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .er-toast .toast-ic { font-size: 1.35rem; flex-shrink: 0; }
+
+    /* ===== Settings-Panel ===== */
+    .set-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 4px; border-bottom: 1px solid #1d1a13; }
+    .set-row:last-child { border-bottom: none; }
+    .set-label { font-family: 'Cinzel', serif; color: var(--gold); font-size: 0.95rem; letter-spacing: 1px; }
+    .set-sub { font-size: 0.72rem; color: #888; font-family: sans-serif; margin-top: 2px; }
+    .set-lang { display: flex; gap: 6px; }
+    .set-lang .btn-lang { border: 1px solid var(--border-color); }
+    .info-lead { font-family: sans-serif; color: #cdbfa3; font-size: 0.9rem; line-height: 1.6; text-align: center; margin-bottom: 6px; }
+
+    /* ===== Hall of Fame ===== */
+    .hof-empty { color: #888; font-family: sans-serif; text-align: center; padding: 26px 10px; line-height: 1.6; }
+    .hof-group-head { font-family: 'Cinzel', serif; color: var(--gold); font-size: 0.95rem; letter-spacing: 2px; text-transform: uppercase; margin: 16px 0 10px; padding-bottom: 5px; border-bottom: 1px solid var(--border-color); }
+    .hof-group-head:first-child { margin-top: 4px; }
+    .hof-group-head span { color: #888; font-size: 0.78rem; letter-spacing: 1px; }
+    .hof-card { background: #0f0f0f; border: 1px solid var(--border-color); border-radius: 8px; padding: 12px 14px; margin-bottom: 10px; }
+    .hof-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+    .hof-badge { font-family: sans-serif; font-size: 0.6rem; font-weight: bold; letter-spacing: 1px; padding: 2px 9px; border-radius: 20px; text-transform: uppercase; }
+    .hof-badge.normal { color: var(--gold); border: 1px solid var(--gold-dark); background: rgba(205,163,79,0.12); }
+    .hof-badge.hard { color: #e74c3c; border: 1px solid #e74c3c; background: rgba(231,76,60,0.12); }
+    .hof-badge.ch { color: #9b8cff; border: 1px solid #6f5fd6; background: rgba(111,95,214,0.14); }
+    .hof-time { font-family: 'Cinzel', serif; color: var(--gold); font-size: 1.02rem; letter-spacing: 1px; }
+    .hof-date { margin-left: auto; font-family: sans-serif; font-size: 0.7rem; color: #888; }
+    .hof-gear { display: flex; gap: 10px; }
+    .hof-slot { display: flex; align-items: center; gap: 8px; background: #141414; border: 1px solid var(--border-color); border-radius: 6px; padding: 6px 10px; flex: 1; min-width: 0; }
+    .hof-slot img { width: 34px; height: 34px; object-fit: contain; flex-shrink: 0; }
+    .hof-slot .nm { font-family: sans-serif; font-size: 0.78rem; color: #ede6d4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .hof-slot .sub { font-family: sans-serif; font-size: 0.66rem; color: #8f8f80; }
+    .hof-stats { display: flex; gap: 16px; font-family: sans-serif; font-size: 0.74rem; color: #b5a98f; margin-top: 9px; flex-wrap: wrap; }
+    .hof-stats b { color: var(--gold); }
+    @media (max-width: 540px) { .hof-gear { flex-direction: column; } }
+
+    /* ===== Eldendex "Buch" ===== */
+    #dex-pagehead { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 6px 0 12px; text-align: center; }
+    .dex-chapter { font-family: 'Cinzel', serif; font-size: 1.15rem; letter-spacing: 2px; text-transform: uppercase; }
+    .dex-chapter .cnt { font-family: sans-serif; font-size: 0.72rem; color: #888; letter-spacing: 1px; margin-left: 8px; text-transform: none; }
+    .dex-page-panel { background: linear-gradient(180deg, rgba(32,27,17,0.4), rgba(14,12,8,0.4)); border: 1px solid var(--border-color); border-radius: 8px; padding: 14px; box-shadow: inset 0 0 40px rgba(0,0,0,0.4); height: 320px; overflow-y: auto; }
+
+    /* ===== Scrollbars im Elden-Rogue-Stil ===== */
+    .modal-box, .dex-page-panel, .lb-cat-tabs, #dex-tabs, .modal-bg { scrollbar-width: thin; scrollbar-color: var(--gold-dark) #0d0d0d; }
+    .modal-box::-webkit-scrollbar, .dex-page-panel::-webkit-scrollbar, .modal-bg::-webkit-scrollbar { width: 11px; height: 11px; }
+    .modal-box::-webkit-scrollbar-track, .dex-page-panel::-webkit-scrollbar-track, .modal-bg::-webkit-scrollbar-track { background: #0c0b09; border-radius: 8px; border: 1px solid #1c1710; }
+    .modal-box::-webkit-scrollbar-thumb, .dex-page-panel::-webkit-scrollbar-thumb, .modal-bg::-webkit-scrollbar-thumb { background: linear-gradient(180deg, var(--gold-dark), #5c4519); border: 1px solid #2a2013; border-radius: 8px; }
+    .modal-box::-webkit-scrollbar-thumb:hover, .dex-page-panel::-webkit-scrollbar-thumb:hover, .modal-bg::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, var(--gold), var(--gold-dark)); }
+    .modal-box::-webkit-scrollbar-corner, .dex-page-panel::-webkit-scrollbar-corner { background: #0c0b09; }
+    @media (max-width: 540px) { .dex-page-panel { height: 300px; } }
+    #dex-pagenav { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 16px; }
+    .dex-arrow { background: #1a1510; border: 1px solid var(--gold-dark); color: var(--gold); width: 40px; height: 40px; border-radius: 50%; font-size: 1.35rem; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s ease; }
+    .dex-arrow:hover:not(:disabled) { border-color: var(--gold); box-shadow: 0 0 12px rgba(205,163,79,0.3); transform: scale(1.06); }
+    .dex-arrow:disabled { opacity: 0.28; cursor: default; }
+    .dex-dots { display: flex; gap: 9px; align-items: center; }
+    .dex-dot { width: 11px; height: 11px; border-radius: 50%; border: 1px solid #555; cursor: pointer; padding: 0; background: transparent; transition: transform 0.15s ease; }
+    .dex-dot.active { transform: scale(1.3); }
+    .dex-cell { background: #0f0f0f; border-radius: 6px; padding: 8px 6px; text-align: center; border: 1px solid #222; }
+    .dex-cell img { width: 100%; height: 70px; object-fit: contain; }
+    .dex-cell .dex-nm { font-size: 0.7rem; margin-top: 6px; font-family: sans-serif; line-height: 1.2; min-height: 26px; }
+    .dex-cell .dex-sub { font-size: 0.66rem; color: #9aa0a6; font-family: sans-serif; }
+
     @media (max-width: 540px) {
-      h1 { font-size: 2.4rem; letter-spacing: 5px; margin-top: 32px; }
+      h1 { margin-top: 8px; }
       .ach-grid { grid-template-columns: 1fr; }
       .stat-grid { grid-template-columns: repeat(2, 1fr); }
+      .btn-row { flex-wrap: wrap; }
+      .btn-row .btn-secondary { flex: 1 1 42%; }
+      .disclaimer { left: 12px; }
+      body { overflow-y: auto; }
     }
   </style>
 </head>
 <body>
 
-<button id="btn-info" onclick="openModal('patchnotes')" title="Patch Notes" aria-label="Patch Notes" style="position:absolute;top:16px;left:16px;z-index:1000;padding:7px 13px;border-radius:20px;background:#0e0e0e;border:1px solid var(--gold-dark);color:var(--gold);font-family:sans-serif;font-size:0.68rem;font-weight:bold;letter-spacing:1.5px;cursor:pointer;transition:all 0.15s ease;" onmouseover="this.style.borderColor='var(--gold)';this.style.boxShadow='0 0 10px rgba(205,163,79,0.4)';this.style.transform='scale(1.05)';" onmouseout="this.style.borderColor='var(--gold-dark)';this.style.boxShadow='none';this.style.transform='scale(1)';">📜 PATCH NOTES</button>
-<div class="global-lang-switcher">
-  <button class="btn-lang" id="btn-lang-de" onclick="window.i18n.setLang('de')">DE</button>
-  <button class="btn-lang" id="btn-lang-en" onclick="window.i18n.setLang('en')">EN</button>
-</div>
+<div class="bg-layer"></div>
+<div class="bg-scrim"></div>
+<div class="vignette"></div>
+<canvas id="ember-canvas" aria-hidden="true"></canvas>
+
+<nav class="sidebar" id="sidebar" aria-label="Menü">
+  <button class="sb-toggle" id="sb-toggle" onclick="toggleSidebar()" aria-label="Menü auf-/zuklappen" title="Menü">☰</button>
+  <button class="sb-item" onclick="openModal('info')"><span class="sb-ic">ℹ️</span><span class="sb-label" id="sb-info-label">Info</span></button>
+  <button class="sb-item" onclick="openModal('settings')"><span class="sb-ic">⚙️</span><span class="sb-label" id="sb-settings-label">Einstellungen</span></button>
+  <button class="sb-item" onclick="openModal('halloffame')"><span class="sb-ic">👑</span><span class="sb-label" id="sb-hof-label">Hall of Fame</span></button>
+  <button class="sb-item" onclick="openModal('achievements')"><span class="sb-ic">⭐</span><span class="sb-label" id="btn-ach-text">Achievements</span></button>
+  <button class="sb-item" onclick="openModal('eldendex')"><span class="sb-ic">📖</span><span class="sb-label" id="btn-dex-text">Eldendex</span></button>
+  <button class="sb-item" onclick="openModal('patchnotes')"><span class="sb-ic">📜</span><span class="sb-label" id="sb-patch-label">Patch Notes</span></button>
+  <div class="sb-spacer"></div>
+  <div class="sb-brand">ELDEN ROGUE</div>
+</nav>
+
 
 <div class="menu-wrap">
   <h1>Elden Rogue</h1>
   <div class="author-tag" id="main-author-tag">by Hoschi</div>
 
-  <div class="game-desc" id="desc-text">
-    Ein Elden-Ring-Roguelike: Wähle deinen Pfad über eine verzweigte Karte, 
-    besiege Feinde und Bosse, sammle Waffen, Rüstungen und Talismane – 
-    und kämpfe dich durch die Zwischenlande bis zum Eldenthron. 
-    Jeder Run ist zufällig, jeder Tod endgültig.
-  </div>
-
-  <a href="game.html" class="btn-main btn-normal" id="btn-normal" onclick="return checkOverwrite('game.html')">Normaler Modus</a>
-  <a href="game.html?mode=hard" class="btn-main btn-hard-active" id="btn-hard" onclick="return checkOverwrite('game.html?mode=hard')">Hard Mode</a>
-
-  <button class="btn-main btn-tower coming-soon-btn" id="btn-tower" disabled aria-disabled="true"><span id="btn-tower-label">🏯 Battle Tower</span><span class="cs-badge">COMING SOON</span></button>
+  <div class="grace-divider reveal d1"><img src="images/icons/icon_grace.png" alt=""></div>
 
   <a href="game.html?resume=true" class="btn-main btn-continue" id="btn-continue" style="display:none;">▶ Run fortsetzen</a>
+  <a href="game.html" class="btn-main btn-normal btn-hero reveal d2" id="btn-normal" onclick="return checkOverwrite('game.html')">Normaler Modus</a>
 
-  <div class="btn-row">
+  <div class="btn-duo reveal d3">
+    <a href="game.html?mode=hard" class="btn-main btn-hard-active" id="btn-hard" onclick="return checkOverwrite('game.html?mode=hard')">Hard Mode</a>
+    <button class="btn-main btn-tower coming-soon-btn" id="btn-tower" disabled aria-disabled="true"><span id="btn-tower-label">🏯 Battle Tower</span><span class="cs-badge">COMING SOON</span></button>
+  </div>
+
+  <div class="btn-row reveal d4">
     <button class="btn-secondary" onclick="openModal('seelenschmiede')">
       <span class="btn-icon">⚜️</span> <span id="btn-shop-text">Roundtable</span><span id="btn-shop-souls" style="color:#cda34f;font-weight:bold;"></span>
     </button>
     <button class="btn-secondary" onclick="openModal('bestenliste')">
       <span class="btn-icon">🏆</span> <span id="btn-lb-text">Bestenliste</span>
     </button>
-    <button class="btn-secondary" onclick="openModal('achievements')">
-      <span class="btn-icon">⭐</span> <span id="btn-ach-text">Achievements</span>
-    </button>
     <button class="btn-secondary" onclick="openModal('challenges')">
       <span class="btn-icon">🏴</span> <span id="btn-ch-text">Challenges</span>
     </button>
-    <button class="btn-secondary" onclick="openModal('eldendex')">
-      <span class="btn-icon">📖</span> <span id="btn-dex-text">Eldendex</span>
-    </button>
   </div>
 
-  <div class="account-section">
+  <div class="account-section reveal d5">
     <div class="account-bar" id="account-bar">
       <div class="account-left" id="account-left"><div><div class="account-name">Lade…</div></div></div>
       <div id="account-right"></div>
     </div>
   </div>
 
-  <div class="social-row">
+  <div class="social-row reveal d6">
     <a href="https://www.twitch.tv/officialhoschi" target="_blank" class="btn-social btn-twitch">🎥 Twitch</a>
     <a href="https://discord.gg/mUSzTDw8Ns" target="_blank" class="btn-social btn-discord">💬 Discord</a>
   </div>
 
 <div id="cam-hint-box" style="position:fixed;bottom:14px;right:14px;z-index:500;width:172px;height:130px;background:rgba(8,8,8,0.4);border:1px dashed rgba(205,163,79,0.5);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:rgba(232,222,192,0.82);font-family:sans-serif;font-size:0.82rem;line-height:1.4;padding:8px;pointer-events:none;user-select:none;box-shadow:0 2px 12px rgba(0,0,0,0.4);">🎥<br><b>Streamer?</b><br>Kamera hier hin!</div>
+
+<div class="disclaimer" id="disclaimer">
+  Für das beste Erlebnis – Cloud-Speicher &amp; Online-Bestenliste – bitte <b>anmelden</b>.<br>
+  <span class="disc-copy">Nicht-kommerzielles Fan-Projekt · Elden Ring &amp; die Lore gehören FromSoftware &amp; Bandai Namco.</span>
+</div>
+
+<div class="modal-bg" id="modal-info">
+  <div class="modal-box" style="max-width:540px;">
+    <button class="modal-close" onclick="closeModals()">&times;</button>
+    <div class="modal-title" id="info-title">So funktioniert's</div>
+    <p class="info-lead" id="info-desc"></p>
+    <ul class="tower-guide-list" id="info-list">
+      <li id="info-l1"><b>Modus wählen:</b> Starte einen <b>Normalen</b> Run. Den <b>Hard Mode</b> schaltest du frei, sobald du einmal durchgespielt hast.</li>
+      <li id="info-l2"><b>Run fortsetzen:</b> Ein laufender Run wird gespeichert und erscheint oben als grüner Button.</li>
+      <li id="info-l3"><b>Karte:</b> Wähle deinen Pfad über ein verzweigtes Netz – jeder Knoten ist ein anderes Event.</li>
+      <li id="info-l4"><b>Roundtable:</b> Gib gesammelte Seelen für dauerhafte Upgrades aus.</li>
+      <li id="info-l5"><b>Sammeln &amp; Steigern:</b> Achievements und den Eldendex findest du links im Menü.</li>
+    </ul>
+    <button class="btn-mini" onclick="closeModals()" style="display:block; margin:14px auto 0;">Verstanden</button>
+  </div>
+</div>
+
+<div class="modal-bg" id="modal-settings">
+  <div class="modal-box" style="max-width:460px;">
+    <button class="modal-close" onclick="closeModals()">&times;</button>
+    <div class="modal-title" id="settings-title">⚙️ Einstellungen</div>
+    <div class="set-row">
+      <div>
+        <div class="set-label" id="set-lang-label">Sprache</div>
+        <div class="set-sub" id="set-lang-sub">Language</div>
+      </div>
+      <div class="set-lang">
+        <button class="btn-lang" id="set-lang-de" onclick="window.i18n.setLang('de')">DE</button>
+        <button class="btn-lang" id="set-lang-en" onclick="window.i18n.setLang('en')">EN</button>
+      </div>
+    </div>
+    <div class="set-row">
+      <div>
+        <div class="set-label" id="set-sound-label">Sound</div>
+        <div class="set-sub" id="set-sound-sub">UI-Klänge an/aus</div>
+      </div>
+      <button class="btn-mini" id="set-sound-btn" onclick="toggleSound()" style="min-width:64px;">🔊 An</button>
+    </div>
+    <div class="set-row">
+      <div>
+        <div class="set-label" id="set-vol-label">Lautstärke</div>
+        <div class="set-sub" id="set-vol-sub">SFX-Volume</div>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <input type="range" id="set-vol" min="0" max="100" value="60" step="1" oninput="setSoundVol(this.value)" onchange="previewSound()" style="width:120px; accent-color:var(--gold); cursor:pointer;">
+        <span id="set-vol-val" style="font-family:sans-serif; font-size:0.8rem; color:var(--gold); min-width:38px; text-align:right;">60%</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modal-confirm">
+  <div class="modal-box" style="max-width:440px;">
+    <div class="modal-title" id="confirm-title" style="color:#e6a23c;">⚠️ Neuen Run starten?</div>
+    <p class="info-lead" id="confirm-msg" style="margin:8px 0 4px;">Du hast einen gespeicherten Run. Ein neues Spiel überschreibt ihn.</p>
+    <div style="display:flex; gap:12px; margin-top:20px;">
+      <button class="btn-mini" id="confirm-cancel" onclick="closeModals()" style="flex:1; padding:12px;">Abbrechen</button>
+      <button class="btn-mini" id="confirm-ok" style="flex:1; padding:12px; background:#2c2214; border-color:var(--gold); color:var(--gold); font-weight:bold;">Überschreiben &amp; starten</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modal-halloffame">
+  <div class="modal-box" style="max-width:640px;">
+    <button class="modal-close" onclick="closeModals()">&times;</button>
+    <div class="modal-title" id="hof-title">👑 Hall of Fame</div>
+    <div class="ach-progress" id="hof-sub"></div>
+    <div class="lb-tabs" id="hof-tabs"></div>
+    <div id="hof-list"></div>
+  </div>
+</div>
 
 <div class="modal-bg" id="modal-tower-guide">
   <div class="modal-box" style="max-width:520px;">
@@ -309,7 +534,7 @@
     <button class="modal-close" onclick="closeModals()">&times;</button>
     <div class="modal-title" id="lb-title">Bestenliste</div>
     <div style="display:flex; justify-content:flex-end; margin:-4px 0 8px;">
-      <select id="lb-patch" onchange="ladeBestenliste()" style="background:#111; color:var(--gold); border:1px solid var(--gold-dark); padding:3px 10px; font-family:'Mantinia',serif; font-size:0.7rem; letter-spacing:1px; border-radius:3px; cursor:pointer;"><option value="1.5" selected>PATCH v1.5</option><option value="1.4">PATCH v1.4</option><option value="1.3">PATCH v1.3</option></select>
+      <select id="lb-patch" onchange="ladeBestenliste()" style="background:#111; color:var(--gold); border:1px solid var(--gold-dark); padding:3px 10px; font-family:'Cinzel',serif; font-size:0.7rem; letter-spacing:1px; border-radius:3px; cursor:pointer;"><option value="1.5" selected>PATCH v1.5</option><option value="1.4">PATCH v1.4</option><option value="1.3">PATCH v1.3</option></select>
     </div>
     <div id="lb-cat-tabs" class="lb-tabs"></div>
     <div id="lb-status" class="muted">Lade Bestenliste…</div>
@@ -345,7 +570,11 @@
     <div class="modal-title" id="dex-title">Eldendex</div>
     <div class="ach-progress" id="dex-progress"></div>
     <div id="dex-tabs" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:14px;"></div>
-    <div id="dex-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:10px;"></div>
+    <div id="dex-pagehead"></div>
+    <div class="dex-page-panel">
+      <div id="dex-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:10px;"></div>
+    </div>
+    <div id="dex-pagenav"></div>
   </div>
 </div>
 
@@ -378,10 +607,11 @@
     document.getElementById("th-score").innerText = t("lb_th_score");
 
     // Hardcoded Fallbacks für die neuen Texte im neuen Layout
-    document.getElementById("desc-text").innerText = lang === 'en' 
-      ? "An Elden Ring Roguelike: Choose your path across a branching map, defeat enemies and bosses, collect weapons, armor, and talismans – and fight your way through the Lands Between to the Elden Throne. Every run is random, every death is final." 
+    var infoDesc = document.getElementById("info-desc");
+    if (infoDesc) infoDesc.innerText = lang === 'en'
+      ? "An Elden Ring Roguelike: Choose your path across a branching map, defeat enemies and bosses, collect weapons, armor, and talismans – and fight your way through the Lands Between to the Elden Throne. Every run is random, every death is final."
       : "Ein Elden-Ring-Roguelike: Wähle deinen Pfad über eine verzweigte Karte, besiege Feinde und Bosse, sammle Waffen, Rüstungen und Talismane – und kämpfe dich durch die Zwischenlande bis zum Eldenthron. Jeder Run ist zufällig, jeder Tod endgültig.";
-    
+
     document.getElementById("btn-hard").innerText = lang === 'en' ? "Hard Mode" : "Schwerer Modus";
     // Bestenlisten-Kategorien (Dropdown) in aktueller Sprache füllen
     fuelleLbKategorien(t);
@@ -452,6 +682,7 @@
     if (document.getElementById("modal-achievements").classList.contains("open")) ladeAchievements();
     if (document.getElementById("modal-eldendex").classList.contains("open")) ladeEldendex();
     if (document.getElementById("modal-patchnotes").classList.contains("open")) ladePatchNotes();
+    if (document.getElementById("modal-halloffame").classList.contains("open")) ladeHallOfFame();
   });
 
   /* ===== Modal Handling ===== */
@@ -500,6 +731,98 @@
     if (name === "eldendex") ladeEldendex();
     if (name === "patchnotes") ladePatchNotes();
     if (name === "seelenschmiede") renderShop();
+    if (name === "halloffame") ladeHallOfFame();
+  }
+
+  function fmtRunTimeMenu(ms) {
+    var s = Math.floor((ms || 0) / 1000), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), ss = s % 60;
+    var mm = (h > 0) ? String(m).padStart(2, "0") : String(m);
+    return (h > 0 ? h + ":" : "") + mm + ":" + String(ss).padStart(2, "0");
+  }
+  var _hofFilter = "all";
+  var HOF_CATS = ["normal", "hard", "tower", "noarmor", "noblaidd", "autobattle", "haligtree"];
+  function hofMode(e) { return (e.challenge || e.difficulty || "normal"); }
+  function hofCatLabel(cat, en) {
+    var m = { normal: "Normal", hard: "Hard", tower: "Battle Tower", noarmor: "No Armor", noblaidd: "No Blaidd", autobattle: "Auto-Battle", haligtree: "Haligtree" };
+    return m[cat] || cat;
+  }
+  function setHofFilter(f) { _hofFilter = f; ladeHallOfFame(); }
+  window.setHofFilter = setHofFilter;
+  function hofCard(e, en, klasseName, chNames) {
+    var diff = (e.difficulty === "hard") ? "hard" : "normal";
+    var chBadge = e.challenge ? '<span class="hof-badge ch">' + (chNames[e.challenge] || e.challenge) + '</span>' : '';
+    var d = new Date(e.ts || 0);
+    var dateStr = isNaN(d.getTime()) ? "" : d.toLocaleDateString(en ? "en-US" : "de-DE");
+    var w = e.weapon || {}, a = e.armor;
+    var wImg = w.img ? '<img src="' + w.img + '" onerror="this.style.display=\'none\'">' : '';
+    var wSlot = '<div class="hof-slot">' + wImg + '<div style="min-width:0;"><div class="nm">' + (w.name || "—") + '</div><div class="sub">+' + (w.upgrade || 0) + ' · ' + (w.rarity || "") + '</div></div></div>';
+    var aSlot;
+    if (a) {
+      var aImg = a.img ? '<img src="' + a.img + '" onerror="this.style.display=\'none\'">' : '';
+      aSlot = '<div class="hof-slot">' + aImg + '<div style="min-width:0;"><div class="nm">' + (a.name || "") + '</div><div class="sub">' + (a.rarity || "") + '</div></div></div>';
+    } else {
+      aSlot = '<div class="hof-slot"><div class="sub">' + (en ? "No armor" : "Keine Rüstung") + '</div></div>';
+    }
+    return '<div class="hof-card"><div class="hof-top">'
+      + '<span class="hof-badge ' + diff + '">' + (diff === "hard" ? "HARD" : "NORMAL") + '</span>' + chBadge
+      + '<span class="hof-time">⏱ ' + fmtRunTimeMenu(e.timeMs) + '</span>'
+      + '<span class="hof-date">' + dateStr + '</span></div>'
+      + '<div class="hof-gear">' + wSlot + aSlot + '</div>'
+      + '<div class="hof-stats"><span>' + (en ? "Class" : "Klasse") + ': <b>' + (klasseName[e.klasse] || e.klasse || "—") + '</b></span>'
+      + '<span>' + (en ? "Score" : "Wertung") + ': <b>' + (e.score || 0).toLocaleString(en ? "en-US" : "de-DE") + '</b></span>'
+      + '<span>' + (en ? "Bosses" : "Bosse") + ': <b>' + (e.bosses || 0) + '</b></span>'
+      + '<span>' + (en ? "Fights" : "Kämpfe") + ': <b>' + (e.fights || 0) + '</b></span></div></div>';
+  }
+  function ladeHallOfFame() {
+    var en = (typeof _menuIsEn === "function") ? _menuIsEn() : false;
+    var list = [];
+    try { list = JSON.parse(localStorage.getItem("eldenRogueHallOfFame")) || []; } catch (e) {}
+    list.sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); }); // neueste zuerst
+    var wrap = document.getElementById("hof-list");
+    var sub = document.getElementById("hof-sub");
+    var tabsEl = document.getElementById("hof-tabs");
+    if (!wrap) return;
+    if (!list.length) {
+      if (sub) sub.textContent = "";
+      if (tabsEl) tabsEl.innerHTML = "";
+      wrap.innerHTML = '<div class="hof-empty">' + (en
+        ? "No completed runs yet.<br>Beat the Elden Beast to enter the Hall of Fame."
+        : "Noch keine abgeschlossenen Runs.<br>Bezwinge das Eldenbiest, um in die Hall of Fame einzuziehen.") + '</div>';
+      return;
+    }
+    if (sub) sub.textContent = (en ? "Completed runs: " : "Abgeschlossene Runs: ") + list.length;
+    var klasseName = { schwertkaempfer: (en ? "Swordsman" : "Schwertkämpfer"), samurai: "Samurai", nackt: (en ? "Wretch" : "Bettler") };
+    var chNames = { noarmor: "No Armor", noblaidd: "No Blaidd", autobattle: "Auto-Battle", tower: "Battle Tower", haligtree: "Haligtree" };
+
+    // vorhandene Modi (in fester Reihenfolge) ermitteln
+    var counts = {};
+    list.forEach(function (e) { var m = hofMode(e); counts[m] = (counts[m] || 0) + 1; });
+    var present = HOF_CATS.filter(function (c) { return counts[c]; });
+    // extra Modi, die nicht in HOF_CATS stehen, hinten anhängen
+    Object.keys(counts).forEach(function (c) { if (present.indexOf(c) === -1) present.push(c); });
+    if (_hofFilter !== "all" && !counts[_hofFilter]) _hofFilter = "all";
+
+    // Tabs bauen
+    if (tabsEl) {
+      var tabs = '<button class="lb-pill' + (_hofFilter === "all" ? " active" : "") + '" onclick="setHofFilter(\'all\')">' + (en ? "All" : "Alle") + ' (' + list.length + ')</button>';
+      tabs += present.map(function (c) {
+        return '<button class="lb-pill' + (_hofFilter === c ? " active" : "") + '" onclick="setHofFilter(\'' + c + '\')">' + hofCatLabel(c, en) + ' (' + counts[c] + ')</button>';
+      }).join("");
+      tabsEl.innerHTML = tabs;
+    }
+
+    // Inhalt rendern
+    if (_hofFilter === "all") {
+      // alles anzeigen, gruppiert nach Modus mit Zwischenüberschrift
+      wrap.innerHTML = present.map(function (c) {
+        var group = list.filter(function (e) { return hofMode(e) === c; });
+        var head = '<div class="hof-group-head">' + hofCatLabel(c, en) + ' <span>· ' + group.length + '</span></div>';
+        return head + group.map(function (e) { return hofCard(e, en, klasseName, chNames); }).join("");
+      }).join("");
+    } else {
+      var filtered = list.filter(function (e) { return hofMode(e) === _hofFilter; });
+      wrap.innerHTML = filtered.map(function (e) { return hofCard(e, en, klasseName, chNames); }).join("");
+    }
   }
 
   function ladePatchNotes() {
@@ -507,32 +830,75 @@
     if (!body) return;
     function sec(icon, title, items) {
       return '<div style="margin-bottom:15px;">'
-        + '<div style="color:var(--gold);font-family:\'Mantinia\',serif;font-size:1.02rem;letter-spacing:1px;margin-bottom:5px;">' + icon + ' ' + title + '</div>'
+        + '<div style="color:var(--gold);font-family:\'Cinzel\',serif;font-size:1.02rem;letter-spacing:1px;margin-bottom:5px;">' + icon + ' ' + title + '</div>'
         + '<ul style="margin:0;padding-left:18px;color:#cabf9f;font-family:sans-serif;font-size:0.84rem;line-height:1.5;">'
         + items.map(function (i) { return '<li style="margin-bottom:4px;">' + i + '</li>'; }).join('')
         + '</ul></div>';
     }
-    var html = '<div style="text-align:center;margin:2px 0 16px;">'
-      + '<div style="font-size:0.68rem;letter-spacing:3px;color:#8c6d2d;text-transform:uppercase;font-family:sans-serif;">' + shopL("Aktuelle Version", "Current Version") + '</div>'
-      + '<div style="color:var(--gold);font-family:\'Mantinia\',serif;font-size:1.5rem;letter-spacing:2px;">Patch 1.5</div></div>';
-    html += sec("🆕", shopL("Neu", "New"), [
-      shopL("<b>Roundtable-Truhen (Gacha):</b> Öffne Waffen- & Rüstungstruhen für Seelen und schalte neues Equipment frei. Duplikate erstatten die Hälfte zurück.", "<b>Roundtable chests (gacha):</b> Open weapon & armor chests for souls and unlock new gear. Duplicates refund half."),
-      shopL("<b>Pech-Schutz:</b> Nach mehreren Duplikaten in Folge ist die nächste Truhe garantiert ein neues Item – mit Fortschrittsleiste an jeder Truhe.", "<b>Pity system:</b> After several duplicates in a row, the next chest is a guaranteed new item — shown by a progress bar on each chest."),
-      shopL("<b>Eldendex:</b> Ein Kompendium für Waffen, Rüstungen, Gegner & Bosse.", "<b>Eldendex:</b> A compendium of weapons, armor, enemies & bosses."),
-      shopL("<b>26 neue Waffen</b> – von der Uchigatana bis zum Dunkelmondgroßschwert, nach Seltenheit einsortiert und im Schaden ausbalanciert.", "<b>26 new weapons</b> — from the Uchigatana to the Dark Moon Greatsword, sorted by rarity and balanced."),
-      shopL("<b>Der Haligtree ist zurück – jetzt im normalen Run:</b> Finde zwei Festungen, sammle beide Medaillon-Hälften und stelle dich nach Gideon optional <b>Malenia</b>. Überlebst du sie, geht es weiter zum Eldenthron.", "<b>The Haligtree returns — now in normal runs:</b> Find two forts, collect both medallion halves and optionally face <b>Malenia</b> after Gideon. Survive her and press on to the Elden Throne.")
-    ]);
-    html += sec("⚙️", shopL("Verbesserungen", "Improvements"), [
-      shopL("Zentrale Balance-Werte überarbeitet und aufeinander abgestimmt.", "Central balance values reworked and tuned to fit together.")
-    ]);
-    html += sec("🔧", shopL("Fixes", "Fixes"), [
-      shopL("Der Elden Beast greift nach Radagons Verwandlung nicht mehr sofort an (gilt auch für Malenias 2. Phase).", "The Elden Beast no longer attacks immediately after Radagon's transformation (also Malenia's 2nd phase)."),
-      shopL("Challenge-Runs landen jetzt zuverlässig in der richtigen Bestenlisten-Kategorie.", "Challenge runs now reliably land in the correct leaderboard category.")
-    ]);
-    html += sec("🔜", shopL("Bald", "Coming soon"), [
+    function verHead(ver) {
+      return '<div style="text-align:center;margin:24px 0 14px;padding-top:18px;border-top:1px solid var(--border-color);">'
+        + '<div style="color:#8c6d2d;font-family:\'Cinzel\',serif;font-size:1.15rem;letter-spacing:2px;">Patch ' + ver + '</div></div>';
+    }
+
+    // Persistenter Ausblick (immer sichtbar, nicht Teil der History)
+    var BALD = { icon:"🔜", title: shopL("Bald","Coming soon"), items: [
       shopL("🏯 Battle Tower – ein endloser Aufstieg. Wie hoch schaffst du es?", "🏯 Battle Tower — an endless ascent. How high can you climb?"),
       shopL("🎭 Skins & neue Starterklassen.", "🎭 Skins & new starter classes.")
-    ]);
+    ]};
+
+    // Patch-Historie: neuester Eintrag zuerst. Neue Patches oben ergänzen.
+    var PATCHES = [
+      { ver:"1.5.1", sections: [
+        { icon:"🆕", title: shopL("Neu","New"), items: [
+          shopL("<b>Level-System im Roundtable:</b> Gib Seelen aus, um deine Stufe zu erhöhen und Attribute zu steigern, jetzt im Elden Ring Style.", "<b>Roundtable level system:</b> Spend souls to raise your level and boost attributes — now in true Elden Ring style."),
+          shopL("<b>Hall of Fame:</b> Alle durchgespielten Runs mit Ausrüstung, Werten und Zeit, nach Modus sortiert (Wann Elden Rogue Speedrun?).", "<b>Hall of Fame:</b> All completed runs with gear, stats and time, sorted by mode (Elden Rogue speedruns when?)."),
+          shopL("<b>Run-Timer:</b> Deine Laufzeit läuft jetzt sichtbar im Spiel mit.", "<b>Run timer:</b> Your run time now ticks visibly in-game.")
+        ]},
+        { icon:"⚙️", title: shopL("Verbesserungen","Improvements"), items: [
+          shopL("Überarbeitetes Hauptmenü mit neuer Optik, aufklappbarem Seitenmenü und Einstellungen für Sprache und Lautstärke.", "Reworked main menu with a new look, a collapsible side menu and settings for language and volume."),
+          shopL("Eldendex ist jetzt ein durchblätterbares Buch, nach Seltenheit sortiert.", "The Eldendex is now a page-turnable book, sorted by rarity."),
+          shopL("Hard Mode schaltet frei, sobald du das Spiel einmal durchgespielt hast.", "Hard Mode unlocks once you've beaten the game.")
+        ]},
+        { icon:"🔧", title: shopL("Fixes","Fixes"), items: [
+          shopL("Hover-Sound im Menü wird nicht mehr mehrfach abgespielt.", "Menu hover sound no longer plays multiple times."),
+          shopL("Eldendex-Fenster springt beim Blättern nicht mehr herum.", "The Eldendex window no longer jumps around while flipping pages."),
+          shopL("Unförmiger Hard-Mode-Button korrigiert.", "Fixed the misshapen Hard Mode button."),
+          shopL("Sauberere Dialoge und Scrollleisten im Elden-Ring-Stil.", "Cleaner dialogs and Elden Ring-styled scrollbars."),
+          shopL("Malenia Bug behoben und gebalanced (hoffentlich).", "Malenia bug fixed and rebalanced (hopefully)."),
+          shopL("Fehler beim Auswählen der Knoten gefixt.", "Fixed an error when selecting map nodes."),
+          shopL("Kein Spaß gehabt das alles zu bugfixen.", "Had zero fun fixing all of this.")
+        ]}
+      ]},
+      { ver:"1.5", sections: [
+        { icon:"🆕", title: shopL("Neu","New"), items: [
+          shopL("<b>Roundtable-Truhen (Gacha):</b> Öffne Waffen- & Rüstungstruhen für Seelen und schalte neues Equipment frei. Duplikate erstatten die Hälfte zurück.", "<b>Roundtable chests (gacha):</b> Open weapon & armor chests for souls and unlock new gear. Duplicates refund half."),
+          shopL("<b>Pech-Schutz:</b> Nach mehreren Duplikaten in Folge ist die nächste Truhe garantiert ein neues Item – mit Fortschrittsleiste an jeder Truhe.", "<b>Pity system:</b> After several duplicates in a row, the next chest is a guaranteed new item — shown by a progress bar on each chest."),
+          shopL("<b>Eldendex:</b> Ein Kompendium für Waffen, Rüstungen, Gegner & Bosse.", "<b>Eldendex:</b> A compendium of weapons, armor, enemies & bosses."),
+          shopL("<b>26 neue Waffen</b> – von der Uchigatana bis zum Dunkelmondgroßschwert, nach Seltenheit einsortiert und im Schaden ausbalanciert.", "<b>26 new weapons</b> — from the Uchigatana to the Dark Moon Greatsword, sorted by rarity and balanced."),
+          shopL("<b>Der Haligtree ist zurück – jetzt im normalen Run:</b> Finde zwei Festungen, sammle beide Medaillon-Hälften und stelle dich nach Gideon optional <b>Malenia</b>. Überlebst du sie, geht es weiter zum Eldenthron.", "<b>The Haligtree returns — now in normal runs:</b> Find two forts, collect both medallion halves and optionally face <b>Malenia</b> after Gideon. Survive her and press on to the Elden Throne.")
+        ]},
+        { icon:"⚙️", title: shopL("Verbesserungen","Improvements"), items: [
+          shopL("Zentrale Balance-Werte überarbeitet und aufeinander abgestimmt.", "Central balance values reworked and tuned to fit together.")
+        ]},
+        { icon:"🔧", title: shopL("Fixes","Fixes"), items: [
+          shopL("Der Elden Beast greift nach Radagons Verwandlung nicht mehr sofort an (gilt auch für Malenias 2. Phase).", "The Elden Beast no longer attacks immediately after Radagon's transformation (also Malenia's 2nd phase)."),
+          shopL("Challenge-Runs landen jetzt zuverlässig in der richtigen Bestenlisten-Kategorie.", "Challenge runs now reliably land in the correct leaderboard category.")
+        ]}
+      ]}
+    ];
+
+    var html = '<div style="text-align:center;margin:2px 0 16px;">'
+      + '<div style="font-size:0.68rem;letter-spacing:3px;color:#8c6d2d;text-transform:uppercase;font-family:sans-serif;">' + shopL("Aktuelle Version", "Current Version") + '</div>'
+      + '<div style="color:var(--gold);font-family:\'Cinzel\',serif;font-size:1.5rem;letter-spacing:2px;">Patch ' + PATCHES[0].ver + '</div></div>';
+
+    PATCHES.forEach(function (p, idx) {
+      if (idx > 0) html += verHead(p.ver);
+      html += (idx > 0) ? '<div style="opacity:0.7;">' : '<div>';
+      p.sections.forEach(function (s) { html += sec(s.icon, s.title, s.items); });
+      if (idx === 0) html += sec(BALD.icon, BALD.title, BALD.items);   // Ausblick direkt unter dem neuesten Patch
+      html += '</div>';
+    });
+
     body.innerHTML = html;
   }
 
@@ -551,69 +917,157 @@
     { key:"gegner",    label:{ de:"Gegner",    en:"Enemies" } },
     { key:"bosse",     label:{ de:"Bosse",     en:"Bosses" } }
   ];
+  var dexPage = 0;
+  var DEX_RARITY_ORDER = ["common", "rare", "epic", "legendary"];
+  function dexRarityOf(it) {
+    if (!it) return null;
+    if (it.cat === "weapons") {
+      var w = (typeof ALL_WEAPONS !== "undefined") ? ALL_WEAPONS.find(function(x){ return x.name === it.name; }) : null;
+      if (w) return w.rarity;
+      var d = it.dmg || 0; return d <= 20 ? "common" : (d <= 30 ? "rare" : (d <= 45 ? "epic" : "legendary"));
+    }
+    if (it.cat === "armor") {
+      var a = (typeof ALL_ARMOR !== "undefined") ? ALL_ARMOR.find(function(x){ return x.name === it.name; }) : null;
+      return a ? a.rarity : "common";
+    }
+    return null;
+  }
+  function dexGoPage(delta) { dexPage += delta; ladeEldendex(); }
+  function dexSetPage(n) { dexPage = n; ladeEldendex(); }
+  window.dexGoPage = dexGoPage; window.dexSetPage = dexSetPage;
+
   function ladeEldendex() {
     var grid = document.getElementById("dex-grid");
     var lang = window.i18n ? window.i18n.getLang() : "de";
+    var en = lang === "en";
     if (!window.ER || !ER.getDex) {
-      if (grid) grid.innerHTML = '<div style="color:#888; text-align:center; padding:24px; font-family:sans-serif;">' + (lang === "en" ? "Eldendex unavailable. Please reload the page (Ctrl+Shift+R)." : "Eldendex nicht verfügbar. Bitte Seite neu laden (Strg+Shift+R).") + '</div>';
+      if (grid) grid.innerHTML = '<div style="color:#888; text-align:center; padding:24px; font-family:sans-serif;">' + (en ? "Eldendex unavailable. Please reload the page (Ctrl+Shift+R)." : "Eldendex nicht verfügbar. Bitte Seite neu laden (Strg+Shift+R).") + '</div>';
       return;
     }
     var dex;
     try { dex = ER.getDex(); } catch (e) {
-      if (grid) grid.innerHTML = '<div style="color:#888; text-align:center; padding:24px; font-family:sans-serif;">' + (lang === "en" ? "Could not load Eldendex. Try reloading (Ctrl+Shift+R)." : "Eldendex konnte nicht geladen werden. Bitte neu laden (Strg+Shift+R).") + '</div>';
+      if (grid) grid.innerHTML = '<div style="color:#888; text-align:center; padding:24px; font-family:sans-serif;">' + (en ? "Could not load Eldendex. Try reloading (Ctrl+Shift+R)." : "Eldendex konnte nicht geladen werden. Bitte neu laden (Strg+Shift+R).") + '</div>';
       return;
     }
     if (!dex || !dex.cats) { if (grid) grid.innerHTML = ""; return; }
     var meta = ladeMeta();
-    // Tabs
+    // Tabs (Kategorie-Wechsel setzt Seite zurück)
     var tabs = document.getElementById("dex-tabs");
     tabs.innerHTML = "";
     DEX_CATS.forEach(function(c){
-      var cat = dex.cats[c.key] || { found:0, total:0, items:[] };
-      var dFound = cat.found, dTotal = cat.total;
-      if (c.key === "weapons" && cat.items) { dTotal = cat.items.length; dFound = cat.items.filter(function(it){ return meta.unlockedWeapons.indexOf(it.name) >= 0; }).length; }
+      var ct = dex.cats[c.key] || { found:0, total:0, items:[] };
+      var dFound = ct.found, dTotal = ct.total;
+      if (c.key === "weapons" && ct.items) { dTotal = ct.items.length; dFound = ct.items.filter(function(it){ return meta.unlockedWeapons.indexOf(it.name) >= 0; }).length; }
       var active = c.key === dexCurrentCat;
       var btn = document.createElement("button");
       btn.className = "btn-mini";
       btn.style.cssText = "border-color:" + (active?"var(--gold)":"var(--gold-dark)") + ";color:" + (active?"var(--gold)":"#b8a96f") + ";";
       btn.innerText = c.label[lang] + " (" + dFound + "/" + dTotal + ")";
-      btn.onclick = function(){ dexCurrentCat = c.key; ladeEldendex(); };
+      btn.onclick = function(){ dexCurrentCat = c.key; dexPage = 0; ladeEldendex(); };
       tabs.appendChild(btn);
     });
     // Fortschritt gesamt
     var done = dex.found === dex.total && dex.total > 0;
-    document.getElementById("dex-progress").innerHTML = (lang==="en"?"Discovered: ":"Entdeckt: ") + "<b>" + dex.found + " / " + dex.total + "</b>" + (done ? " &nbsp;✅ <b style='color:var(--gold)'>True 100%</b>" : "");
-    // Raster
-    var grid = document.getElementById("dex-grid");
-    grid.innerHTML = "";
+    document.getElementById("dex-progress").innerHTML = (en?"Discovered: ":"Entdeckt: ") + "<b>" + dex.found + " / " + dex.total + "</b>" + (done ? " &nbsp;✅ <b style='color:var(--gold)'>Nashy</b>" : "");
+
     var cat = dex.cats[dexCurrentCat];
-    if (!cat) return;
-    cat.items.forEach(function(it){
-      // Waffen werden im Eldendex nur gezeigt, wenn sie freigeschaltet sind (sonst schwarze Silhouette)
-      var seen = it.seen;
-      if (dexCurrentCat === "weapons") seen = meta.unlockedWeapons.indexOf(it.name) >= 0;
-      var cell = document.createElement("div");
-      cell.style.cssText = "background:#0f0f0f;border:1px solid " + (seen?"var(--gold-dark)":"#222") + ";border-radius:6px;padding:8px 6px;text-align:center;";
-      var img = seen
-        ? '<img src="'+it.img+'" style="width:100%;height:70px;object-fit:contain;" onerror="this.style.opacity=0.2">'
-        : '<img src="'+it.img+'" style="width:100%;height:70px;object-fit:contain;filter:grayscale(1) brightness(0);opacity:0.5;">';
-      var nm = '<div style="font-size:0.7rem;color:'+(seen?"#d4c89a":"#555")+';margin-top:6px;font-family:sans-serif;line-height:1.2;min-height:26px;">'+(seen?it.name:"???")+'</div>';
-      var st = "";
-      if (seen && it.cat === "weapons" && it.dmg) {
-        st = '<div style="font-size:0.66rem;color:#9aa0a6;font-family:sans-serif;">⚔️ '+it.dmg+(it.types?' · '+it.types.join("/"):'')+'</div>';
+    var head = document.getElementById("dex-pagehead");
+    var nav = document.getElementById("dex-pagenav");
+    if (!cat || !cat.items.length) { grid.innerHTML = ""; if (head) head.innerHTML = ""; if (nav) nav.innerHTML = ""; return; }
+
+    // === Seiten bauen: Waffen/Rüstung nach Seltenheit, sonst in Blöcken ===
+    var isEquip = (dexCurrentCat === "weapons" || dexCurrentCat === "armor");
+    var pages = [];
+    if (isEquip) {
+      DEX_RARITY_ORDER.forEach(function(rar){
+        var items = cat.items.filter(function(it){ return dexRarityOf(it) === rar; });
+        if (items.length) pages.push({ rar: rar, title: shopL(RARITY_NAME[rar][0], RARITY_NAME[rar][1]), color: RARITY_COL[rar], items: items });
+      });
+    } else {
+      var per = 8;
+      for (var i = 0; i < cat.items.length; i += per) {
+        pages.push({ rar: null, title: (en ? "Page " : "Seite ") + (Math.floor(i/per)+1), color: "var(--gold)", items: cat.items.slice(i, i+per) });
       }
+    }
+    if (dexPage >= pages.length) dexPage = pages.length - 1;
+    if (dexPage < 0) dexPage = 0;
+    var page = pages[dexPage];
+
+    // === Kapitel-Kopf ===
+    var seenCount = page.items.filter(function(it){ return dexCellSeen(it, meta); }).length;
+    if (head) head.innerHTML = '<div class="dex-chapter" style="color:' + page.color + ';">' + page.title
+      + '<span class="cnt">' + seenCount + ' / ' + page.items.length + '</span></div>';
+
+    // === Raster der aktuellen Seite ===
+    grid.innerHTML = "";
+    page.items.forEach(function(it){
+      var seen = dexCellSeen(it, meta);
+      var rar = isEquip ? dexRarityOf(it) : null;
+      var borderCol = seen ? (rar ? RARITY_COL[rar] : "var(--gold-dark)") : "#222";
+      var cell = document.createElement("div");
+      cell.className = "dex-cell";
+      cell.style.borderColor = borderCol;
+      var img = seen
+        ? '<img src="'+it.img+'" onerror="this.style.opacity=0.2">'
+        : '<img src="'+it.img+'" style="filter:grayscale(1) brightness(0);opacity:0.5;">';
+      var nm = '<div class="dex-nm" style="color:'+(seen?(rar?RARITY_COL[rar]:"#d4c89a"):"#555")+';">'+(seen?it.name:"???")+'</div>';
+      var st = "";
+      if (seen && it.cat === "weapons" && it.dmg) st = '<div class="dex-sub">⚔️ '+it.dmg+(it.types?' · '+it.types.join("/"):'')+'</div>';
       cell.innerHTML = img + nm + st;
       grid.appendChild(cell);
     });
+
+    // === Blätter-Navigation ===
+    if (nav) {
+      var dots = pages.map(function(p, idx){
+        var col = p.color || "var(--gold)";
+        var style = "background:" + (idx === dexPage ? col : "transparent") + ";border-color:" + col + ";";
+        var titleAttr = p.title.replace(/"/g, "&quot;");
+        return '<button class="dex-dot' + (idx === dexPage ? " active" : "") + '" style="' + style + '" title="' + titleAttr + '" onclick="dexSetPage(' + idx + ')"></button>';
+      }).join("");
+      nav.innerHTML =
+        '<button class="dex-arrow" onclick="dexGoPage(-1)"' + (dexPage === 0 ? " disabled" : "") + '>‹</button>'
+        + '<div class="dex-dots">' + dots + '</div>'
+        + '<button class="dex-arrow" onclick="dexGoPage(1)"' + (dexPage === pages.length-1 ? " disabled" : "") + '>›</button>';
+    }
+  }
+  function dexCellSeen(it, meta) {
+    // Waffen nur sichtbar, wenn im Roundtable freigeschaltet; sonst normale "entdeckt"-Logik
+    if (it.cat === "weapons") return meta.unlockedWeapons.indexOf(it.name) >= 0;
+    return !!it.seen;
   }
   /* ===== ⚜️ ROUNDTABLE (Meta-Shop im Hauptmenü) ===== */
   var META_KEY = "eldenRogueMeta";
   var META_RESET_VERSION = 2;   // hochzählen = einmaliger Reset der Freischaltungen für alle Nutzer
   var DEFAULT_WEAPONS = ["Keule","Großaxt","Uchigatana","Dolch","Kurzschwert","Breitschwert","Rapier","Claymore","Bluthundreißzahn","Maltöter Großbeil","Großsterne","Rostiger Anker","Blasphemous Blade"];
   var DEFAULT_ARMOR = ["Albinauric Set","Cleanrot Set","Briar Set","Haligtree Knight Set"];
-  function metaDefault() { return { seelen:0, upgrades:{vitalitaet:0,schaerfe:0,wendigkeit:0,seelenfaenger:0,flakon:0}, unlockedWeapons: DEFAULT_WEAPONS.slice(), unlockedArmor: DEFAULT_ARMOR.slice(), unlockedSkins:[], activeSkinId:null, activeSkinFilter:"", chestPity:{waffe:0,ruestung:0}, resetVersion: META_RESET_VERSION }; }
+  function attrDefault() { return { vgr:0, str:0, end:0, mnd:0, luck:0 }; }
+  function sumAttr(a) { var t=0; for (var k in a) t += (a[k]||0); return t; }
+  function metaDefault() { return { seelen:0, level:1, attr:attrDefault(), unspent:0, attrMigrated:false, attrVer:2, upgrades:{vitalitaet:0,schaerfe:0,wendigkeit:0,seelenfaenger:0,flakon:0}, unlockedWeapons: DEFAULT_WEAPONS.slice(), unlockedArmor: DEFAULT_ARMOR.slice(), unlockedSkins:[], activeSkinId:null, activeSkinFilter:"", chestPity:{waffe:0,ruestung:0}, resetVersion: META_RESET_VERSION }; }
+  function migrateAttr(r, m) {
+    var old = m.attr || {};
+    var A = attrDefault();
+    A.vgr = old.vgr||0; A.str = old.str||0; A.end = old.end||0; A.mnd = old.mnd||0; A.luck = old.luck||0;
+    var changed = false;
+    if (!m.attrMigrated) {                          // ganz altes Upgrade-System -> Attribute
+      var up = m.upgrades || {};
+      A.vgr += (up.vitalitaet||0); A.str += (up.schaerfe||0); A.end += (up.wendigkeit||0);
+      A.luck += (up.seelenfaenger||0); A.mnd += (up.flakon||0);
+      changed = true;
+    }
+    if (m.attrMigrated && m.attrVer !== 2) {         // 8-Attribut-Zwischenversion -> 5 falten
+      A.str += (old.dex||0) + (old.int||0) + (old.fth||0);   // alle Schadens-Stats -> Stärke
+      A.luck += (old.arc||0);                                 // Arkane -> Glück
+      changed = true;
+    }
+    r.attr = A; r.attrMigrated = true; r.attrVer = 2;
+    if (typeof r.level !== "number" || changed) r.level = 1 + sumAttr(A);
+    if (typeof r.unspent !== "number") r.unspent = 0;
+    return r;
+  }
   function ladeMeta() {
     try { var m = JSON.parse(localStorage.getItem(META_KEY)); if (m && typeof m === "object") { var d = metaDefault(); var r = Object.assign(d, m); r.upgrades = Object.assign(metaDefault().upgrades, m.upgrades||{});
+      migrateAttr(r, m);
       if (m.resetVersion !== META_RESET_VERSION) {
         r.unlockedWeapons = DEFAULT_WEAPONS.slice(); r.unlockedArmor = DEFAULT_ARMOR.slice(); r.unlockedSkins = [];
         r.resetVersion = META_RESET_VERSION; speichereMeta(r);
@@ -621,6 +1075,7 @@
         r.unlockedWeapons = Array.from(new Set(DEFAULT_WEAPONS.concat(Array.isArray(r.unlockedWeapons)?r.unlockedWeapons:[])));
         r.unlockedArmor = Array.from(new Set(DEFAULT_ARMOR.concat(Array.isArray(r.unlockedArmor)?r.unlockedArmor:[])));
         if (!Array.isArray(r.unlockedSkins)) r.unlockedSkins=[];
+        if (!m.attrMigrated) speichereMeta(r);
       }
       return r; } } catch(e) {}
     return metaDefault();
@@ -644,6 +1099,18 @@
     { id:"flakon",       icon:"🧪", max:3,  baseCost:220, de:["Flakon","+1 Start-Flakon pro Stufe"],         en:["Flask","+1 starting flask per level"] }
   ];
   function upgradeKosten(u, level) { return Math.round(u.baseCost * (level+1) * (1 + level*0.35)); }
+
+  /* --- ELDEN-RING-LEVELSYSTEM: Attribute + Kostenkurve (Werte hier tunen) --- */
+  var ATTRS = [
+    { id:"vgr",  icon:"❤️", max:10, de:["Lebenskraft","+10 Max-HP pro Punkt"],        en:["Vigor","+10 max HP per point"],           col:"#e05a4a" },
+    { id:"str",  icon:"🗡️", max:10, de:["Stärke","+3% Waffenschaden pro Punkt"],      en:["Strength","+3% weapon damage per point"], col:"#e08a3c" },
+    { id:"end",  icon:"💨", max:10, de:["Ausdauer","+1% Ausweich-Chance pro Punkt"],  en:["Endurance","+1% dodge chance per point"], col:"#54d98c" },
+    { id:"mnd",  icon:"🧪", max:3,  de:["Verstand","+1 Flakon je 3 Punkte"],          en:["Mind","+1 flask per 3 points"],           col:"#4aa3ff" },
+    { id:"luck", icon:"✨", max:10, de:["Glück","+8% Seelen pro Punkt"],              en:["Luck","+8% souls per point"],             col:"#a55eea" }
+  ];
+  function attrMax(id) { for (var i=0;i<ATTRS.length;i++) if (ATTRS[i].id===id) return ATTRS[i].max||10; return 10; }
+  function levelKosten(level) { return Math.min(1000, 90 + level * 10); }  // 100, 110, 120, … (Start 100, je Level +10)
+  var RESPEC_COST = 200;   // Seelen für kompletten Respec
 
   /* --- Gacha-Truhen: alle Items + Standard-frei --- */
   var ALL_WEAPONS = [
@@ -767,6 +1234,33 @@
   }
   window.shopKaufeUpgrade = shopKaufeUpgrade; window.shopSkinKlick = shopSkinKlick;
 
+  /* --- Levelsystem: Attribut steigern / Respec --- */
+  function shopAllocate(attrId) {
+    var m = ladeMeta();
+    if (!m.attr || !(attrId in m.attr)) return;
+    if ((m.attr[attrId]||0) >= attrMax(attrId)) return;   // Attribut-Cap erreicht
+    if ((m.unspent||0) > 0) {                        // freie Respec-Punkte zuerst (kostenlos)
+      m.attr[attrId]++; m.unspent--; speichereMeta(m); renderShop(); return;
+    }
+    var lvl = m.level || 1;
+    var cost = levelKosten(lvl);
+    if (m.seelen < cost) return;
+    m.seelen -= cost; m.attr[attrId]++; m.level = lvl + 1;
+    speichereMeta(m); renderShop();
+  }
+  function shopRespec() {
+    var m = ladeMeta();
+    var total = sumAttr(m.attr);
+    if (total === 0 && (m.unspent||0) === 0) return;
+    if (m.seelen < RESPEC_COST) return;
+    if (!confirm(shopL("Alle " + (total + (m.unspent||0)) + " Attributpunkte für ✨" + RESPEC_COST + " Seelen neu verteilen?", "Redistribute all " + (total + (m.unspent||0)) + " attribute points for ✨" + RESPEC_COST + " souls?"))) return;
+    m.seelen -= RESPEC_COST;
+    m.unspent = (m.unspent||0) + total;
+    m.attr = attrDefault();
+    speichereMeta(m); renderShop();
+  }
+  window.shopAllocate = shopAllocate; window.shopRespec = shopRespec;
+
   function updateShopButtonSouls() {
     var b = document.getElementById("btn-shop-souls"); if (b) b.innerText = " ✨" + ladeMeta().seelen;
     var t = document.getElementById("btn-shop-text"); if (t) t.innerText = "Roundtable";
@@ -827,15 +1321,39 @@
     var html = "";
 
     if (shopTab === "upgrades") {
-      for (var i=0;i<SHOP_UPGRADES.length;i++) {
-        var u = SHOP_UPGRADES[i]; var lvl = m.upgrades[u.id]||0; var max = lvl>=u.max;
-        var kosten = upgradeKosten(u, lvl); var ok = m.seelen>=kosten && !max;
-        var nm = shopL(u.de[0],u.en[0]), beschr = shopL(u.de[1],u.en[1]);
-        var rechts = max ? '<span style="color:#54d98c;font-weight:bold;font-size:0.8rem;">MAX</span>'
-          : '<span style="color:' + (ok?'#cda34f':'#777') + ';font-weight:bold;white-space:nowrap;">✨ ' + kosten + '</span>';
-        var inner = '<span style="font-size:1.5rem;">' + u.icon + '</span>'
-          + '<div style="flex:1;"><strong style="color:#ede6d4;">' + nm + ' <span style="color:#888;font-weight:normal;">Lv ' + lvl + '/' + u.max + '</span></strong><br><span style="color:#9aa0a6;font-size:0.78rem;">' + beschr + '</span></div>' + rechts;
-        html += zeile(inner, { click: ok?("shopKaufeUpgrade('"+u.id+"')"):null, dim: !ok&&!max, border: max?'#4a6':'#333' });
+      var lvl = m.level || 1;
+      var nextCost = levelKosten(lvl);
+      var canLevel = m.seelen >= nextCost;
+      var free = m.unspent || 0;
+      // Kopf: Stufe + nächste Kosten (oder freie Respec-Punkte)
+      html += '<div style="text-align:center;margin:2px 0 14px;">'
+        + '<div style="font-family:\'Cinzel\',serif;color:var(--gold);font-size:2rem;letter-spacing:2px;line-height:1;">' + shopL("Stufe","Level") + ' ' + lvl + '</div>'
+        + '<div style="font-family:sans-serif;font-size:0.8rem;color:#9aa0a6;margin-top:5px;">'
+        + (free>0 ? ('<span style="color:#f1c40f;font-weight:bold;">' + free + ' ' + shopL("freie Punkte zu verteilen","free points to spend") + '</span>')
+                  : (shopL("Nächste Stufe","Next level") + ': <b style="color:' + (canLevel?'#cda34f':'#777') + ';">✨ ' + nextCost + ' ' + shopL("Seelen","Souls") + '</b>'))
+        + '</div></div>';
+      // Attribut-Zeilen
+      for (var i=0;i<ATTRS.length;i++) {
+        var A = ATTRS[i];
+        var pts = (m.attr && m.attr[A.id]) || 0;
+        var atMax = pts >= A.max;
+        var buyable = !atMax && (free>0 || canLevel);
+        var costLabel = atMax
+          ? '<span style="color:#54d98c;font-weight:bold;font-size:0.8rem;white-space:nowrap;">MAX</span>'
+          : (free>0
+            ? '<span style="color:#f1c40f;font-weight:bold;white-space:nowrap;">＋ ' + shopL("Punkt","point") + '</span>'
+            : '<span style="color:' + (canLevel?'#cda34f':'#777') + ';font-weight:bold;white-space:nowrap;">✨ ' + nextCost + '</span>');
+        var inner = '<span style="font-size:1.5rem;width:30px;text-align:center;flex-shrink:0;">' + A.icon + '</span>'
+          + '<div style="flex:1;min-width:0;"><strong style="color:' + A.col + ';">' + shopL(A.de[0],A.en[0]) + ' <span style="color:#888;font-weight:normal;font-family:sans-serif;">· ' + pts + '/' + A.max + '</span></strong><br>'
+          + '<span style="color:#9aa0a6;font-size:0.76rem;">' + shopL(A.de[1],A.en[1]) + '</span></div>'
+          + costLabel;
+        html += zeile(inner, { click: buyable?("shopAllocate('"+A.id+"')"):null, dim: !buyable && !atMax, border: atMax?'#4a6':A.col });
+      }
+      // Respec
+      var totalPts = sumAttr(m.attr) + free;
+      if (totalPts>0) {
+        html += '<div style="text-align:center;margin-top:12px;">'
+          + '<button class="btn-mini" onclick="shopRespec()"' + (m.seelen<RESPEC_COST?' style="opacity:0.5;"':'') + '>↻ ' + shopL("Punkte neu verteilen","Respec") + ' · ✨' + RESPEC_COST + '</button></div>';
       }
     } else if (shopTab === "truhen") {
       html += '<p style="color:#aaa;font-size:0.82rem;font-family:sans-serif;margin-top:0;">' + shopL("Kaufe eine Truhe für ein zufälliges Item. Besitzt du es schon, bekommst du die Hälfte der Kosten zurück. Freigeschaltete Items tauchen als Beute in deinen Runs auf.","Buy a chest for a random item. If you already own it, you get half the cost back. Unlocked items appear as loot in your runs.") + '</p>';
@@ -858,7 +1376,7 @@
       }
       html += '</div>';
       html += '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">'
-        + '<div style="padding:10px 24px;border:1px solid #e6a23c;border-radius:30px;background:rgba(18,13,5,0.85);color:#e6a23c;font-family:\'Mantinia\',serif;font-size:1.15rem;letter-spacing:3px;box-shadow:0 0 24px rgba(230,162,60,0.4);">🚧 ' + shopL("BALD VERFÜGBAR","COMING SOON") + '</div></div>';
+        + '<div style="padding:10px 24px;border:1px solid #e6a23c;border-radius:30px;background:rgba(18,13,5,0.85);color:#e6a23c;font-family:\'Cinzel\',serif;font-size:1.15rem;letter-spacing:3px;box-shadow:0 0 24px rgba(230,162,60,0.4);">🚧 ' + shopL("BALD VERFÜGBAR","COMING SOON") + '</div></div>';
       html += '</div>';
     }
     body.innerHTML = html;
@@ -1001,21 +1519,244 @@
     var save = null;
     try { var d = localStorage.getItem("eldenRogueSave"); save = d ? JSON.parse(d) : null; } catch(e){}
     if (save && save.gewaehlteKlasse) {
-      var t = window.i18n ? window.i18n.t : function(k){return k;};
-      var msg = (window.i18n && window.i18n.lang === 'en')
-        ? "You have a saved run. Starting a new game will overwrite it. Continue?"
-        : "Du hast einen gespeicherten Run. Ein neues Spiel überschreibt ihn. Fortfahren?";
-      if (!confirm(msg)) return false;
-      try { localStorage.removeItem("eldenRogueSave"); } catch(e){}
+      showConfirmOverwrite(url);
+      return false;
     }
     window.location.href = url;
     return false;
+  }
+  function showConfirmOverwrite(url) {
+    var en = (typeof _menuIsEn === "function") ? _menuIsEn() : false;
+    var m = document.getElementById("modal-confirm");
+    if (!m) { if (confirm(en ? "You have a saved run. Overwrite it?" : "Du hast einen gespeicherten Run. Überschreiben?")) { try { localStorage.removeItem("eldenRogueSave"); } catch(e){} window.location.href = url; } return; }
+    document.getElementById("confirm-title").textContent = en ? "⚠️ Start a new run?" : "⚠️ Neuen Run starten?";
+    document.getElementById("confirm-msg").textContent = en
+      ? "You have a saved run. Starting a new game will overwrite it."
+      : "Du hast einen gespeicherten Run. Ein neues Spiel überschreibt ihn.";
+    var cancel = document.getElementById("confirm-cancel"); cancel.textContent = en ? "Cancel" : "Abbrechen";
+    var ok = document.getElementById("confirm-ok"); ok.textContent = en ? "Overwrite & start" : "Überschreiben & starten";
+    ok.onclick = function () { try { localStorage.removeItem("eldenRogueSave"); } catch(e){} window.location.href = url; };
+    closeModals(); m.classList.add("open");
   }
   
   // Call initialization logic for translations once
   renderStaticText();
   updateLangSwitcherButtons();
   try { updateShopButtonSouls(); } catch(e) {}
+</script>
+
+<script>
+/* ===== Glut-/Aschepartikel-Canvas ===== */
+(function(){
+  var canvas = document.getElementById("ember-canvas");
+  if (!canvas) return;
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var ctx = canvas.getContext("2d");
+  var W, H, particles = [];
+  function resize(){ W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+  resize();
+  window.addEventListener("resize", resize);
+  var COUNT = reduce ? 22 : Math.min(90, Math.round(W * H / 22000));
+  function spawn(atBottom){
+    return { x: Math.random()*W, y: atBottom ? H + Math.random()*40 : Math.random()*H,
+      r: 0.6 + Math.random()*1.8, vy: 0.25 + Math.random()*0.75, vx: (Math.random()-0.5)*0.35,
+      life: 0, ttl: 300 + Math.random()*400, sway: Math.random()*Math.PI*2, swaySpeed: 0.005 + Math.random()*0.015,
+      hue: 38 + Math.random()*14, alpha: 0.15 + Math.random()*0.45 };
+  }
+  for (var i=0;i<COUNT;i++) particles.push(spawn(false));
+  function tick(){
+    ctx.clearRect(0,0,W,H);
+    for (var i=0;i<particles.length;i++){
+      var p = particles[i];
+      p.life++; p.sway += p.swaySpeed;
+      p.y -= p.vy; p.x += p.vx + Math.sin(p.sway)*0.3;
+      var fade = 1 - p.life / p.ttl;
+      if (p.y < -20 || p.life > p.ttl){ particles[i] = spawn(true); continue; }
+      var a = p.alpha * Math.max(0, fade);
+      ctx.beginPath();
+      ctx.fillStyle = "hsla(" + p.hue + ",85%,62%," + a + ")";
+      ctx.shadowColor = "rgba(230,180,90," + a + ")";
+      ctx.shadowBlur = 8;
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+      ctx.fill();
+    }
+    ctx.shadowBlur = 0;
+    requestAnimationFrame(tick);
+  }
+  tick();
+})();
+
+/* ===== Synthetische UI-Sounds (WebAudio) – Lautstärke via _soundVol ===== */
+var _audioCtx = null;
+var _soundOn = (localStorage.getItem("er_sound") !== "off");
+var _soundVol = (function(){ var v = parseFloat(localStorage.getItem("er_sound_vol")); return isNaN(v) ? 0.6 : Math.min(1, Math.max(0, v)); })();
+function _menuIsEn(){ return !!(window.i18n && window.i18n.getLang && window.i18n.getLang() === 'en'); }
+function _ac(){
+  if (!_audioCtx){ try { _audioCtx = new (window.AudioContext||window.webkitAudioContext)(); } catch(e){ return null; } }
+  if (_audioCtx && _audioCtx.state === "suspended") _audioCtx.resume();
+  return _audioCtx;
+}
+function _tone(freq, freqTo, dur, type, peak){
+  if (!_soundOn || _soundVol <= 0) return;
+  var ac = _ac(); if (!ac) return;
+  var t = ac.currentTime;
+  var osc = ac.createOscillator(), g = ac.createGain();
+  osc.type = type || "sine";
+  osc.frequency.setValueAtTime(freq, t);
+  if (freqTo) osc.frequency.exponentialRampToValueAtTime(freqTo, t + dur);
+  var vol = Math.max(0.0002, peak * _soundVol);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(vol, t + 0.01);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  osc.connect(g); g.connect(ac.destination);
+  osc.start(t); osc.stop(t + dur + 0.02);
+}
+function playHover(){ _tone(760, 900, 0.06, "triangle", 0.03); }
+function playClick(){ _tone(230, 130, 0.14, "sine", 0.10); _tone(460, 300, 0.10, "triangle", 0.04); }
+
+function _updateSoundBtn(){
+  var b = document.getElementById("set-sound-btn");
+  if (b) b.textContent = _soundOn ? (_menuIsEn() ? "🔊 On" : "🔊 An") : (_menuIsEn() ? "🔇 Off" : "🔇 Aus");
+  var v = document.getElementById("set-vol"); if (v) v.value = Math.round(_soundVol * 100);
+  var vl = document.getElementById("set-vol-val"); if (vl) vl.textContent = Math.round(_soundVol * 100) + "%";
+}
+function toggleSound(){
+  _soundOn = !_soundOn;
+  localStorage.setItem("er_sound", _soundOn ? "on" : "off");
+  _updateSoundBtn();
+  if (_soundOn) playClick();
+}
+function setSoundVol(v){
+  _soundVol = Math.min(1, Math.max(0, (parseFloat(v) || 0) / 100));
+  localStorage.setItem("er_sound_vol", String(_soundVol));
+  _updateSoundBtn();
+}
+function previewSound(){ if (_soundOn) playClick(); }
+(function(){
+  var sel = ".btn-main, .btn-secondary, .btn-social, .sb-item, .sb-toggle, .btn-mini, .btn-google, .lb-pill, .mode-tab, .btn-lang";
+  function ok(el){ return el && !el.classList.contains("coming-soon-btn") && !el.classList.contains("btn-hard-locked"); }
+  var _hoverEl = null;
+  document.addEventListener("mouseover", function(e){
+    var el = e.target.closest && e.target.closest(sel);
+    if (!ok(el) || el === _hoverEl) return;   // gleiches Element (nur zwischen Kind-Elementen bewegt) -> kein neuer Sound
+    _hoverEl = el;
+    playHover();
+  });
+  document.addEventListener("mouseout", function(e){
+    var el = e.target.closest && e.target.closest(sel);
+    if (!el) return;
+    var to = e.relatedTarget;
+    if (to && el.contains(to)) return;        // Wechsel zu einem Kind -> weiterhin im selben Button
+    if (el === _hoverEl) _hoverEl = null;
+  });
+  document.addEventListener("click", function(e){
+    var el = e.target.closest && e.target.closest(sel);
+    if (ok(el)) playClick();
+  });
+})();
+
+/* Audio so früh wie möglich freischalten: beim ersten echten Nutzer-Gesture irgendwo auf der Seite
+   (Browser blockieren WebAudio bis zur ersten Interaktion – Hovern zählt nicht). */
+(function(){
+  function unlock(){ var ac = _ac(); if (ac && ac.state === "suspended") ac.resume(); }
+  ["pointerdown", "mousedown", "keydown", "touchstart"].forEach(function(ev){
+    window.addEventListener(ev, unlock, { capture: true });
+  });
+})();
+
+/* ===== Toast-Hinweis (ersetzt hässliches alert) ===== */
+var _toastTimer = null;
+function showToast(msg, icon){
+  var el = document.getElementById("er-toast");
+  if (!el){ el = document.createElement("div"); el.id = "er-toast"; el.className = "er-toast"; document.body.appendChild(el); }
+  el.innerHTML = '<span class="toast-ic"></span><span class="toast-msg"></span>';
+  el.querySelector(".toast-ic").textContent = icon || "🔒";
+  el.querySelector(".toast-msg").textContent = msg;
+  void el.offsetWidth;
+  el.classList.add("show");
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(function(){ el.classList.remove("show"); }, 3400);
+}
+
+/* ===== Linke Sidebar auf-/zuklappen ===== */
+function toggleSidebar(){
+  var sb = document.getElementById("sidebar");
+  var open = sb.classList.toggle("open");
+  var tg = document.getElementById("sb-toggle");
+  if (tg) tg.textContent = open ? "✕" : "☰";
+  try { localStorage.setItem("er_sidebar", open ? "1" : "0"); } catch(e){}
+}
+(function(){
+  try {
+    if (localStorage.getItem("er_sidebar") === "1"){
+      document.getElementById("sidebar").classList.add("open");
+      document.getElementById("sb-toggle").textContent = "✕";
+    }
+  } catch(e){}
+})();
+
+/* ===== Hard-Mode-Sperre (erst nach 1x Durchspielen im Normal-Modus) ===== */
+function applyHardLock(){
+  var btn = document.getElementById("btn-hard");
+  if (!btn) return;
+  var done = 0;
+  try { if (window.ER && ER.getStats) done = ER.getStats().gamesCompleted || 0; } catch(e){}
+  var en = _menuIsEn();
+  var label = en ? "Hard Mode" : "Schwerer Modus";
+  if (done < 1){
+    btn.classList.add("btn-hard-locked");
+    btn.classList.remove("btn-hard-active");
+    btn.removeAttribute("href");
+    btn.setAttribute("aria-disabled", "true");
+    btn.innerHTML = '<span>' + label + '</span><span class="lock-badge">🔒 ' + (en ? "LOCKED" : "GESPERRT") + '</span>';
+    btn.title = en ? "Locked – finish a Normal run first" : "Gesperrt – schließe erst einen normalen Run ab";
+    btn.onclick = function(){ showToast(en ? "Finish the game once in Normal Mode to unlock Hard Mode." : "Schließe das Spiel einmal im Normalen Modus ab, um den Hard Mode freizuschalten.", "🔒"); return false; };
+  } else {
+    btn.classList.remove("btn-hard-locked");
+    btn.classList.add("btn-hard-active");
+    btn.setAttribute("href", "game.html?mode=hard");
+    btn.removeAttribute("aria-disabled");
+    btn.textContent = label;
+    btn.title = "";
+    btn.onclick = function(){ return checkOverwrite('game.html?mode=hard'); };
+  }
+}
+
+/* ===== Zusätzliche Menü-Texte lokalisieren (Sidebar, Info, Settings, Disclaimer) ===== */
+function localizeMenuExtras(){
+  var en = _menuIsEn();
+  function set(id, de, enTxt){ var el = document.getElementById(id); if (el) el.textContent = en ? enTxt : de; }
+  function setH(id, de, enTxt){ var el = document.getElementById(id); if (el) el.innerHTML = en ? enTxt : de; }
+  set("sb-info-label", "Info", "Info");
+  set("sb-settings-label", "Einstellungen", "Settings");
+  set("sb-hof-label", "Hall of Fame", "Hall of Fame");
+  set("sb-patch-label", "Patch Notes", "Patch Notes");
+  set("hof-title", "👑 Hall of Fame", "👑 Hall of Fame");
+  set("info-title", "So funktioniert's", "How it works");
+  set("settings-title", "⚙️ Einstellungen", "⚙️ Settings");
+  set("set-lang-label", "Sprache", "Language");
+  set("set-lang-sub", "Language", "Sprache");
+  set("set-sound-label", "Sound", "Sound");
+  set("set-sound-sub", "UI-Klänge an/aus", "UI sounds on/off");
+  set("set-vol-label", "Lautstärke", "Volume");
+  set("set-vol-sub", "SFX-Lautstärke", "SFX volume");
+  setH("info-l1", "<b>Modus wählen:</b> Starte einen <b>Normalen</b> Run. Den <b>Hard Mode</b> schaltest du frei, sobald du einmal durchgespielt hast.", "<b>Pick a mode:</b> Start a <b>Normal</b> run. <b>Hard Mode</b> unlocks once you've finished the game.");
+  setH("info-l2", "<b>Run fortsetzen:</b> Ein laufender Run wird gespeichert und erscheint oben als grüner Button.", "<b>Resume:</b> An active run is saved and shows up as the green button at the top.");
+  setH("info-l3", "<b>Karte:</b> Wähle deinen Pfad über ein verzweigtes Netz – jeder Knoten ist ein anderes Event.", "<b>Map:</b> Choose your path across a branching web – every node is a different event.");
+  setH("info-l4", "<b>Roundtable:</b> Gib gesammelte Seelen für dauerhafte Upgrades aus.", "<b>Roundtable:</b> Spend the souls you collect on permanent upgrades.");
+  setH("info-l5", "<b>Sammeln &amp; Steigern:</b> Achievements und den Eldendex findest du links im Menü.", "<b>Collect &amp; progress:</b> Find achievements and the Eldendex in the left menu.");
+  setH("disclaimer",
+    'Für das beste Erlebnis – Cloud-Speicher &amp; Online-Bestenliste – bitte <b>anmelden</b>.<br><span class="disc-copy">Nicht-kommerzielles Fan-Projekt · Elden Ring &amp; die Lore gehören FromSoftware &amp; Bandai Namco.</span>',
+    'For the best experience – cloud save &amp; online leaderboard – please <b>sign in</b>.<br><span class="disc-copy">Non-commercial fan project · Elden Ring &amp; its lore belong to FromSoftware &amp; Bandai Namco.</span>');
+  var lde = document.getElementById("set-lang-de"), len = document.getElementById("set-lang-en");
+  if (lde && len){ lde.classList.toggle("active", !en); len.classList.toggle("active", en); }
+  _updateSoundBtn();
+}
+
+document.addEventListener("languageChanged", function(){ localizeMenuExtras(); applyHardLock(); });
+if (window.ER) { ER.onUserChange(function(){ applyHardLock(); }); }
+localizeMenuExtras();
+applyHardLock();
 </script>
 </body>
 </html>
