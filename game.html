@@ -1625,7 +1625,9 @@ function klickeKnoten(ebene, knoten) {
       else if (aktuelleRegion === "FarumAzula") { gegnerName = "Maliketh, die Schwarze Klinge"; gegnerMaxHp = 1350; gegnerSchaden = 75; }
       else if (aktuelleRegion === "AshenCapital") { gegnerName = "Gideon Ofnir, der Allwissende"; gegnerMaxHp = 1600; gegnerSchaden = 85; }
       else if (aktuelleRegion === "Haligtree") {
-        gegnerName = "Malenia, Blade of Miquella"; gegnerMaxHp = Math.round(2800 * rMult); gegnerSchaden = Math.round(120 * rMult);
+        // Feste Werte wie die anderen Story-Bosse (Radagon = 2000 HP). Malenia ~10% darueber.
+        // NICHT via rMult skalieren, sonst explodiert die HP auf ~19000 (Haligtree-rMult ist ~6.8x).
+        gegnerName = "Malenia, Blade of Miquella"; gegnerMaxHp = 2200; gegnerSchaden = 120;
       }
       else if (aktuelleRegion === "EldenThrone") {
         if (ebene === 1) { gegnerName = "Godfrey, der Erste Eldenlord"; gegnerMaxHp = 1800; gegnerSchaden = 100; }
@@ -2147,7 +2149,7 @@ function kampfGewonnen() {
   // Malenia Phase 2
   if (gegnerName === "Malenia, Blade of Miquella") {
     document.getElementById("battle-log").innerText = t("malenia_phase2_transition");
-    gegnerName = "Malenia, Goddess of Rot"; gegnerMaxHp = Math.round(gegnerMaxHp * 1.3); gegnerHp = gegnerMaxHp; gegnerSchaden = Math.round(gegnerSchaden * 1.4);
+    gegnerName = "Malenia, Goddess of Rot"; gegnerMaxHp = Math.round(gegnerMaxHp * 1.3); gegnerHp = gegnerMaxHp; gegnerSchaden = Math.round(gegnerSchaden * 1.1);
     bossPhaseWechsel = true;   // Phasenwechsel -> kein Sofort-Konter
     document.getElementById("enemy-name").innerText = gegnerNameLoc(gegnerName);
     document.getElementById("enemy-img").src = "images/malenia-2nd-phase-flying.avif";
@@ -2508,7 +2510,20 @@ function bestaetigeStufe(naechsteEbene) { document.getElementById("popup-overlay
     if (!gewaehlteKlasse) { try { waehleKlasseEngine('schwertkaempfer'); } catch(e){ console.warn(e); } }
   }
   function devClosePopups(){ const o=document.getElementById("popup-overlay"); if(o) o.style.display="none"; }
-  function devApply(){ try{ speichereRun(); }catch(e){} try{ updateUI(); }catch(e){} devRefresh(); }
+  function devApply(){
+    // Sauberen Karten-Zustand erzwingen, damit die Knoten wieder anklickbar sind
+    imKampf = false; aktionsSperre = false;
+    try{
+      var bv=document.getElementById("battle-view"); if(bv) bv.style.display="none";
+      var mv=document.getElementById("map-view"); if(mv) mv.style.display="flex";
+      var ab=document.getElementById("atk-btn"); if(ab) ab.style.display="";
+      var hb=document.getElementById("heal-btn"); if(hb) hb.style.display="";
+    }catch(e){}
+    try{ if(gewaehlteKlasse) baueKarteHTML(); }catch(e){ console.warn("baueKarteHTML:",e); }
+    try{ updateUI(); }catch(e){ console.warn("updateUI:",e); }
+    try{ speichereRun(); }catch(e){}
+    devRefresh();
+  }
 
   // Story-Runen passend bis zur Zielregion vergeben, damit Regionslogik konsistent ist
   function devRunenBis(region){
