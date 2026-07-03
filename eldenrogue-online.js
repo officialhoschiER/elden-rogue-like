@@ -261,7 +261,7 @@
     { id: "tower_25",     name: "Turmwächter",        icon: "🗼", desc: "Erreiche Akt 10 im Battle Tower.", check: s => (s.towerBestFloor || 0) >= 10 },
     { id: "tower_master", name: "Meister des Turms",  icon: "👑", desc: "Bezwinge das komplette Boss-Gauntlet des Battle Tower.", check: s => !!(s.challengesCompleted && s.challengesCompleted.tower) },
     /* --- Eldendex --- */
-    { id: "true_100", name: "True 100%", icon: "📖", desc: "Entdecke jeden Eintrag im Eldendex.", check: s => ELDENDEX_IDS.every(function (id) { return s.discovered && s.discovered[id]; }) }
+    { id: "true_100", name: "Nashy", icon: "📖", desc: "Entdecke jeden Eintrag im Eldendex.", check: s => ELDENDEX_IDS.every(function (id) { return s.discovered && s.discovered[id]; }) }
   ];
 
   // Übersetzt Name/Beschreibung eines Achievements via i18n (Fallback: hartkodiert)
