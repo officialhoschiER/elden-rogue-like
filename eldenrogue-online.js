@@ -66,6 +66,10 @@
     // --- Hard-/Challenge-Fortschritt ---
     hardModeCompletions: 0, hardNoDeath: false,
     challengesCompleted: {},
+    // --- Malenia & Legendär-Run ---
+    maleniaKills: 0, maleniaRuns: 0, legendaryRuns: 0,
+    // --- Progression / Freischaltungen ---
+    normalCompletions: 0, classesNormalDone: {}, normalNoBlaiddClears: 0, normalNoArmorClears: 0,
     // --- Eldendex: entdeckte Katalog-IDs ---
     discovered: {},
     // --- Bestwerte pro Patch: { "1_3": { normal:{score,stage,bosses}, hard:{...} }, "1_4": {...} } ---
@@ -78,6 +82,7 @@
     var s = Object.assign({}, DEFAULT_STATS, lsGet(STATS_KEY, {}));
     s.bossKills = Object.assign({}, s.bossKills || {});
     s.challengesCompleted = Object.assign({}, s.challengesCompleted || {});
+    s.classesNormalDone = Object.assign({}, s.classesNormalDone || {});
     s.discovered = Object.assign({}, s.discovered || {});
     s.patchBest = JSON.parse(JSON.stringify(s.patchBest || {}));
     return s;
@@ -234,6 +239,10 @@
     { id: "elden_lord", name: "Elden Lord",             icon: "👑", desc: "Schließe einen Run ab und werde Elden Lord.", check: s => s.gamesCompleted >= 1 },
     { id: "complete_10",name: "Veteran",                icon: "🎖️", desc: "Schließe 10 Runs ab.",                  check: s => s.gamesCompleted >= 10 },
     { id: "complete_25",name: "Legende",                icon: "🏆", desc: "Schließe 25 Runs ab.",                  check: s => s.gamesCompleted >= 25 },
+    /* --- Malenia & Legendär --- */
+    { id: "malenia",        name: "Klinge Miquellas",      icon: "🌸", desc: "Besiege Malenia.",                     check: s => (s.maleniaKills || 0) >= 1 },
+    { id: "malenia_run",    name: "Pfad des Haligtree",    icon: "🌳", desc: "Schließe einen Run ab, in dem du Malenia besiegt hast.", check: s => (s.maleniaRuns || 0) >= 1 },
+    { id: "full_legendary", name: "Legendär ausgestattet", icon: "✨", desc: "Beende einen Run mit legendärer Waffe, Rüstung und mind. einem legendären Talisman.", check: s => (s.legendaryRuns || 0) >= 1 },
     /* --- Tode --- */
     { id: "first_death",name: "Du bist gestorben",      icon: "💀", desc: "Stirb zum ersten Mal.",                  check: s => s.deaths >= 1 },
     { id: "death_50",   name: "Hartnäckig",             icon: "⚰️", desc: "Stirb 50 Mal und gib nicht auf.",        check: s => s.deaths >= 50 },
@@ -254,15 +263,60 @@
     /* --- Challenges --- */
     { id: "challenge_auto",      name: "Zuschauer",        icon: "👁️", desc: "Schließe einen Auto-Battle-Run ab.", check: s => !!(s.challengesCompleted && s.challengesCompleted.autobattle) },
     { id: "challenge_noarmor",   name: "Nacktläufer",      icon: "🏃", desc: "Schließe einen No-Armor-Run ab.",     check: s => !!(s.challengesCompleted && s.challengesCompleted.noarmor) },
-    { id: "challenge_noblaidd",  name: "Einsamer Wolf",    icon: "🐺", desc: "Schließe einen No-Blaidd-Run ab.",    check: s => !!(s.challengesCompleted && s.challengesCompleted.noblaidd) },
     /* --- Battle Tower --- */
-    { id: "tower_climb",  name: "Turmaufstieg",       icon: "🏯", desc: "Betritt den Battle Tower.",          check: s => (s.towerBestFloor || 0) >= 1 },
-    { id: "tower_10",     name: "Aufstrebend",        icon: "🪜", desc: "Erreiche Akt 5 im Battle Tower.", check: s => (s.towerBestFloor || 0) >= 5 },
-    { id: "tower_25",     name: "Turmwächter",        icon: "🗼", desc: "Erreiche Akt 10 im Battle Tower.", check: s => (s.towerBestFloor || 0) >= 10 },
-    { id: "tower_master", name: "Meister des Turms",  icon: "👑", desc: "Bezwinge das komplette Boss-Gauntlet des Battle Tower.", check: s => !!(s.challengesCompleted && s.challengesCompleted.tower) },
+    { id: "tower_climb",  name: "Turmaufstieg",       icon: "🏯", desc: "Betritt den Battle Tower.",                 check: s => (s.towerBestFloor || 0) >= 1 },
+    { id: "tower_10",     name: "Aufstrebend",        icon: "🪜", desc: "Erreiche Etage 5 im Battle Tower.",          check: s => (s.towerBestFloor || 0) >= 5 },
+    { id: "tower_25",     name: "Turmwächter",        icon: "🗼", desc: "Erreiche Etage 10 im Battle Tower.",         check: s => (s.towerBestFloor || 0) >= 10 },
+    { id: "tower_15",     name: "Hoch hinaus",        icon: "⛰️", desc: "Erreiche Etage 15 im Battle Tower.",         check: s => (s.towerBestFloor || 0) >= 15 },
+    { id: "tower_master", name: "Meister des Turms",  icon: "👑", desc: "Bezwinge alle 20 Etagen und Promised Consort Radahn.", check: s => !!(s.challengesCompleted && s.challengesCompleted.tower) },
     /* --- Eldendex --- */
     { id: "true_100", name: "Nashy", icon: "📖", desc: "Entdecke jeden Eintrag im Eldendex.", check: s => ELDENDEX_IDS.every(function (id) { return s.discovered && s.discovered[id]; }) }
   ];
+
+  /* ====== 3b) FREISCHALTUNGEN (Binding-of-Isaac-Stil, progressiv) ======
+     Zentrale Registry: jede Freischaltung hat eine Bedingung (check) und optional
+     einen Fortschritt (progress). Neue Inhalte (z.B. DLC) hier ergänzen. */
+  const TOTAL_CLASSES = 3;   // Anzahl spielbarer Klassen (schwertkaempfer / samurai / nackt) — bei neuen Klassen erhöhen
+  function classCountNormal(s) { return (s && s.classesNormalDone) ? Object.keys(s.classesNormalDone).length : 0; }
+  const UNLOCKS = [
+    { id: "hard_mode", icon: "🔥",
+      name: { de: "Schwerer Modus", en: "Hard Mode" },
+      desc: { de: "Ein härterer Aufstieg: stärkere Gegner, weniger Ausrüstung, mehr Ruhm.", en: "A harder ascent: tougher enemies, less gear, more glory." },
+      hint: { de: "Schließe das Spiel einmal im Normal-Modus ab.", en: "Finish the game once in Normal Mode." },
+      check: s => (s.gamesCompleted || 0) >= 1,
+      progress: s => ({ cur: Math.min(1, s.gamesCompleted || 0), max: 1 }) },
+    { id: "malenia", icon: "🌸",
+      name: { de: "Der Pfad des Haligtree", en: "The Haligtree Path" },
+      desc: { de: "Die geheimen Medaillons, der Haligtree und der Kampf gegen Malenia, Klinge Miquellas.", en: "The secret medallions, the Haligtree and the fight against Malenia, Blade of Miquella." },
+      hint: { de: "Schließe den Normal-Modus ab, ohne Blaidd überhaupt zu begegnen.", en: "Finish Normal Mode without ever encountering Blaidd." },
+      check: s => (s.normalNoBlaiddClears || 0) >= 1 || (s.maleniaKills || 0) >= 1,
+      progress: s => ({ cur: Math.min(1, s.normalNoBlaiddClears || 0), max: 1 }) },
+    { id: "battle_tower", icon: "🗼",
+      name: { de: "Battle Tower", en: "Battle Tower" },
+      desc: { de: "20 Etagen, ein Leben, ein Endboss. Der ultimative Prüfstein.", en: "20 floors, one life, one final boss. The ultimate trial." },
+      hint: { de: "Schließe den Normal-Modus mit allen Klassen ab.", en: "Finish Normal Mode with every class." },
+      check: s => classCountNormal(s) >= TOTAL_CLASSES || (s.towerBestFloor || 0) >= 1,   // Grace: wer den Turm schon betreten hat, behält Zugang
+      progress: s => ({ cur: Math.min(TOTAL_CLASSES, classCountNormal(s)), max: TOTAL_CLASSES }) },
+    { id: "liurnia", icon: "🌙", secret: true,   // geheime Freischaltung — KEIN Hinweis auf die Methode (Rüstung ablegen)
+      name: { de: "Liurnia der Seen", en: "Liurnia of the Lakes" },
+      desc: { de: "Ein alternativer Pfad nach Limgrave — die versunkenen Seen mit Rennala, Königin des Vollmonds.", en: "An alternative path after Limgrave — the sunken lakes with Rennala, Queen of the Full Moon." },
+      hint: { de: "Ein verborgenes Geheimnis wartet darauf, gelüftet zu werden …", en: "A hidden secret waits to be uncovered …" },
+      check: s => (s.normalNoArmorClears || 0) >= 1,
+      progress: null }
+  ];
+  function unlockInfo() {
+    var s = getStats();
+    return UNLOCKS.map(function (u) {
+      var pr = u.progress ? u.progress(s) : null;
+      return { id: u.id, icon: u.icon, secret: !!u.secret, name: u.name, desc: u.desc, hint: u.hint,
+               unlocked: !!u.check(s), cur: pr ? pr.cur : null, max: pr ? pr.max : null };
+    });
+  }
+  function isUnlockedId(id) {
+    var s = getStats();
+    for (var i = 0; i < UNLOCKS.length; i++) { if (UNLOCKS[i].id === id) return !!UNLOCKS[i].check(s); }
+    return false;
+  }
 
   // Übersetzt Name/Beschreibung eines Achievements via i18n (Fallback: hartkodiert)
   function locAch(a) {
@@ -299,7 +353,7 @@
 
   function normDiff(d) { return d === "hard" ? "hard" : "normal"; }
   // Bestenlisten-Kategorien: Basis (normal/hard), Battle Tower und je Challenge eine eigene Liste.
-  const LB_KATEGORIEN = ["normal", "hard", "tower", "noarmor", "noblaidd", "autobattle"];
+  const LB_KATEGORIEN = ["normal", "hard", "tower", "noarmor", "autobattle"];
   function normCat(c) { return LB_KATEGORIEN.indexOf(c) >= 0 ? c : "normal"; }
   function patchKey(p) { return String(p || PATCH).replace(/\./g, "_"); } // "1.5" -> "1_5"
   function leererPatchSlot() { var o = {}; LB_KATEGORIEN.forEach(function (c) { o[c] = { score: 0, stage: 0, bosses: 0 }; }); return o; }
@@ -358,7 +412,22 @@
     weaponFound:  function () { bump("weaponsFound"); },
     armorFound:   function () { bump("armorsFound"); },
     blaiddDefeat: function () { bump("blaiddDefeats"); },
-    gameCompleted: function () { bump("gamesCompleted"); ER.endRun(); },
+    gameCompleted: function (klasse, diff, noBlaidd, noArmor) {
+      bump("gamesCompleted");   // speichert + prüft Achievements
+      if (diff !== "hard") {    // nur Normal-Abschlüsse zählen für die Freischaltungen
+        var s = getStats();
+        s.normalCompletions = (s.normalCompletions || 0) + 1;
+        if (klasse) { s.classesNormalDone = s.classesNormalDone || {}; s.classesNormalDone[klasse] = true; }   // Battle Tower: alle Klassen
+        if (noBlaidd) s.normalNoBlaiddClears = (s.normalNoBlaiddClears || 0) + 1;                              // Haligtree: ohne Blaidd
+        if (noArmor && klasse === "schwertkaempfer") s.normalNoArmorClears = (s.normalNoArmorClears || 0) + 1;  // Liurnia: NUR Vagabund + bewusst abgelegte Rüstung (Samurai/Bettler folgen später)
+        saveStats(s);
+        checkAchievements();    // Freischaltungen können sich geändert haben
+      }
+      ER.endRun();
+    },
+    maleniaKilled:        function () { bump("maleniaKills"); },
+    maleniaRunCompleted:  function () { bump("maleniaRuns"); },
+    legendaryRunCompleted: function () { bump("legendaryRuns"); },
     flaskDrunk:   function () { bump("flasksDrunk"); },
     reachStage:   function (n) { if (n) { setMax("furthestStage", n); var r = getRun(); var diff = normDiff(r.difficulty); setMax(diff === "hard" ? "furthestStageHard" : "furthestStageNormal", n); if (n > (r.stage || 0)) { r.stage = n; saveRun(r); } } },
     towerReached: function (n) {
@@ -368,6 +437,10 @@
       if (r.category === "tower" && n > (r.stage || 0)) { r.stage = n; saveRun(r); }
     },
     bestTower: function () { return getStats().towerBestFloor || 0; },
+
+    /* --- Freischaltungen (Progression) --- */
+    getUnlocks: function () { return unlockInfo(); },
+    isUnlocked: function (id) { return isUnlockedId(id); },
 
     /* --- Hard Mode & Challenges --- */
     hardCompleted: function () {
@@ -572,7 +645,7 @@
         // Merge: Zahlen -> Maximum, Objekte -> vereinen, Booleans -> ODER
         var merged = Object.assign({}, DEFAULT_STATS, local);
         Object.keys(DEFAULT_STATS).forEach(function (k) {
-          if (k === "bossKills" || k === "challengesCompleted" || k === "discovered") {
+          if (k === "bossKills" || k === "challengesCompleted" || k === "discovered" || k === "classesNormalDone") {
             var localObj = local[k] || {}, cloudObj = cs[k] || {};
             var mergedObj = Object.assign({}, cloudObj, localObj);
             Object.keys(cloudObj).forEach(function (kk) {
