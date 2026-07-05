@@ -127,6 +127,16 @@
       tower_desc: "Wähle eine erbeutete Große Rune, um sie an diesem Altar exklusiv zu aktivieren.",
       tower_leave: "Turm verlassen ➔",
       tower_btn: "🏯 Battle Tower",
+      tower_guide_title: "🗼 Battle Tower",
+      tower_guide_sub: "20 Etagen. Ein Leben. Wie weit kommst du?",
+      tower_guide_l1: "<b>20 Etagen</b>, jede eine kleine Mini-Karte mit Kämpfen und einem Boss am Ende – zufällig aus dem Boss-Pool und mit jeder Etage härter.",
+      tower_guide_l2: "<b>Ein Leben:</b> Stirbst du, ist der Aufstieg vorbei – Neustart ab Etage 1. Deine HP tragen zwischen den Etagen mit.",
+      tower_guide_l3: "<b>Nach jedem Boss</b> gewährt dir Melina einen dauerhaften Segen (Schaden, Max-HP, Flakon, Ausweichen …). Alle 5 Etagen aktivierst du zusätzlich eine <b>Große Rune</b>.",
+      tower_guide_l4: "<b>Verhängnis-Etagen</b> (30 %): ein Fluch gilt für die <b>ganze Etage</b> – z.&nbsp;B. zähere Gegner, Scharlachfäule oder halbe Flakons. Wird oben angezeigt.",
+      tower_guide_l5: "<b>Etage 20: Promised Consort Radahn</b> – bezwinge ihn und werde Meister des Turms.",
+      tower_guide_l6: "Der Turm ist <b>brutal</b>: Du brauchst einen gut gelevelten Charakter (Roundtable) und etwas Glück. Deine Roundtable-Upgrades zählen voll.",
+      tower_guide_start: "Turm betreten ⚔️",
+      tower_guide_close: "Zurück",
       dex_title: "Eldendex",
 
       // Rewards & Boss Transitions
@@ -521,6 +531,16 @@
       tower_desc: "Present a reclaimed Great Rune at this holy altar to permanently activate its blessing.",
       tower_leave: "Leave Tower ➔",
       tower_btn: "🏯 Battle Tower",
+      tower_guide_title: "🗼 Battle Tower",
+      tower_guide_sub: "20 floors. One life. How far can you climb?",
+      tower_guide_l1: "<b>20 floors</b>, each a small mini-map of fights ending in a boss — random from the boss pool and tougher every floor.",
+      tower_guide_l2: "<b>One life:</b> if you die, the ascent is over — restart from floor 1. Your HP carries between floors.",
+      tower_guide_l3: "<b>After every boss</b> Melina grants a permanent blessing (damage, max HP, flask, dodge …). Every 5 floors you also activate a <b>Great Rune</b>.",
+      tower_guide_l4: "<b>Curse floors</b> (30%): a curse applies to the <b>whole floor</b> — e.g. tougher enemies, Scarlet Rot or half flasks. Shown at the top.",
+      tower_guide_l5: "<b>Floor 20: Promised Consort Radahn</b> — defeat him to become Master of the Tower.",
+      tower_guide_l6: "The tower is <b>brutal</b>: you need a well-leveled character (Roundtable) and a bit of luck. Your Roundtable upgrades carry in fully.",
+      tower_guide_start: "Enter the Tower ⚔️",
+      tower_guide_close: "Back",
       dex_title: "Eldendex",
 
       // Rewards & Boss Transitions
