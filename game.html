@@ -11,8 +11,8 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-  <script src="lang.js?v=1.5.26"></script>
-  <script src="eldenrogue-online.js?v=1.5.26"></script>
+  <script src="lang.js?v=1.5.28"></script>
+  <script src="eldenrogue-online.js?v=1.5.28"></script>
   <style>
     /* Lokale Font-Einbindung aus dem fonts-Ordner */
     @font-face {
@@ -100,6 +100,8 @@ h1, h2, h3, .btn-menu, .btn-combat, .btn-social, .game-author-tag, #region-displ
     .loot-info-i:hover::after { opacity: 1; }
     /* Bei geöffnetem Popup bleibt das linke Menü sichtbar (zum Vergleichen der Waffe) */
     #popup-overlay[style*="flex"] ~ .side-panel.left-panel { position: relative; z-index: 250; pointer-events: none; }
+    /* Vor Rundenstart (Klassenauswahl) sind die Seitenleisten ausgeblendet -> kein leeres Scroll-Menü */
+    #game-container.pre-run .side-panel { display: none; }
 
     .modal-content.klassen-modal { max-width: 880px; width: 84%; }
     .class-selection { display: flex; gap: 18px; margin-top: 28px; }
@@ -393,7 +395,7 @@ h1, h2, h3, .btn-menu, .btn-combat, .btn-social, .game-author-tag, #region-displ
 </head>
 <body>
 
-<div id="game-container">
+<div id="game-container" class="pre-run">
   
   <div id="popup-overlay" class="modal-overlay">
     <div class="modal-content" id="popup-content"></div>
@@ -859,6 +861,8 @@ function renderStaticTextGame() {
   if (el("ui-backpack-title")) el("ui-backpack-title").innerText = t("backpack").replace("🎒 ", "");
   if (el("ui-storage-title")) el("ui-storage-title").innerHTML = t("weapon_storage") + ' (<span id="weapon-slot-count">' + maxWaffenSlots + '</span>)';
   if (el("ui-consumables-title")) el("ui-consumables-title").innerText = L("Items", "Items");
+  // Timer-Anzeige (Einstellung im Hauptmenü) – reine UI, aus = ausgeblendet
+  try { let rt = el("run-timer"); if (rt) rt.style.display = (localStorage.getItem("eldenRogueHideTimer") === "1") ? "none" : "block"; } catch(e){}
   if (el("ui-talisman-title")) el("ui-talisman-title").innerText = t("talisman_slots");
   if (el("ui-runes-title")) el("ui-runes-title").innerText = t("great_runes");
 
@@ -1427,8 +1431,9 @@ function generiereSubDungeonNetz(art) {
     for (let k = 0; k < anzahl; k++) {
       let typ;
       if (istBoss) typ = 5;
-      else { let r = Math.random(); if (r < 0.35) typ = 11; else if (r < 0.70) typ = 12; else typ = 13; }
-      if (!istBoss && e === gnadenReihe && k === 0) typ = 4;   // garantierte Gnade
+      else if (art === "sewers") { let r = Math.random(); if (r < 0.35) typ = 11; else if (r < 0.70) typ = 12; else typ = 13; }
+      else typ = (Math.random() < 0.5) ? 11 : 12;   // Dungeons: NUR Gegner + Kisten (keine Gnade/Falle)
+      if (art === "sewers" && !istBoss && e === gnadenReihe && k === 0) typ = 4;   // garantierte Gnade nur in der Kanalisation
       let wege = []; let naechste = subLayout[e + 1] || 0;
       if (naechste > 0) {
         if (anzahl === 2 && naechste === 3) wege = (k === 0) ? [0, 1] : [1, 2];
@@ -1455,8 +1460,9 @@ window.onload = function() {
   updateLangSwitcherButtons();
   if (resumeRun && ladeGespeichertenRun()) {
     document.getElementById("popup-overlay").style.display = "none";
+    let gc = document.getElementById("game-container"); if (gc) gc.classList.remove("pre-run");   // fortgesetzter Run: Seitenleisten sichtbar
   } else {
-    oeffneKlassenAuswahl(); 
+    oeffneKlassenAuswahl();
   }
 };
 
@@ -1607,6 +1613,7 @@ function direktNeustarten() {
 }
 
 function waehleKlasseEngine(klasse) {
+  let gc = document.getElementById("game-container"); if (gc) gc.classList.remove("pre-run");   // Seitenleisten ab jetzt sichtbar
   gewaehlteKlasse = klasse; waffenUpgrade = 0; gelagerteWaffen = []; maxWaffenSlots = hardMode ? 0 : 1; besiegteWaechter = 0;
   ruestungName = t("no_armor"); ruestungRaritaet = "common"; ruestungReduktion = 0; ruestungBild = "";
 
@@ -1837,8 +1844,10 @@ function updateUI() {
     } else {
       gelagerteWaffen.forEach((w, i) => {
         let f = raritaetFarben[w.rarity] || "#9aa0a6"; let d = document.createElement("div");
-        d.style.cssText = `background:rgba(0,0,0,0.4); border:1px solid ${f}; border-radius:3px; padding:4px 6px; font-size:0.78rem; font-family:sans-serif; text-transform:none; display:flex; justify-content:space-between; align-items:center;`;
-        d.innerHTML = `<span style="color:${f}; font-weight:bold;">${waffenNameLoc(w.name)}</span><span style="color:#888;">${dmgArtenLoc(w.schadensarten, "/")}</span>`;
+        d.style.cssText = `background:rgba(0,0,0,0.4); border:1px solid ${f}; border-radius:5px; padding:8px 6px; font-family:sans-serif; text-transform:none; display:flex; flex-direction:column; align-items:center; gap:4px; text-align:center;`;
+        d.innerHTML = `<img src="${gibWaffenBild(w.name)}" alt="" style="width:46px; height:46px; object-fit:contain;" onerror="this.style.display='none'">`
+          + `<span style="color:${f}; font-weight:bold; font-size:0.8rem; line-height:1.15;">${waffenNameLoc(w.name)}</span>`
+          + `<span style="display:inline-flex; gap:4px;">${(w.schadensarten||[]).map(dmgTypIconHtml).join("")}</span>`;
         if (!imKampf) { d.style.cursor = "pointer"; d.title = t("storage_swap_tip"); d.onclick = () => wechsleWaffe(i); } else { d.style.opacity = "0.5"; }
         wCont.appendChild(d);
       });
@@ -2046,7 +2055,7 @@ function klickeKnoten(ebene, knoten) {
     // und Blaidds Schaden wächst langsamer als seine HP, damit er die Regionsbosse nicht überholt.
     let bHpScale  = 1 + (hardMode ? 0.55 : 0.40) * Math.sqrt(questProgress);
     let bDmgScale = 1 + (hardMode ? 0.32 : 0.22) * Math.sqrt(questProgress);
-    gegnerMaxHp = Math.round(80 * rMult * bHpScale); gegnerSchaden = Math.round(15 * rMult * bDmgScale); }
+    gegnerMaxHp = Math.round(88 * rMult * bHpScale); gegnerSchaden = Math.round(16.5 * rMult * bDmgScale); }   // Basiswerte +10% (Skalierung unverändert)
   else if (knoten.typ === 15) {
     // Festungskampf (Haligtree Challenge) — wie ein normaler Kampf
     if (medallionHalves === 0) { gegnerName = "Loretta, Knight of the Haligtree"; gegnerMaxHp = Math.round(280 * rMult); gegnerSchaden = Math.round(27 * rMult); }
