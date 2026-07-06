@@ -11,8 +11,8 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-  <script src="lang.js?v=1.5.31"></script>
-  <script src="eldenrogue-online.js?v=1.5.31"></script>
+  <script src="lang.js?v=1.5.33"></script>
+  <script src="eldenrogue-online.js?v=1.5.33"></script>
   <style>
     /* Lokale Font-Einbindung aus dem fonts-Ordner */
     @font-face {
@@ -1328,23 +1328,24 @@ function platziereRyaQuest(karte, regionName) {
 // Haligtree-Challenge: 2 Festungen auf die Karte setzen (max 1 pro Region)
 let fortressPlacedRegions = [];
 function platziereFestungen(karte, regionName) {
-  if (activeChallenge !== "" && activeChallenge !== "haligtree") return karte;   // Medaillen-Jagd jetzt im Normal-/Hard-Run (nicht in anderen Challenges)
-  if (window.ER && ER.isUnlocked && !ER.isUnlocked("malenia")) return karte;     // Malenia-Thematik erst nach 3 Klassen-Durchläufen freigeschaltet
+  if (activeChallenge !== "" && activeChallenge !== "haligtree") return karte;   // Medaillen-Jagd im Normal-/Hard-Run
+  if (window.ER && ER.isUnlocked && !ER.isUnlocked("malenia")) return karte;     // erst nach dem "Pfad des Haligtree"-Unlock (Run ohne Blaidd)
   if (fortressPlacedRegions.length >= 2) return karte;
   if (fortressPlacedRegions.includes(regionName)) return karte;
-  // Regionen 2-5 (inkl. Alternativ-Pfade Liurnia/Gelmir), damit die Medaillon-Jagd auf jeder Route möglich bleibt
-  let validRegions = ["Caelid","Liurnia","Leyndell","Gelmir","Mountaintops","FarumAzula"];
-  if (!validRegions.includes(regionName)) return karte;
+  // Jeder Run besucht genau EINE Region pro "Slot" (Godrick-Wahl, Radahn/Rennala-Wahl, dann fest):
+  //  Slot 1: Caelid|Liurnia · Slot 2: Leyndell|Gelmir · Slot 3: Mountaintops · Slot 4: FarumAzula
+  // Sequentielle Garantie (remaining/slotsLeft) => IMMER genau 2 Festungen, max 1 pro Ebene, verteilt.
+  let slotVon = { Caelid:1, Liurnia:1, Leyndell:2, Gelmir:2, Mountaintops:3, FarumAzula:4 };
+  let slot = slotVon[regionName];
+  if (!slot) return karte;
   let remaining = 2 - fortressPlacedRegions.length;
-  let regionsLeft = validRegions.length - validRegions.indexOf(regionName);
-  let chance = Math.min(1.0, remaining / regionsLeft + 0.1);
-  if (Math.random() > chance) return karte;
-  // Einen passenden Knoten finden (nicht Boss, nicht Gnade, nicht Dungeon)
+  let slotsLeft = 5 - slot;                 // inkl. aktueller Ebene (Slot 4 -> 1)
+  if (Math.random() > (remaining / slotsLeft)) return karte;
+  // Einen passenden Knoten finden (nicht Boss, Gnade, Dungeon, Runen-Altar, Erdbaum)
   let candidates = [];
-  karte.forEach((zeile, zi) => { zeile.knoten.forEach((k, ki) => { if (![4,5,10].includes(k.typ) && zi > 0 && zi < karte.length-1) candidates.push(k); }); });
+  karte.forEach((zeile, zi) => { zeile.knoten.forEach((k) => { if (![4,5,7,8,10].includes(k.typ) && zi > 0 && zi < karte.length-1) candidates.push(k); }); });
   if (candidates.length === 0) return karte;
-  let pick = candidates[Math.floor(Math.random() * candidates.length)];
-  pick.typ = 15;
+  candidates[Math.floor(Math.random() * candidates.length)].typ = 15;
   fortressPlacedRegions.push(regionName);
   return karte;
 }
@@ -3002,6 +3003,7 @@ function kampfGewonnen() {
   if (window.ER) {
     ER.fightWon();
     if (gegnerName === "Eldenbiest" || gegnerName === "Mohg, Fürst des Blutes") { if (!__schonGezaehlt) { ER.bossKilled(gegnerName); recordHallOfFame(); ER.gameCompleted(gewaehlteKlasse, hardMode ? "hard" : "normal", !blaiddEncounteredRun, (armorRemovedByPlayer && !hatRuestungAusgeruestet())); stopRunTimer();
+      if (activeChallenge === "" && window.ER && ER.recordCompletionTime) try { ER.recordCompletionTime(runPlayMs, { klasse: gewaehlteKlasse, diff: hardMode ? "hard" : "normal" }); } catch(e){}   // Speedrun-Bestenliste (nur echte Story-Runs)
       if (hardMode) ER.hardCompleted();
       if (activeChallenge) ER.challengeCompleted(activeChallenge);
       if (maleniaBesiegtRun) ER.maleniaRunCompleted();   // Achievement "Pfad des Haligtree"
