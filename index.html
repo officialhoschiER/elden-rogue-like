@@ -16,8 +16,8 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-  <script src="lang.js?v=1.5.28"></script>
-  <script src="eldenrogue-online.js?v=1.5.28"></script>
+  <script src="lang.js?v=1.5.30"></script>
+  <script src="eldenrogue-online.js?v=1.5.30"></script>
   
   <style>
     :root { --gold: #cda34f; --gold-dark: #8c6d2d; --bg-dark: #0b0b0b; --border-color: #3a3224; --panel: #161616; }
@@ -1713,7 +1713,19 @@
     }
     var done = list.filter(function (u) { return u.unlocked; }).length;
     document.getElementById("unlocks-progress").textContent = (en ? "Unlocked: " : "Freigeschaltet: ") + done + " / " + list.length;
+    // Klassen-Checkliste für die Battle-Tower-Freischaltung (zeigt, welche Klasse schon durchgespielt wurde)
+    var CLASS_NAMES = { schwertkaempfer: (en ? "Swordsman" : "Schwertkämpfer"), samurai: "Samurai", nackt: (en ? "Wretch" : "Bettler") };
+    function classChecklist() {
+      if (!window.ER || !ER.getClassProgress) return "";
+      var cp; try { cp = ER.getClassProgress(); } catch(e){ return ""; }
+      var items = cp.all.map(function (c) {
+        var d = cp.done.indexOf(c) >= 0;
+        return '<span style="color:' + (d ? '#2ecc71' : '#8c8377') + '; font-family:sans-serif; font-size:0.72rem; white-space:nowrap;">' + (d ? '✓' : '○') + ' ' + CLASS_NAMES[c] + '</span>';
+      }).join(' &nbsp;·&nbsp; ');
+      return '<div style="margin-top:6px; display:flex; flex-wrap:wrap; gap:2px 4px;">' + items + '</div>';
+    }
     grid.innerHTML = list.map(function (u) {
+      var extra = (u.id === "battle_tower") ? classChecklist() : "";
       var name = en ? u.name.en : u.name.de;
       var desc = en ? u.desc.en : u.desc.de;
       var hint = en ? u.hint.en : u.hint.de;
@@ -1725,7 +1737,7 @@
           '<div style="min-width:0;"><div class="nm">' + name + '</div>' +
           '<div class="ds">' + desc + '</div>' +
           '<div style="margin-top:5px; font-size:0.7rem; color:#2ecc71; font-weight:bold; letter-spacing:1px; font-family:sans-serif;">✓ ' + (en ? "UNLOCKED" : "FREIGESCHALTET") + '</div>' +
-          '<div style="margin-top:3px; font-size:0.68rem; color:#8c8377; font-style:italic; font-family:sans-serif; line-height:1.35;">' + (en ? "Unlocked by: " : "Freigeschaltet durch: ") + how + '</div></div></div>';
+          '<div style="margin-top:3px; font-size:0.68rem; color:#8c8377; font-style:italic; font-family:sans-serif; line-height:1.35;">' + (en ? "Unlocked by: " : "Freigeschaltet durch: ") + how + '</div>' + extra + '</div></div>';
       }
       var bar = "";
       if (u.max) {
@@ -1737,7 +1749,7 @@
       return '<div class="ach-card locked">' +
         '<div class="ic">🔒</div>' +
         '<div style="min-width:0;"><div class="nm" style="color:#8c8377;">' + lockName + '</div>' +
-        '<div class="ds">' + hint + '</div>' + bar + '</div></div>';
+        '<div class="ds">' + hint + '</div>' + bar + extra + '</div></div>';
     }).join("");
   }
 
