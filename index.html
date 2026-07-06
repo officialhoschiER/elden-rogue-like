@@ -16,8 +16,8 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-  <script src="lang.js?v=1.5.26"></script>
-  <script src="eldenrogue-online.js?v=1.5.26"></script>
+  <script src="lang.js?v=1.5.28"></script>
+  <script src="eldenrogue-online.js?v=1.5.28"></script>
   
   <style>
     :root { --gold: #cda34f; --gold-dark: #8c6d2d; --bg-dark: #0b0b0b; --border-color: #3a3224; --panel: #161616; }
@@ -120,8 +120,15 @@
     /* Seelen-Anzeige oben links */
     #souls-badge { position: fixed; top: 18px; left: 86px; z-index: 40; display: flex; align-items: center; gap: 10px;
       background: rgba(8,8,8,0.72); border: 1px solid var(--gold-dark); border-radius: 8px; padding: 9px 18px;
-      font-family: 'Cinzel', serif; color: var(--gold); font-size: 1.3rem; font-weight: bold; letter-spacing: 1px; line-height: 1; backdrop-filter: blur(2px); }
+      font-family: 'Cinzel', serif; color: var(--gold); font-size: 1.3rem; font-weight: bold; letter-spacing: 1px; line-height: 1; backdrop-filter: blur(2px);
+      transition: left 0.25s ease; }
     #souls-badge span { display: inline-block; transform: translateY(1px); }
+    /* Seelen-Anzeige rückt mit, wenn das Seitenmenü ausgeklappt ist (kein Überlappen) */
+    .sidebar.open ~ #souls-badge { left: 240px; }
+    /* Versions-Label (klick -> Patch Notes) */
+    #version-tag { position: fixed; bottom: 12px; right: 16px; z-index: 40; font-family: 'Cinzel', serif; font-size: 0.82rem;
+      color: #8c6d2d; letter-spacing: 1px; cursor: pointer; opacity: 0.7; transition: opacity 0.2s, color 0.2s; }
+    #version-tag:hover { opacity: 1; color: var(--gold); }
     /* Roundtable & Bestenliste exakt gleich groß */
     .btn-row .btn-secondary { flex: 1 1 0; min-width: 0; }
     /* Event-Banner (globale Aktionen, z.B. Doppel-Seelen-Wochenende) */
@@ -389,6 +396,8 @@
   <span id="souls-badge-value">0</span>
 </div>
 
+<div id="version-tag" onclick="openModal('patchnotes')" title="Patch Notes">v1.5.3</div>
+
 
 <div class="menu-wrap">
   <h1>Elden Rogue</h1>
@@ -490,6 +499,13 @@
         <div class="set-sub" id="set-speedrun-sub">Neben ein Pop-up klicken = nichts nehmen &amp; weiter</div>
       </div>
       <button class="btn-mini" id="set-speedrun-btn" onclick="toggleSpeedrun()" style="min-width:64px;">Aus</button>
+    </div>
+    <div class="set-row">
+      <div>
+        <div class="set-label" id="set-timer-label">Timer anzeigen</div>
+        <div class="set-sub" id="set-timer-sub">Laufzeit-Anzeige im Spiel</div>
+      </div>
+      <button class="btn-mini" id="set-timer-btn" onclick="toggleTimer()" style="min-width:64px;">An</button>
     </div>
     <div class="set-row" style="flex-wrap:wrap;">
       <div>
@@ -886,6 +902,34 @@
 
     // Patch-Historie: neuester Eintrag zuerst. Neue Patches oben ergänzen.
     var PATCHES = [
+      { ver:"1.5.3", sections: [
+        { icon:"🆕", title: shopL("Neu","New"), items: [
+          shopL("<b>Berg Gelmir:</b> Ein alternativer Pfad statt Leyndell. Stelle dich <b>Rykard, Herr der Blasphemie</b> (jetzt mit 2 Phasen!). Freigeschaltet über eine geheime <b>Rya-Quest</b>.", "<b>Mount Gelmir:</b> An alternative path instead of Leyndell. Face <b>Rykard, Lord of Blasphemy</b> (now with 2 phases!). Unlocked via a secret <b>Rya questline</b>."),
+          shopL("<b>Die Kanalisation & Mohgwyn-Dynastie:</b> Ein verborgener Pfad unter der Hauptstadt.", "<b>The Sewers & Mohgwyn Dynasty:</b> A hidden path beneath the capital."),
+          shopL("<b>Langschwanzkatzen-Talisman</b> + neue „Jump-and-Run“-Abgrund-Mechanik in den Sewers.", "<b>Longtail Cat Talisman</b> + a new „Jump-and-Run“ chasm mechanic in the sewers."),
+          shopL("<b>Geräte-Sync (Cloud):</b> Fortschritt, Seelen & laufende Runs sind mit Google-Login über all deine Geräte synchron.", "<b>Cross-device sync (cloud):</b> Progress, souls & active runs stay in sync across all your devices with a Google login."),
+          shopL("<b>Aktions-Codes & Event-System:</b> Codes einlösen (Einstellungen) und globale Events wie Doppel-Seelen-Wochenenden (wartet auf Ankündigungen).", "<b>Promo codes & event system:</b> Redeem codes (settings) and global events like double-souls weekends (watch for announcements)."),
+          shopL("<b>Speedrun-Modus</b> (Einstellungen): neben ein Pop-up klicken = nichts nehmen & sofort weiter.", "<b>Speedrun mode</b> (settings): click beside a pop-up = take nothing & continue instantly.")
+        ]},
+        { icon:"✨", title: shopL("Verbesserungen","Improvements"), items: [
+          shopL("<b>Waffen-Fund komplett überarbeitet:</b> Waffenbild, Schadensart als Icon, bereits verrechneter Schadenswert in Seltenheitsfarbe – direkt vergleichbar. Deutlich weniger Text.", "<b>Weapon drops fully reworked:</b> weapon image, damage type as an icon, the already-calculated damage value in rarity colour — directly comparable. Far less text."),
+          shopL("<b>Inventar neu:</b> Waffen-Lager & Consumables übersichtlich nebeneinander, aufgeräumtes Talisman-Menü.", "<b>New inventory:</b> weapon storage & consumables neatly side by side, decluttered talisman menu."),
+          shopL("Das <b>linke Menü bleibt bei Pop-ups sichtbar</b> – perfekt zum Vergleichen.", "The <b>left panel stays visible during pop-ups</b> — perfect for comparing."),
+          shopL("<b>Eldendex:</b> Gegner jetzt sauber nach Gebiet pro Seite, Bosse dicht gepackt.", "<b>Eldendex:</b> enemies now grouped one area per page, bosses packed tightly."),
+          shopL("Feste <b>Bestenlisten-Größe</b> mit Blättern, <b>Seelen-Anzeige</b> im Hauptmenü, <b>Runen-Altar</b> mit allen 5 Großen Runen.", "Fixed <b>leaderboard size</b> with paging, a <b>souls display</b> in the main menu, and the <b>rune altar</b> with all 5 Great Runes.")
+        ]},
+        { icon:"⚖️", title: shopL("Balance","Balance"), items: [
+          shopL("<b>Battle Tower deutlich schwerer.</b>", "<b>Battle Tower is significantly harder.</b>"),
+          shopL("Waffen mit <b>zwei Schadensarten</b> spüren jetzt Resistenzen (z. B. Blasphemous Blade vs. Radagon).", "Weapons with <b>two damage types</b> now feel resistances (e.g. Blasphemous Blade vs. Radagon)."),
+          shopL("<b>Auto-Battle</b> reagiert flotter.", "<b>Auto-Battle</b> reacts more quickly.")
+        ]},
+        { icon:"🐛", title: shopL("Käfer","Bugs"), items: [
+          shopL("Blaidd-Quest-Achievement wurde fälschlich freigeschaltet – zählt jetzt die echte Quest (4× in einem Run).", "The Blaidd quest achievement unlocked falsely — it now tracks the real quest (4× in one run)."),
+          shopL("Eldendex zeigte gefundene/fehlende Einträge falsch – behoben; <b>alle Gegner & Bosse enthalten und gezählt</b>.", "The Eldendex showed found/missing entries incorrectly — fixed; <b>all enemies & bosses are included and counted</b>."),
+          shopL("Große Runen ließen sich nach dem Freischalten nicht auswählen – behoben (5-Runen-Altar).", "Great Runes couldn't be selected after unlocking — fixed (5-rune altar)."),
+          shopL("Fehlende Bilder (Festungen, Rennala, Haligtree- & Liurnia-Gegner, Mohg, Esgar, Putrid Tree Spirit) – behoben.", "Missing images (forts, Rennala, Haligtree & Liurnia enemies, Mohg, Esgar, Putrid Tree Spirit) — fixed.")
+        ]}
+      ]},
       { ver:"1.5.2", sections: [
         { icon:"🆕", title: shopL("Neu","New"), items: [
           shopL("<b><img src='images/icons/Godfrey Icon.webp' class='btn-ico' onerror=\"this.style.display='none'\">Battle Tower:</b> Ein 20-stöckiger Aufstieg – jede Etage ein Bosskampf, dazwischen Melinas Segen und Große Runen. Wie hoch schaffst du es?", "<b><img src='images/icons/Godfrey Icon.webp' class='btn-ico' onerror=\"this.style.display='none'\">Battle Tower:</b> A 20-floor ascent — every floor a boss fight, with Melina's blessings and Great Runes in between. How high can you climb?"),
@@ -1833,6 +1877,21 @@ function toggleSpeedrun(){
   if (_soundOn) playClick();
 }
 window.toggleSpeedrun = toggleSpeedrun;
+
+// Timer-Anzeige (nur UI): Standard = an. localStorage "eldenRogueHideTimer" === "1" -> aus
+function _updateTimerBtn(){
+  var aus = localStorage.getItem("eldenRogueHideTimer") === "1";
+  var en = _menuIsEn();
+  var btn = document.getElementById("set-timer-btn");
+  if (btn) { btn.innerText = aus ? (en ? "Off" : "Aus") : (en ? "On" : "An"); btn.style.color = aus ? "#888" : "#2ecc71"; btn.style.borderColor = aus ? "" : "#2ecc71"; }
+}
+function toggleTimer(){
+  var aus = localStorage.getItem("eldenRogueHideTimer") === "1";
+  localStorage.setItem("eldenRogueHideTimer", aus ? "0" : "1");
+  _updateTimerBtn();
+  if (_soundOn) playClick();
+}
+window.toggleTimer = toggleTimer;
 (function(){
   var sel = ".btn-main, .btn-secondary, .btn-social, .sb-item, .sb-toggle, .btn-mini, .btn-google, .lb-pill, .mode-tab, .btn-lang";
   function ok(el){ return el && !el.classList.contains("coming-soon-btn") && !el.classList.contains("btn-hard-locked"); }
@@ -1972,7 +2031,10 @@ function localizeMenuExtras(){
   set("set-vol-sub", "SFX-Lautstärke", "SFX volume");
   set("set-speedrun-label", "Speedrun-Modus", "Speedrun Mode");
   set("set-speedrun-sub", "Neben ein Pop-up klicken = nichts nehmen & weiter", "Click beside a pop-up = take nothing & continue");
+  set("set-timer-label", "Timer anzeigen", "Show timer");
+  set("set-timer-sub", "Laufzeit-Anzeige im Spiel", "In-game run timer display");
   _updateSpeedrunBtn();
+  _updateTimerBtn();
   setH("info-l1", "<b>Modus wählen:</b> Starte einen <b>Normalen</b> Run. Den <b>Hard Mode</b> schaltest du frei, sobald du einmal durchgespielt hast.", "<b>Pick a mode:</b> Start a <b>Normal</b> run. <b>Hard Mode</b> unlocks once you've finished the game.");
   setH("info-l2", "<b>Run fortsetzen:</b> Ein laufender Run wird gespeichert und erscheint oben als grüner Button.", "<b>Resume:</b> An active run is saved and shows up as the green button at the top.");
   setH("info-l3", "<b>Karte:</b> Wähle deinen Pfad über ein verzweigtes Netz – jeder Knoten ist ein anderes Event.", "<b>Map:</b> Choose your path across a branching web – every node is a different event.");
