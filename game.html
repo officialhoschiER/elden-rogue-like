@@ -11,8 +11,8 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-  <script src="lang.js?v=1.5.33"></script>
-  <script src="eldenrogue-online.js?v=1.5.33"></script>
+  <script src="lang.js?v=1.5.36"></script>
+  <script src="eldenrogue-online.js?v=1.5.36"></script>
   <style>
     /* Lokale Font-Einbindung aus dem fonts-Ordner */
     @font-face {
@@ -1065,6 +1065,7 @@ function gibBossSchadensModifikator() {
 
 // In-Kampf-Anzeige NUR für namentliche Bosse/Festungen (kleine Gegner sähen inkonsistent aus)
 function gibGegnerAffinitaeten() {
+  if (hardMode) return null;   // Hard Mode: keine Schwächen-Vorschau — man muss selbst wissen, was gut ist
   if (inSubDungeon || (aktuellerKnotenTyp !== 5 && aktuellerKnotenTyp !== 15)) return null;
   let tbl = bossResistenzen[gegnerName]; if (!tbl) return null;
   let schwaechen = [], resistenzen = [];
@@ -1074,6 +1075,7 @@ function gibGegnerAffinitaeten() {
 }
 // Tooltip-Text für das "i"-Icon am Regions-Badge (Gebiets-Resistenzen zum Nachlesen)
 function gibGebietsResistenzTooltip() {
+  if (hardMode) return "";   // Hard Mode: kein Gebiets-Schwächen-Hinweis
   if (inSubDungeon) return "";
   let tbl = gebietsResistenzen[aktuelleRegion]; if (!tbl) return "";
   let schw = [], res = [];
@@ -1102,6 +1104,7 @@ function regionBossName(region, ebene) {
 }
 // Kurzer Schwäche/Resistenz-Text für einen Boss (für den Hover-Tooltip)
 function bossSchwaecheText(bossName) {
+  if (hardMode) return "";   // Hard Mode: keine Boss-Schwächen-Vorschau beim Hovern
   let tbl = bossResistenzen[bossName]; if (!tbl) return "";
   let schw = [], res = [];
   schadensArten.forEach(art => { if (tbl[art] > 0) schw.push(dmgArtLoc(art)); else if (tbl[art] < 0) res.push(dmgArtLoc(art)); });
@@ -1265,7 +1268,7 @@ const bDatenbankHTML = {
   4: "images/icon_grace.png", 6: "images/icon_talisman.webp", 7: "images/icon_tree.webp",
   8: "images/icon_tower.png", 9: "images/icon_quest.webp", 10: "images/icon_dungeon.webp",
   11: "images/icon_skel.jpg", 12: "images/icon_chest.jpg", 13: "images/icon_run.jpg",
-  15: "images/fort-nightreign-full.jpg",
+  15: "images/icons/fort-nightreign-full.jpg",
   14: "images/Eldenringcaveofknowledge.jpeg",
   16: "images/icons/sewersicon.webp",
   17: "images/icons/ryas_necklace.png",
@@ -1952,7 +1955,7 @@ function updateUI() {
       affInfo.innerHTML = teile.join("<br>"); affInfo.style.display = "block";
     } else { affInfo.style.display = "none"; }
 
-    if (aktuellerKnotenTyp === 15) document.getElementById("enemy-img").src = bilderDatenbankBosse[gegnerName] || "images/fort-nightreign-full.jpg";
+    if (aktuellerKnotenTyp === 15) document.getElementById("enemy-img").src = bilderDatenbankBosse[gegnerName] || "images/icons/fort-nightreign-full.jpg";
     else if (aktuellerKnotenTyp === 19) document.getElementById("enemy-img").src = bilderDatenbankBosse[gegnerName] || "";
     else if (aktuellerKnotenTyp === 9) document.getElementById("enemy-img").src = "images/blaidd.avif";
     else if (aktuellerKnotenTyp === 14) { let mb = gibAktuellenMiniboss(); document.getElementById("enemy-img").src = (mb.bild === "__TARNISHED__") ? playerImageStr : mb.bild; }
@@ -2333,10 +2336,12 @@ async function gegnerKonter(opts) {
   // Kampf bereits entschieden -> kein Konter mehr.
   if (gegnerHp <= 0 || spielerHp <= 0) return;
 
-  // Gegner taumelt -> setzt mit seinem Angriff aus.
+  // Gegner taumelt -> setzt mit seinem Angriff aus (kein Schaden), die Runde dauert aber
+  // GENAUSO LANGE wie ein normaler Konter — sonst öffnet sich beim Stagger ein Spam-Fenster.
   if (enemyIsStaggered) {
     enemyIsStaggered = false;
     document.getElementById("battle-log").innerText += t(opts.logStagger);
+    await wait((opts.windup ? 150 : 0) + (opts.cleanupDelay || 300));
     return;
   }
 
@@ -2448,7 +2453,7 @@ async function spielerAngriff() {
   // --- Gegner-Konter (+700 ms gesamt) ---
   await wait(350);
   if (bossPhaseWechsel) { bossPhaseWechsel = false; aktionsSperre = false; updateUI(); return; }  // frisch verwandelter Boss greift diese Runde nicht an
-  if (gegnerHp <= 0 || spielerHp <= 0) { aktionsSperre = false; return; }
+  if (gegnerHp <= 0 || spielerHp <= 0) { aktionsSperre = false; updateUI(); return; }
   await gegnerKonter({
     windup: true,
     dmgVariance: () => Math.floor(Math.random() * 4) - 1,
