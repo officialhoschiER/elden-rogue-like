@@ -352,7 +352,7 @@
     { id: "battle_tower", icon: "🗼", img: "images/icons/Godfrey Icon.webp",
       name: { de: "Battle Tower", en: "Battle Tower" },
       desc: { de: "20 Etagen, ein Leben, ein Endboss. Der ultimative Prüfstein.", en: "20 floors, one life, one final boss. The ultimate trial." },
-      hint: { de: "Schließe den Normal-Modus mit allen Klassen ab.", en: "Finish Normal Mode with every class." },
+      hint: { de: "Schließe das Spiel mit allen Klassen ab (Normal oder Hard).", en: "Finish the game with every class (Normal or Hard)." },
       check: s => classCountNormal(s) >= TOTAL_CLASSES || (s.towerBestFloor || 0) >= 1,   // Grace: wer den Turm schon betreten hat, behält Zugang
       progress: s => ({ cur: Math.min(TOTAL_CLASSES, classCountNormal(s)), max: TOTAL_CLASSES }) },
     { id: "liurnia", icon: "🌙", img: "images/icons/sleep_status_effect_elden_ring_wiki_guide_100px.png", secret: true,   // geheime Freischaltung — KEIN Hinweis auf die Methode (Rüstung ablegen)
@@ -506,15 +506,16 @@
     blaiddQuestComplete: function () { bump("blaiddQuestDone"); },   // Blaidds Quest tatsächlich in EINEM Run abgeschlossen (4x)
     gameCompleted: function (klasse, diff, noBlaidd, noArmor) {
       bump("gamesCompleted");   // speichert + prüft Achievements
-      if (diff !== "hard") {    // nur Normal-Abschlüsse zählen für die Freischaltungen
-        var s = getStats();
+      var s = getStats();
+      // Klasse gilt als "durchgespielt" bei JEDER Schwierigkeit (Hard ist strenger als Normal) -> Battle-Tower-Freischaltung
+      if (klasse) { s.classesNormalDone = s.classesNormalDone || {}; s.classesNormalDone[klasse] = true; }
+      if (diff !== "hard") {    // die übrigen Freischaltungen bleiben Normal-spezifisch
         s.normalCompletions = (s.normalCompletions || 0) + 1;
-        if (klasse) { s.classesNormalDone = s.classesNormalDone || {}; s.classesNormalDone[klasse] = true; }   // Battle Tower: alle Klassen
         if (noBlaidd) s.normalNoBlaiddClears = (s.normalNoBlaiddClears || 0) + 1;                              // Haligtree: ohne Blaidd
         if (noArmor && klasse === "schwertkaempfer") s.normalNoArmorClears = (s.normalNoArmorClears || 0) + 1;  // Liurnia: NUR Vagabund + bewusst abgelegte Rüstung (Samurai/Bettler folgen später)
-        saveStats(s);
-        checkAchievements();    // Freischaltungen können sich geändert haben
       }
+      saveStats(s);
+      checkAchievements();      // Freischaltungen können sich geändert haben
       ER.endRun();
     },
     maleniaKilled:        function () { bump("maleniaKills"); },
@@ -537,6 +538,14 @@
     /* --- Freischaltungen (Progression) --- */
     getUnlocks: function () { return unlockInfo(); },
     isUnlocked: function (id) { return isUnlockedId(id); },
+    // Welche Klassen wurden schon durchgespielt (für die Battle-Tower-Freischaltung)?
+    getClassProgress: function () {
+      var s = getStats(); var done = s.classesNormalDone || {};
+      var all = ["schwertkaempfer", "samurai", "nackt"];
+      return { all: all, total: TOTAL_CLASSES,
+        done: all.filter(function (c) { return !!done[c]; }),
+        missing: all.filter(function (c) { return !done[c]; }) };
+    },
 
     /* --- Geräte-Sync: lokale Stände (Meta/HoF/Run) in die Cloud spiegeln ---
        syncNow()      -> gebündelt nach ein paar Sekunden (für häufige Ereignisse wie speichereRun)
