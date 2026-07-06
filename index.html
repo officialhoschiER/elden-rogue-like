@@ -16,8 +16,8 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-  <script src="lang.js?v=1.5.31"></script>
-  <script src="eldenrogue-online.js?v=1.5.31"></script>
+  <script src="lang.js?v=1.5.33"></script>
+  <script src="eldenrogue-online.js?v=1.5.33"></script>
   
   <style>
     :root { --gold: #cda34f; --gold-dark: #8c6d2d; --bg-dark: #0b0b0b; --border-color: #3a3224; --panel: #161616; }
@@ -224,6 +224,10 @@
 
     /* ===== Bestenliste ===== */
     .lb-table { width: 100%; border-collapse: collapse; font-family: sans-serif; }
+    /* Speedrun-Board: nur Zeit -> Spalten 3 & 4 aus; 100%-Board: Datum + Erfolge -> Spalte 4 aus */
+    .lb-table.lbmode-speedrun th:nth-child(3), .lb-table.lbmode-speedrun td:nth-child(3),
+    .lb-table.lbmode-speedrun th:nth-child(4), .lb-table.lbmode-speedrun td:nth-child(4) { display: none; }
+    .lb-table.lbmode-completionist th:nth-child(4), .lb-table.lbmode-completionist td:nth-child(4) { display: none; }
     .lb-table th { text-align: left; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: #888; padding: 8px 10px; border-bottom: 1px solid var(--border-color); }
     .lb-table td { padding: 10px; border-bottom: 1px solid #1d1a13; font-size: 0.92rem; }
     .lb-rank { font-family: 'Cinzel', serif; color: var(--gold); width: 42px; }
@@ -749,11 +753,13 @@
   let achMode = "normal";
 
   var LB_CATS = [
-    ["normal",     "lb_cat_normal"],
-    ["hard",       "lb_cat_hard"],
-    ["tower",      "lb_cat_tower"],
-    ["noarmor",    "challenge_noarmor"],
-    ["autobattle", "challenge_autobattle"]
+    ["normal",       "lb_cat_normal"],
+    ["hard",         "lb_cat_hard"],
+    ["speedrun",     "lb_cat_speedrun"],
+    ["completionist","lb_cat_completionist"],
+    ["tower",        "lb_cat_tower"],
+    ["noarmor",      "challenge_noarmor"],
+    ["autobattle",   "challenge_autobattle"]
   ];
   var lbKategorieAktiv = "normal";
   function fuelleLbKategorien(t) {
@@ -1607,10 +1613,26 @@
     var patchSel = document.getElementById("lb-patch");
     var lbPatch = patchSel ? patchSel.value : "1.5";
 
-    // Spaltenkopf je Kategorie: Tower zeigt "Akt", sonst "Etappe"
-    var istTower = (lbKategorie === "tower");
-    document.getElementById("th-stage").innerText = istTower ? t("lb_th_akt") : t("lb_th_stage");
-    document.getElementById("th-bosses").innerText = t("lb_th_bosses");
+    // Spaltenkonfiguration je Board-Typ
+    var thStage = document.getElementById("th-stage"), thBosses = document.getElementById("th-bosses"), thScore = document.getElementById("th-score");
+    table.classList.remove("lbmode-speedrun", "lbmode-completionist", "lbmode-score");
+    if (lbKategorie === "speedrun") {
+      table.classList.add("lbmode-speedrun");
+      thScore.innerText = t("lb_th_time");
+      if (patchSel) patchSel.style.display = "none";   // Speedrun-Board ist patch-übergreifend
+    } else if (lbKategorie === "completionist") {
+      table.classList.add("lbmode-completionist");
+      thStage.innerText = t("lb_th_date");
+      thScore.innerText = t("lb_th_achievements");
+      if (patchSel) patchSel.style.display = "none";
+    } else {
+      table.classList.add("lbmode-score");
+      var istTower = (lbKategorie === "tower");
+      thStage.innerText = istTower ? t("lb_th_akt") : t("lb_th_stage");
+      thBosses.innerText = t("lb_th_bosses");
+      thScore.innerText = t("lb_th_score");
+      if (patchSel) patchSel.style.display = "";
+    }
 
     lbPage = 0;
     ER.getLeaderboard(50, function (rows, online) {
@@ -1627,6 +1649,19 @@
     }, lbKategorie, lbPatch);
   }
 
+  /* Laufzeit (ms) -> m:ss oder h:mm:ss */
+  function fmtRunTime(ms) {
+    ms = ms || 0; var s = Math.floor(ms / 1000);
+    var h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+    var p = function (n) { return (n < 10 ? "0" : "") + n; };
+    return h > 0 ? (h + ":" + p(m) + ":" + p(sec)) : (m + ":" + p(sec));
+  }
+  /* Zeitstempel (ms) -> lokales Datum */
+  function fmtLbDate(ts) {
+    if (!ts) return "—";
+    try { return new Date(ts).toLocaleDateString(_menuIsEn() ? "en-US" : "de-DE"); } catch (e) { return "—"; }
+  }
+
   /* Bestenliste: feste Größe — immer 10 Zeilen pro Seite, darunter blättern (wie im Eldendex) */
   var _lbRows = []; var lbPage = 0; var LB_PER_PAGE = 10;
   function renderLbPage() {
@@ -1637,16 +1672,21 @@
     var start = lbPage * LB_PER_PAGE;
     var slice = _lbRows.slice(start, start + LB_PER_PAGE);
     body.innerHTML = "";
+    var cat = lbKategorieAktiv || "normal";
     slice.forEach(function (r, i) {
       var rank = start + i;
       var rankClass = rank === 0 ? "gold" : (rank === 1 ? "silver" : (rank === 2 ? "bronze" : ""));
       var tr = document.createElement("tr");
-      tr.innerHTML =
-        '<td class="lb-rank ' + rankClass + '">' + (rank + 1) + '</td>' +
-        '<td><span class="lb-name">' + (r.photo ? '<img src="' + r.photo + '">' : "") + (r.name || (window.i18n ? t("lb_th_player") : "Befleckter")) + (r.patch ? ' <span class="lb-patch">v' + r.patch + '</span>' : "") + '</span></td>' +
-        '<td>' + (r.stage || 0) + '</td>' +
-        '<td>' + (r.bosses || 0) + '</td>' +
-        '<td class="lb-score">' + (r.score || 0) + '</td>';
+      var nameCell = '<td><span class="lb-name">' + (r.photo ? '<img src="' + r.photo + '">' : "") + (r.name || (window.i18n ? t("lb_th_player") : "Befleckter")) + (r.patch ? ' <span class="lb-patch">v' + r.patch + '</span>' : "") + '</span></td>';
+      var mid, last;
+      if (cat === "speedrun") {
+        mid = '<td></td><td></td>'; last = '<td class="lb-score">' + fmtRunTime(r.timeMs) + '</td>';
+      } else if (cat === "completionist") {
+        mid = '<td>' + fmtLbDate(r.date) + '</td><td></td>'; last = '<td class="lb-score">' + (r.count || 0) + '</td>';
+      } else {
+        mid = '<td>' + (r.stage || 0) + '</td><td>' + (r.bosses || 0) + '</td>'; last = '<td class="lb-score">' + (r.score || 0) + '</td>';
+      }
+      tr.innerHTML = '<td class="lb-rank ' + rankClass + '">' + (rank + 1) + '</td>' + nameCell + mid + last;
       body.appendChild(tr);
     });
     // Auffüllen auf exakt 10 Zeilen, damit das Fenster immer gleich groß bleibt
