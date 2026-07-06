@@ -38,10 +38,37 @@
       fbDB = firebase.firestore();
       fbAuth.onAuthStateChanged(function (u) {
         currentUser = u;
+        initialSyncDone = false;   // erst wieder pushen, wenn der Cloud-Stand des (neuen) Kontos gemergt wurde
         if (u) cloudSyncOnLogin();
         userListeners.forEach(function (cb) { try { cb(u); } catch (e) {} });
       });
     } catch (e) { console.warn("[ER] Firebase-Init fehlgeschlagen:", e); }
+  }
+
+  /* ====== GLOBALE EVENTS (z.B. Doppel-Seelen-Wochenende) ======
+     Admin legt in der Firebase-Konsole das Dokument config/event an:
+       { aktiv: true, seelenMult: 2, titel: "Doppelte Seelen!", titelEn: "Double Souls!", bis: <Timestamp oder Millis, optional> }
+     aktiv auf false setzen (oder Ablaufzeit erreichen) beendet das Event — kein Deployment nötig. */
+  let eventInfo = null;
+  function eventBisMillis(bis) {
+    if (!bis) return null;
+    if (typeof bis === "number") return bis;
+    if (bis.toMillis) { try { return bis.toMillis(); } catch (e) {} }
+    if (bis.seconds) return bis.seconds * 1000;
+    return null;
+  }
+  if (ONLINE && fbDB) {
+    try {
+      fbDB.collection("config").doc("event").get().then(function (snap) {
+        if (!snap.exists) return;
+        var d = snap.data();
+        var bis = eventBisMillis(d.bis);
+        if (d.aktiv && (!bis || bis > Date.now())) {
+          eventInfo = { seelenMult: d.seelenMult || 1, titel: d.titel || "", titelEn: d.titelEn || d.titel || "", bis: bis };
+          try { window.dispatchEvent(new CustomEvent("er-event", { detail: eventInfo })); } catch (e) {}
+        }
+      }).catch(function (e) { console.warn("[ER] Event-Config:", e); });
+    } catch (e) {}
   }
 
   /* ====== 2) SPEICHER-HELFER (robust, fällt nie auf die Nase) ====== */
@@ -57,7 +84,7 @@
   const DEFAULT_STATS = {
     fightsWon: 0, bossesKilled: 0, elitesKilled: 0, minibossesKilled: 0, invadersKilled: 0,
     runsStarted: 0, deaths: 0, dungeonsCleared: 0, talismansFound: 0, weaponsFound: 0,
-    armorsFound: 0, blaiddDefeats: 0, gamesCompleted: 0, furthestStage: 0,
+    armorsFound: 0, blaiddDefeats: 0, blaiddQuestDone: 0, gamesCompleted: 0, furthestStage: 0,
     bestRunBosses: 0, bestScore: 0, flasksDrunk: 0,
     // --- pro Schwierigkeit getrennt ---
     bestScoreNormal: 0, bestScoreHard: 0,
@@ -70,6 +97,7 @@
     maleniaKills: 0, maleniaRuns: 0, legendaryRuns: 0,
     // --- Progression / Freischaltungen ---
     normalCompletions: 0, classesNormalDone: {}, normalNoBlaiddClears: 0, normalNoArmorClears: 0,
+    ryaInvites: 0, mohgwynVisits: 0, gelmirVisits: 0, fallDeaths: 0,
     // --- Eldendex: entdeckte Katalog-IDs ---
     discovered: {},
     // --- Bestwerte pro Patch: { "1_3": { normal:{score,stage,bosses}, hard:{...} }, "1_4": {...} } ---
@@ -167,50 +195,68 @@
     { id:"t:radagon",   cat:"talismans", name:"Radagon's Scarseal",      img:"images/talismans/radagons_scarseal.png" },
     { id:"t:dungeater", cat:"talismans", name:"Dung Eater Medallion",    img:"images/talismans/dungeater_medallion.png" },
     { id:"t:havel",     cat:"talismans", name:"Havel's Medallion",       img:"images/talismans/havels_medallion.png" },
-    // --- Gegner (id = exakter gegnerName) ---
-    { id:"Elite-Ritter",                          cat:"gegner", name:"Elite-Ritter",                          img:"images/Gegner/soldat.jpg" },
-    { id:"Bloodhound Knight",                     cat:"gegner", name:"Bloodhound Knight",                     img:"images/Gegner/LIMGRAVE_WAECHTER.webp" },
-    { id:"Nerijus",                               cat:"gegner", name:"Nerijus",                               img:"images/Gegner/LIMGRAVE_INVADER.webp" },
-    { id:"Böser Vogel",                           cat:"gegner", name:"Böser Vogel",                           img:"images/Gegner/CAELID_ELITE.jpg" },
-    { id:"Ekzykes",                               cat:"gegner", name:"Ekzykes",                               img:"images/Gegner/CAELID_WAECHTER.webp" },
-    { id:"Vyke",                                  cat:"gegner", name:"Vyke",                                  img:"images/Gegner/CAELID_INVADER.jpg" },
-    { id:"Leyndell Ritter",                       cat:"gegner", name:"Leyndell Ritter",                       img:"images/Gegner/LEYNDELL_ELITE.jpg" },
-    { id:"Omen",                                  cat:"gegner", name:"Omen",                                  img:"images/Gegner/LEYNDELL_WAECHTER.jpg" },
-    { id:"Eleonora",                              cat:"gegner", name:"Eleonora",                              img:"images/Gegner/LEYNDELL_INVADER.jpg" },
-    { id:"Feuermönch",                            cat:"gegner", name:"Feuermönch",                            img:"images/Gegner/MOUNTAINTOPS_ELITE.jpg" },
-    { id:"Troll",                                 cat:"gegner", name:"Troll",                                 img:"images/Gegner/MOUNTAINTOPS_WAECHTER.jpg" },
-    { id:"Okina",                                 cat:"gegner", name:"Okina",                                 img:"images/Gegner/MOUNTAINTOPS_INVADER.jpg" },
-    { id:"Bestienmensch of Farum Azula",          cat:"gegner", name:"Bestienmensch of Farum Azula",          img:"images/Gegner/FARUMAZULA_ELITE.jpg" },
-    { id:"Farum Azula Drache",                    cat:"gegner", name:"Farum Azula Drache",                    img:"images/Gegner/FARUMAZULA_WAECHTER.jpg" },
-    { id:"Anastasia",                             cat:"gegner", name:"Anastasia",                             img:"images/Gegner/FARUMAZULA_INVADER.jpg" },
-    { id:"Page",                                  cat:"gegner", name:"Page",                                  img:"images/Gegner/ASHENCAPITAL_ELITE.jpg" },
-    { id:"Königlicher Revenant",                  cat:"gegner", name:"Königlicher Revenant",                  img:"images/Gegner/ASHENCAPITAL_WAECHTER.jpg" },
-    { id:"Varre",                                 cat:"gegner", name:"Varre",                                 img:"images/Gegner/ASHENCAPITAL_INVADER.jpg" },
-    { id:"Haligtree Knight",                      cat:"gegner", name:"Haligtree Knight",                      img:"images/Gegner/haligtree_knight.webp" },
-    { id:"Putrid Avatar",                         cat:"gegner", name:"Putrid Avatar",                         img:"images/Gegner/putrid_avatar.webp" },
-    { id:"Millicent",                             cat:"gegner", name:"Millicent",                             img:"images/Gegner/millicent.webp" },
-    { id:"Beastman of Farum Azula",               cat:"gegner", name:"Beastman of Farum Azula",               img:"images/Gegner/miniboss_beastman.jpg" },
-    { id:"Cleanrot Knight",                       cat:"gegner", name:"Cleanrot Knight",                       img:"images/Gegner/miniboss_cleanrot_knight.png" },
-    { id:"Omenkiller & Miranda the Blighted Bloom", cat:"gegner", name:"Omenkiller & Miranda",                img:"images/Gegner/miniboss_omenkiller.jpg" },
-    { id:"Erdtree Avatar",                        cat:"gegner", name:"Erdtree Avatar",                        img:"images/Gegner/miniboss_erdtree_avatar.webp" },
-    { id:"Stray Mimic Tear",                      cat:"gegner", name:"Stray Mimic Tear",                      img:"images/starter/tarnished_ritter.webp" },
-    { id:"Dragonkin Soldier",                     cat:"gegner", name:"Dragonkin Soldier",                     img:"images/Gegner/miniboss_dragonkin_soldier.png" },
-    { id:"Putrid Tree Spirit",                    cat:"gegner", name:"Putrid Tree Spirit",                    img:"images/Gegner/putrid_tree_spirit.webp" },
-    { id:"Dungeon Skelett",                       cat:"gegner", name:"Dungeon Skelett",                       img:"images/Gegner/skeleton.webp" },
-    // --- Bosse (id = exakter gegnerName) ---
+    { id:"t:katze",     cat:"talismans", name:"Langschwanzkatzen-Talisman", img:"images/talismans/longtail_cat_talisman.png" },
+    // --- Gegner (id = exakter gegnerName; reg = Gebiet für die Eldendex-Seiten) ---
+    { id:"Elite-Ritter",                          cat:"gegner", reg:"limgrave", name:"Elite-Ritter",                          img:"images/Gegner/soldat.jpg" },
+    { id:"Bloodhound Knight",                     cat:"gegner", reg:"limgrave", name:"Bloodhound Knight",                     img:"images/Gegner/LIMGRAVE_WAECHTER.webp" },
+    { id:"Nerijus",                               cat:"gegner", reg:"limgrave", name:"Nerijus",                               img:"images/Gegner/LIMGRAVE_INVADER.webp" },
+    { id:"Böser Vogel",                           cat:"gegner", reg:"caelid", name:"Böser Vogel",                           img:"images/Gegner/CAELID_ELITE.jpg" },
+    { id:"Ekzykes",                               cat:"gegner", reg:"caelid", name:"Ekzykes",                               img:"images/Gegner/CAELID_WAECHTER.webp" },
+    { id:"Vyke",                                  cat:"gegner", reg:"caelid", name:"Vyke",                                  img:"images/Gegner/CAELID_INVADER.jpg" },
+    { id:"Glintstone-Ritter",                     cat:"gegner", reg:"liurnia", name:"Glintstone-Ritter",                     img:"images/Gegner/miniboss_liurnia.webp" },
+    { id:"Roter Wolf von Radagon",                cat:"gegner", reg:"liurnia", name:"Roter Wolf von Radagon",                img:"images/Gegner/red-wolf-of-radagon.jpg" },
+    { id:"Edgar der Rächer",                      cat:"gegner", reg:"liurnia", name:"Edgar der Rächer",                      img:"images/Gegner/edgar the revenger.webp" },
+    { id:"Nachtreiter (Night's Cavalry)",         cat:"gegner", reg:"liurnia", name:"Nachtreiter (Night's Cavalry)",         img:"images/Gegner/nights-cavalry.jpg" },
+    { id:"Eiserne Jungfrauen",                    cat:"gegner", reg:"gelmir", name:"Eiserne Jungfrauen",                    img:"images/Gegner/abductor-virgins.jpg" },
+    { id:"Ausgewachsene Sternenbestie",           cat:"gegner", reg:"gelmir", name:"Ausgewachsene Sternenbestie",           img:"images/Gegner/full-grown-fallingstar.jpg" },
+    { id:"Inquisitor Ghiza",                      cat:"gegner", reg:"gelmir", name:"Inquisitor Ghiza",                      img:"images/Gegner/ER_Inquisitor_Ghiza.png" },
+    { id:"Godskin-Edler",                         cat:"gegner", reg:"gelmir", name:"Godskin-Edler",                         img:"images/Gegner/godskin_noble_elden_ring_wiki_600px.jpg" },
+    { id:"Roter Albinauriker",                    cat:"gegner", reg:"mohgwyn", name:"Roter Albinauriker",                    img:"images/Gegner/ER_Red_Albinauric_w_Shamshir.webp" },
+    { id:"Monströse Krähe",                       cat:"gegner", reg:"mohgwyn", name:"Monströse Krähe",                       img:"images/Gegner/monstrous-crow-2-hq-elden-ring-wiki-guide.jpg" },
+    { id:"Namenlose Weißmaske",                   cat:"gegner", reg:"mohgwyn", name:"Namenlose Weißmaske",                   img:"images/Gegner/nameless-white-mask-in-elden-ring.avif" },
+    { id:"Esgar, Priester des Blutes",            cat:"gegner", reg:"mohgwyn", name:"Esgar, Priester des Blutes",            img:"images/Gegner/ER_Esgar,_Priests_of_Blood.webp" },
+    { id:"Leyndell Ritter",                       cat:"gegner", reg:"leyndell", name:"Leyndell Ritter",                       img:"images/Gegner/LEYNDELL_ELITE.jpg" },
+    { id:"Omen",                                  cat:"gegner", reg:"leyndell", name:"Omen",                                  img:"images/Gegner/LEYNDELL_WAECHTER.jpg" },
+    { id:"Eleonora",                              cat:"gegner", reg:"leyndell", name:"Eleonora",                              img:"images/Gegner/LEYNDELL_INVADER.jpg" },
+    { id:"Feuermönch",                            cat:"gegner", reg:"mountaintops", name:"Feuermönch",                            img:"images/Gegner/MOUNTAINTOPS_ELITE.jpg" },
+    { id:"Troll",                                 cat:"gegner", reg:"mountaintops", name:"Troll",                                 img:"images/Gegner/MOUNTAINTOPS_WAECHTER.jpg" },
+    { id:"Okina",                                 cat:"gegner", reg:"mountaintops", name:"Okina",                                 img:"images/Gegner/MOUNTAINTOPS_INVADER.jpg" },
+    { id:"Bestienmensch of Farum Azula",          cat:"gegner", reg:"farumazula", name:"Bestienmensch of Farum Azula",          img:"images/Gegner/FARUMAZULA_ELITE.jpg" },
+    { id:"Farum Azula Drache",                    cat:"gegner", reg:"farumazula", name:"Farum Azula Drache",                    img:"images/Gegner/FARUMAZULA_WAECHTER.jpg" },
+    { id:"Anastasia",                             cat:"gegner", reg:"farumazula", name:"Anastasia",                             img:"images/Gegner/FARUMAZULA_INVADER.jpg" },
+    { id:"Page",                                  cat:"gegner", reg:"ashencapital", name:"Page",                                  img:"images/Gegner/ASHENCAPITAL_ELITE.jpg" },
+    { id:"Königlicher Revenant",                  cat:"gegner", reg:"ashencapital", name:"Königlicher Revenant",                  img:"images/Gegner/ASHENCAPITAL_WAECHTER.jpg" },
+    { id:"Varre",                                 cat:"gegner", reg:"ashencapital", name:"Varre",                                 img:"images/Gegner/ASHENCAPITAL_INVADER.jpg" },
+    { id:"Haligtree Knight",                      cat:"gegner", reg:"haligtree", name:"Haligtree Knight",                      img:"images/Gegner/haligtree_knight.webp" },
+    { id:"Putrid Avatar",                         cat:"gegner", reg:"haligtree", name:"Putrid Avatar",                         img:"images/Gegner/putrid_avatar.webp" },
+    { id:"Millicent",                             cat:"gegner", reg:"haligtree", name:"Millicent",                             img:"images/Gegner/millicent.webp" },
+    { id:"Beastman of Farum Azula",               cat:"gegner", reg:"minibosse", name:"Beastman of Farum Azula",               img:"images/Gegner/miniboss_beastman.jpg" },
+    { id:"Cleanrot Knight",                       cat:"gegner", reg:"minibosse", name:"Cleanrot Knight",                       img:"images/Gegner/miniboss_cleanrot_knight.png" },
+    { id:"Omenkiller & Miranda the Blighted Bloom", cat:"gegner", reg:"minibosse", name:"Omenkiller & Miranda",                img:"images/Gegner/miniboss_omenkiller.jpg" },
+    { id:"Erdtree Avatar",                        cat:"gegner", reg:"minibosse", name:"Erdtree Avatar",                        img:"images/Gegner/miniboss_erdtree_avatar.webp" },
+    { id:"Stray Mimic Tear",                      cat:"gegner", reg:"minibosse", name:"Stray Mimic Tear",                      img:"images/starter/tarnished_ritter.webp" },
+    { id:"Dragonkin Soldier",                     cat:"gegner", reg:"minibosse", name:"Dragonkin Soldier",                     img:"images/Gegner/miniboss_dragonkin_soldier.png" },
+    { id:"Putrid Tree Spirit",                    cat:"gegner", reg:"minibosse", name:"Putrid Tree Spirit",                    img:"images/Gegner/putrid_tree_spirit.webp" },
+    { id:"Dungeon Skelett",                       cat:"gegner", reg:"minibosse", name:"Dungeon Skelett",                       img:"images/Gegner/skeleton.webp" },
+    // --- Bosse (id = exakter gegnerName) — Reihenfolge = Story-/Spielfortschritt ---
     { id:"Godrick, der Verpflanzte",          cat:"bosse", name:"Godrick, der Verpflanzte",          img:"images/bosse/godrick.webp" },
     { id:"Sternengeißel Radahn",              cat:"bosse", name:"Sternengeißel Radahn",              img:"images/bosse/radahn.webp" },
+    { id:"Rennala, Königin des Vollmonds",    cat:"bosse", name:"Rennala, Königin des Vollmonds",    img:"images/bosse/rennala.jpg" },
+    { id:"Gottverschlingende Schlange",       cat:"bosse", name:"Gottverschlingende Schlange",       img:"images/bosse/rykardp1.jpg" },
+    { id:"Rykard, Herr der Blasphemie",       cat:"bosse", name:"Rykard, Herr der Blasphemie",       img:"images/bosse/rykardp2.jpg" },
     { id:"Morgott, der Omenkönig",            cat:"bosse", name:"Morgott, der Omenkönig",            img:"images/bosse/Morgott.webp" },
+    { id:"Mohg, das Omen",                    cat:"bosse", name:"Mohg, das Omen",                    img:"images/bosse/f4nks42kdbhd1.jpeg" },
     { id:"Feuerriese",                        cat:"bosse", name:"Feuerriese",                        img:"images/bosse/firegiant.avif" },
     { id:"Maliketh, die Schwarze Klinge",     cat:"bosse", name:"Maliketh, die Schwarze Klinge",     img:"images/bosse/maliketh.jpg" },
     { id:"Gideon Ofnir, der Allwissende",     cat:"bosse", name:"Gideon Ofnir, der Allwissende",     img:"images/bosse/gideon.webp" },
-    { id:"Godfrey, der Erste Eldenlord",      cat:"bosse", name:"Godfrey, der Erste Eldenlord",      img:"images/bosse/godfrey.webp" },
-    { id:"Radagon von der Goldenen Ordnung",  cat:"bosse", name:"Radagon von der Goldenen Ordnung",  img:"images/bosse/radagon.jpg" },
-    { id:"Eldenbiest",                        cat:"bosse", name:"Eldenbiest",                        img:"images/bosse/eldenbeast.jpg" },
     { id:"Loretta, Knight of the Haligtree",  cat:"bosse", name:"Loretta, Knight of the Haligtree",  img:"images/bosse/loretta-knight-of-haligtree.jpg" },
     { id:"Commander Niall",                   cat:"bosse", name:"Commander Niall",                   img:"images/bosse/commander-niall-elden-ring-wiki.jpg" },
     { id:"Malenia, Blade of Miquella",        cat:"bosse", name:"Malenia, Blade of Miquella",        img:"images/bosse/maleniap1.webp" },
     { id:"Malenia, Goddess of Rot",           cat:"bosse", name:"Malenia, Goddess of Rot",           img:"images/bosse/malenia-2nd-phase-flying.avif" },
+    { id:"Mohg, Fürst des Blutes",            cat:"bosse", name:"Mohg, Fürst des Blutes",            img:"images/bosse/Titel-8-fc80008000ffff_1920x1080.avif" },
+    { id:"Godfrey, der Erste Eldenlord",      cat:"bosse", name:"Godfrey, der Erste Eldenlord",      img:"images/bosse/godfrey.webp" },
+    { id:"Radagon von der Goldenen Ordnung",  cat:"bosse", name:"Radagon von der Goldenen Ordnung",  img:"images/bosse/radagon.jpg" },
+    { id:"Eldenbiest",                        cat:"bosse", name:"Eldenbiest",                        img:"images/bosse/eldenbeast.jpg" },
     { id:"Blaidd, der Halbwolf",              cat:"bosse", name:"Blaidd, der Halbwolf",              img:"images/Gegner/blaidd.avif" },
     { id:"Cemetery Shade",                    cat:"bosse", name:"Cemetery Shade",                    img:"images/bosse/catacomb_boss.jpg" },
     { id:"Promised Consort Radahn",           cat:"bosse", name:"Promised Consort Radahn",           img:"images/bosse/pcr.webp" }
@@ -234,6 +280,11 @@
     { id: "morgott",    name: "Omenkönig gefallen",     icon: "👑", desc: "Besiege Morgott.",                       check: s => (s.bossKills["Morgott, der Omenkönig"] || 0) >= 1 },
     { id: "firegiant",  name: "Schmiede erloschen",     icon: "🔥", desc: "Besiege den Feuerriesen.",               check: s => (s.bossKills["Feuerriese"] || 0) >= 1 },
     { id: "maliketh",   name: "Schwarze Klinge",        icon: "🐕", desc: "Besiege Maliketh.",                      check: s => (s.bossKills["Maliketh, die Schwarze Klinge"] || 0) >= 1 },
+    { id: "rennala",    name: "Vollmondkönigin",        icon: "🌕", desc: "Besiege Rennala, Königin des Vollmonds.", check: s => (s.bossKills["Rennala, Königin des Vollmonds"] || 0) >= 1 },
+    { id: "rykard",     name: "Gottverschlinger",       icon: "🐍", desc: "Besiege Rykard, Herrn der Blasphemie.",   check: s => (s.bossKills["Rykard, Herr der Blasphemie"] || 0) >= 1 },
+    { id: "mohg_omen",  name: "Omen der Tiefe",         icon: "👹", desc: "Besiege Mohg, das Omen, in der Kanalisation.", check: s => (s.bossKills["Mohg, das Omen"] || 0) >= 1 },
+    { id: "fall_death", name: "Hätte eine Katze sein sollen", icon: "🕳️", desc: "Stürze in der Kanalisation in den Abgrund.", check: s => (s.fallDeaths || 0) >= 1 },
+    { id: "mohg",       name: "Miquellas Erwachen",     icon: "🩸", desc: "Besiege Mohg, Fürst des Blutes, und erwecke Miquella.", check: s => (s.bossKills["Mohg, Fürst des Blutes"] || 0) >= 1 },
     { id: "all_bosses", name: "Götterdämmerung",        icon: "🌒", desc: "Besiege jeden Halbgott mindestens einmal.", check: s => HAUPTBOSSE.every(b => (s.bossKills[b] || 0) >= 1) },
     /* --- Runs / Abschluss --- */
     { id: "elden_lord", name: "Elden Lord",             icon: "👑", desc: "Schließe einen Run ab und werde Elden Lord.", check: s => s.gamesCompleted >= 1 },
@@ -251,7 +302,7 @@
     { id: "dungeon_1",  name: "Gruft-Plünderer",        icon: "🏰", desc: "Schließe einen Dungeon ab.",             check: s => s.dungeonsCleared >= 1 },
     { id: "dungeon_10", name: "Katakomben-Kenner",      icon: "🗝️", desc: "Schließe 10 Dungeons ab.",              check: s => s.dungeonsCleared >= 10 },
     /* --- Blaidd --- */
-    { id: "blaidd",     name: "Blaidds Gefährte",       icon: "🐺", desc: "Schließe Blaidds Quest ab.",             check: s => s.blaiddDefeats >= 4 },
+    { id: "blaidd",     name: "Blaidds Gefährte",       icon: "🐺", desc: "Schließe Blaidds Quest ab (4× in einem Run).", check: s => (s.blaiddQuestDone || 0) >= 1 },
     /* --- Sammeln --- */
     { id: "talisman_25",name: "Talisman-Sammler",       icon: "💍", desc: "Finde 25 Talismane.",                    check: s => s.talismansFound >= 25 },
     { id: "weapon_25",  name: "Waffennarr",             icon: "🗡️", desc: "Finde 25 Waffen.",                      check: s => s.weaponsFound >= 25 },
@@ -263,6 +314,13 @@
     /* --- Challenges --- */
     { id: "challenge_auto",      name: "Zuschauer",        icon: "👁️", desc: "Schließe einen Auto-Battle-Run ab.", check: s => !!(s.challengesCompleted && s.challengesCompleted.autobattle) },
     { id: "challenge_noarmor",   name: "Nacktläufer",      icon: "🏃", desc: "Schließe einen No-Armor-Run ab.",     check: s => !!(s.challengesCompleted && s.challengesCompleted.noarmor) },
+    /* --- Freischaltungen (eines pro neuer Passage) --- */
+    { id: "unlock_hard",    name: "Eine neue Prüfung",         icon: "🔥", desc: "Schalte den Schweren Modus frei.",             check: s => isUnlockedId("hard_mode") },
+    { id: "unlock_malenia", name: "Der verborgene Pfad",       icon: "🌸", desc: "Schalte den Pfad des Haligtree frei.",         check: s => isUnlockedId("malenia") },
+    { id: "unlock_tower",   name: "Tor zum Turm",              icon: "🗼", desc: "Schalte den Battle Tower frei.",               check: s => isUnlockedId("battle_tower") },
+    { id: "unlock_liurnia", name: "Ein verborgenes Geheimnis", icon: "🌙", desc: "Lüfte eines der Geheimnisse des Zwischenlands.", check: s => isUnlockedId("liurnia") },
+    { id: "unlock_gelmir",  name: "Der Weg des Vulkans",       icon: "🌋", desc: "Folge einer geheimnisvollen Einladung.",         check: s => isUnlockedId("gelmir") },
+    { id: "unlock_mohgwyn", name: "Ruf des Blutes",            icon: "🩸", desc: "Lüfte ein weiteres Geheimnis des Zwischenlands.", check: s => isUnlockedId("mohgwyn") },
     /* --- Battle Tower --- */
     { id: "tower_climb",  name: "Turmaufstieg",       icon: "🏯", desc: "Betritt den Battle Tower.",                 check: s => (s.towerBestFloor || 0) >= 1 },
     { id: "tower_10",     name: "Aufstrebend",        icon: "🪜", desc: "Erreiche Etage 5 im Battle Tower.",          check: s => (s.towerBestFloor || 0) >= 5 },
@@ -270,7 +328,7 @@
     { id: "tower_15",     name: "Hoch hinaus",        icon: "⛰️", desc: "Erreiche Etage 15 im Battle Tower.",         check: s => (s.towerBestFloor || 0) >= 15 },
     { id: "tower_master", name: "Meister des Turms",  icon: "👑", desc: "Bezwinge alle 20 Etagen und Promised Consort Radahn.", check: s => !!(s.challengesCompleted && s.challengesCompleted.tower) },
     /* --- Eldendex --- */
-    { id: "true_100", name: "Nashy", icon: "📖", desc: "Entdecke jeden Eintrag im Eldendex.", check: s => ELDENDEX_IDS.every(function (id) { return s.discovered && s.discovered[id]; }) }
+    { id: "true_100", name: "Nashy", icon: "📖", desc: "Entdecke jeden Eintrag im Eldendex.", check: s => ELDENDEX.every(function (e) { return dexIstGesehen(e, s); }) }
   ];
 
   /* ====== 3b) FREISCHALTUNGEN (Binding-of-Isaac-Stil, progressiv) ======
@@ -279,42 +337,75 @@
   const TOTAL_CLASSES = 3;   // Anzahl spielbarer Klassen (schwertkaempfer / samurai / nackt) — bei neuen Klassen erhöhen
   function classCountNormal(s) { return (s && s.classesNormalDone) ? Object.keys(s.classesNormalDone).length : 0; }
   const UNLOCKS = [
-    { id: "hard_mode", icon: "🔥",
+    { id: "hard_mode", icon: "🔥", img: "images/icons/madness_status_effect_elden_ring_wiki_guide_100px.png",
       name: { de: "Schwerer Modus", en: "Hard Mode" },
       desc: { de: "Ein härterer Aufstieg: stärkere Gegner, weniger Ausrüstung, mehr Ruhm.", en: "A harder ascent: tougher enemies, less gear, more glory." },
       hint: { de: "Schließe das Spiel einmal im Normal-Modus ab.", en: "Finish the game once in Normal Mode." },
       check: s => (s.gamesCompleted || 0) >= 1,
       progress: s => ({ cur: Math.min(1, s.gamesCompleted || 0), max: 1 }) },
-    { id: "malenia", icon: "🌸",
+    { id: "malenia", icon: "🌸", img: "images/icons/scarlet_rot_status_effect_elden_ring_wiki_guide_100px.png",
       name: { de: "Der Pfad des Haligtree", en: "The Haligtree Path" },
       desc: { de: "Die geheimen Medaillons, der Haligtree und der Kampf gegen Malenia, Klinge Miquellas.", en: "The secret medallions, the Haligtree and the fight against Malenia, Blade of Miquella." },
       hint: { de: "Schließe den Normal-Modus ab, ohne Blaidd überhaupt zu begegnen.", en: "Finish Normal Mode without ever encountering Blaidd." },
       check: s => (s.normalNoBlaiddClears || 0) >= 1 || (s.maleniaKills || 0) >= 1,
       progress: s => ({ cur: Math.min(1, s.normalNoBlaiddClears || 0), max: 1 }) },
-    { id: "battle_tower", icon: "🗼",
+    { id: "battle_tower", icon: "🗼", img: "images/icons/Godfrey Icon.webp",
       name: { de: "Battle Tower", en: "Battle Tower" },
       desc: { de: "20 Etagen, ein Leben, ein Endboss. Der ultimative Prüfstein.", en: "20 floors, one life, one final boss. The ultimate trial." },
       hint: { de: "Schließe den Normal-Modus mit allen Klassen ab.", en: "Finish Normal Mode with every class." },
       check: s => classCountNormal(s) >= TOTAL_CLASSES || (s.towerBestFloor || 0) >= 1,   // Grace: wer den Turm schon betreten hat, behält Zugang
       progress: s => ({ cur: Math.min(TOTAL_CLASSES, classCountNormal(s)), max: TOTAL_CLASSES }) },
-    { id: "liurnia", icon: "🌙", secret: true,   // geheime Freischaltung — KEIN Hinweis auf die Methode (Rüstung ablegen)
+    { id: "liurnia", icon: "🌙", img: "images/icons/sleep_status_effect_elden_ring_wiki_guide_100px.png", secret: true,   // geheime Freischaltung — KEIN Hinweis auf die Methode (Rüstung ablegen)
       name: { de: "Liurnia der Seen", en: "Liurnia of the Lakes" },
       desc: { de: "Ein alternativer Pfad nach Limgrave — die versunkenen Seen mit Rennala, Königin des Vollmonds.", en: "An alternative path after Limgrave — the sunken lakes with Rennala, Queen of the Full Moon." },
       hint: { de: "Ein verborgenes Geheimnis wartet darauf, gelüftet zu werden …", en: "A hidden secret waits to be uncovered …" },
+      how:  { de: "Lege als Vagabund zu Run-Beginn deine Rüstung ab (aus dem Slot ziehen) und schließe den Run ab.", en: "As Vagabond, drag your armor out of its slot at the start of a run and finish the run." },
       check: s => (s.normalNoArmorClears || 0) >= 1,
+      progress: null },
+    { id: "gelmir", icon: "🌋", secret: true,   // geheim — Ryas Halskette (nur Samurai, in Liurnia) soll ein Rätsel bleiben
+      name: { de: "Der Berg Gelmir", en: "Mount Gelmir" },
+      desc: { de: "Ein alternativer Pfad statt Leyndell — der brennende Berg mit Rykard, Herrn der Blasphemie.", en: "An alternative path instead of Leyndell — the burning mount with Rykard, Lord of Blasphemy." },
+      hint: { de: "Jemand in den Seen vermisst etwas Kostbares …", en: "Someone in the lakes misses something precious …" },
+      how:  { de: "Finde als Samurai in Liurnia Ryas Halskette und bringe sie ihr zurück — sie lädt dich nach Haus Vulkan ein.", en: "As Samurai, find Rya's necklace in Liurnia and return it to her — she invites you to Volcano Manor." },
+      check: s => (s.ryaInvites || 0) >= 1 || ((s.bossKills || {})["Rykard, Herr der Blasphemie"] || 0) >= 1,   // Grace: wer Rykard schon besiegt hat, behält den Pfad
+      progress: null },
+    { id: "mohgwyn", icon: "🩸", secret: true,   // geheim — der Kanalisations-Knoten in Leyndell soll überraschen
+      name: { de: "Die Mohgwyn-Dynastie", en: "Mohgwyn Dynasty" },
+      desc: { de: "Die Kanalisation der Hauptstadt, Mohg und ein Pfad, der mit Miquellas Erwachen endet.", en: "The capital's sewers, Mohg, and a path that ends with Miquella's awakening." },
+      hint: { de: "Ein weiteres Geheimnis schlummert in der Tiefe …", en: "Another secret slumbers in the depths …" },
+      how:  { de: "Besiege Rykard, Herrn der Blasphemie, am Berg Gelmir — danach findet der Bettler die Kanalisation in Leyndell.", en: "Defeat Rykard, Lord of Blasphemy, on Mount Gelmir — afterwards the Wretch can find the sewers in Leyndell." },
+      check: s => ((s.bossKills || {})["Rykard, Herr der Blasphemie"] || 0) >= 1,
       progress: null }
   ];
   function unlockInfo() {
     var s = getStats();
     return UNLOCKS.map(function (u) {
       var pr = u.progress ? u.progress(s) : null;
-      return { id: u.id, icon: u.icon, secret: !!u.secret, name: u.name, desc: u.desc, hint: u.hint,
+      return { id: u.id, icon: u.icon, img: u.img || null, secret: !!u.secret, name: u.name, desc: u.desc, hint: u.hint,
+               how: u.how || u.hint,   // Bedingung im Klartext (Fallback: Hinweis, der bei Nicht-Geheimnissen bereits konkret ist)
                unlocked: !!u.check(s), cur: pr ? pr.cur : null, max: pr ? pr.max : null };
     });
   }
   function isUnlockedId(id) {
     var s = getStats();
     for (var i = 0; i < UNLOCKS.length; i++) { if (UNLOCKS[i].id === id) return !!UNLOCKS[i].check(s); }
+    return false;
+  }
+
+  /* Zentrale "entdeckt"-Logik für den Eldendex (getDex UND das Nashy-Achievement nutzen dieselbe Regel):
+     - explizit entdeckt (discovered), ODER
+     - Boss/Gegner bereits getötet (bossKills), ODER
+     - Waffe/Rüstung im Roundtable freigeschaltet (Truhen + Standard-Equipment zählen sofort). */
+  function dexIstGesehen(e, s) {
+    if (s.discovered && s.discovered[e.id]) return true;
+    if (s.bossKills && s.bossKills[e.id] > 0) return true;
+    if (e.cat === "weapons" || e.cat === "armor") {
+      try {
+        var m = JSON.parse(localStorage.getItem("eldenRogueMeta")) || {};
+        var liste = e.cat === "weapons" ? (m.unlockedWeapons || []) : (m.unlockedArmor || []);
+        if (liste.indexOf(e.name) >= 0) return true;
+      } catch (err) {}
+    }
     return false;
   }
 
@@ -412,6 +503,7 @@
     weaponFound:  function () { bump("weaponsFound"); },
     armorFound:   function () { bump("armorsFound"); },
     blaiddDefeat: function () { bump("blaiddDefeats"); },
+    blaiddQuestComplete: function () { bump("blaiddQuestDone"); },   // Blaidds Quest tatsächlich in EINEM Run abgeschlossen (4x)
     gameCompleted: function (klasse, diff, noBlaidd, noArmor) {
       bump("gamesCompleted");   // speichert + prüft Achievements
       if (diff !== "hard") {    // nur Normal-Abschlüsse zählen für die Freischaltungen
@@ -426,6 +518,10 @@
       ER.endRun();
     },
     maleniaKilled:        function () { bump("maleniaKills"); },
+    ryaInvite:            function () { bump("ryaInvites"); },      // Ryas Einladung nach Haus Vulkan (Gelmir-Freischaltung)
+    mohgwynVisited:       function () { bump("mohgwynVisits"); },   // hebt die Bettler-Beschränkung der Kanalisation auf
+    gelmirVisited:        function () { bump("gelmirVisits"); },    // hebt die Samurai-Beschränkung des Gelmir-Pfads auf
+    fallDeath:            function () { bump("fallDeaths"); },      // Sturz in den Abgrund (der Tod selbst wird über ER.death gezählt)
     maleniaRunCompleted:  function () { bump("maleniaRuns"); },
     legendaryRunCompleted: function () { bump("legendaryRuns"); },
     flaskDrunk:   function () { bump("flasksDrunk"); },
@@ -441,6 +537,37 @@
     /* --- Freischaltungen (Progression) --- */
     getUnlocks: function () { return unlockInfo(); },
     isUnlocked: function (id) { return isUnlockedId(id); },
+
+    /* --- Geräte-Sync: lokale Stände (Meta/HoF/Run) in die Cloud spiegeln ---
+       syncNow()      -> gebündelt nach ein paar Sekunden (für häufige Ereignisse wie speichereRun)
+       syncNow(true)  -> sofort (für wichtige Momente: Run beendet, Hall-of-Fame-Eintrag) */
+    syncNow: function (sofort) { scheduleCloudPush(!!sofort); },
+    __mergeMeta: mergeMeta,   // für Tests/Debugging
+
+    /* --- Globales Event (config/event in Firestore) --- */
+    getEvent: function () { return eventInfo || {}; },
+
+    /* --- Aktions-Codes einlösen (codes/{CODE} in Firestore, vom Admin in der Konsole angelegt) ---
+       Dokument-Felder: { aktiv: true, seelen: 1000, bis: <Timestamp/Millis, optional> }
+       cb bekommt: {ok:true, seelen:N, code:C} oder {ok:false, grund:"offline"|"schon"|"ungueltig"|"abgelaufen"} */
+    redeemCode: function (code, cb) {
+      cb = cb || function () {};
+      code = String(code || "").trim().toUpperCase();
+      if (!code) { cb({ ok: false, grund: "ungueltig" }); return; }
+      if (!ONLINE || !fbDB) { cb({ ok: false, grund: "offline" }); return; }
+      try {
+        var m = JSON.parse(localStorage.getItem("eldenRogueMeta") || "null");
+        if (m && Array.isArray(m.redeemedCodes) && m.redeemedCodes.indexOf(code) >= 0) { cb({ ok: false, grund: "schon" }); return; }
+      } catch (e) {}
+      fbDB.collection("codes").doc(code).get().then(function (snap) {
+        if (!snap.exists) { cb({ ok: false, grund: "ungueltig" }); return; }
+        var d = snap.data();
+        if (!d.aktiv) { cb({ ok: false, grund: "ungueltig" }); return; }
+        var bis = eventBisMillis(d.bis);
+        if (bis && bis < Date.now()) { cb({ ok: false, grund: "abgelaufen" }); return; }
+        cb({ ok: true, seelen: d.seelen || 0, code: code });
+      }).catch(function () { cb({ ok: false, grund: "offline" }); });
+    },
 
     /* --- Hard Mode & Challenges --- */
     hardCompleted: function () {
@@ -478,14 +605,11 @@
     },
     getDex: function () {
       var s = getStats();
-      var disc = s.discovered || {};
-      var bossKills = s.bossKills || {};
       var cats = {}; var total = 0, found = 0;
       ELDENDEX.forEach(function (e) {
-        // auch entdeckt, wenn der Gegner/Boss bereits getötet wurde (für bestehende Spielstände)
-        var seen = !!disc[e.id] || (bossKills[e.id] > 0);
+        var seen = dexIstGesehen(e, s);
         if (!cats[e.cat]) cats[e.cat] = { items: [], found: 0, total: 0 };
-        cats[e.cat].items.push({ id:e.id, name:e.name, cat:e.cat, img:e.img, dmg:e.dmg, types:e.types, seen:seen });
+        cats[e.cat].items.push({ id:e.id, name:e.name, cat:e.cat, img:e.img, dmg:e.dmg, types:e.types, reg:e.reg, seen:seen });
         cats[e.cat].total++; total++;
         if (seen) { cats[e.cat].found++; found++; }
       });
@@ -608,6 +732,45 @@
     return out;
   }
 
+  /* ====== GERÄTE-SYNC (Meta/Roundtable, Hall of Fame, aktiver Run) ======
+     Alles läuft über das bestehende users/{uid}-Dokument. Die localStorage-Stände werden
+     als JSON-Strings gespiegelt (robust gegen Firestore-Typregeln) und beim Login
+     verlustfrei gemergt: Zahlen -> Maximum, Listen -> Vereinigung, Run -> neuester Zeitstempel. */
+  var initialSyncDone = false;   // verhindert, dass ein frisches Gerät den Cloud-Stand überschreibt, bevor es ihn gelesen hat
+  var syncTimer = null;
+  var metaBackupPending = null;  // Cloud-Meta-Stand VOR dem Login-Merge -> wird einmalig als metaBackupStr gesichert (manuelle Wiederherstellung in der Konsole)
+  function scheduleCloudPush(sofort) {
+    if (!ONLINE || !currentUser) return;
+    if (sofort) { clearTimeout(syncTimer); syncTimer = null; cloudPush(); return; }
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(cloudPush, 4000);   // gebündelt, um Firestore-Schreibvorgänge zu sparen
+  }
+
+  // Roundtable-Meta zweier Geräte verlustfrei vereinen (nichts geht verloren; Seelen -> Maximum)
+  function mergeMeta(l, c) {
+    if (!l) return c; if (!c) return l;
+    var m = Object.assign({}, c, l);
+    m.seelen = Math.max(l.seelen || 0, c.seelen || 0);
+    m.unspent = Math.max(l.unspent || 0, c.unspent || 0);
+    function maxMap(a, b) { var out = {}; Object.keys(a || {}).concat(Object.keys(b || {})).forEach(function (k) { out[k] = Math.max((a || {})[k] || 0, (b || {})[k] || 0); }); return out; }
+    function union(a, b) { var out = (a || []).slice(); (b || []).forEach(function (x) { if (out.indexOf(x) < 0) out.push(x); }); return out; }
+    m.attr = maxMap(l.attr, c.attr);
+    m.upgrades = maxMap(l.upgrades, c.upgrades);
+    m.chestPity = maxMap(l.chestPity, c.chestPity);
+    m.unlockedWeapons = union(l.unlockedWeapons, c.unlockedWeapons);
+    m.unlockedArmor = union(l.unlockedArmor, c.unlockedArmor);
+    m.unlockedSkins = union(l.unlockedSkins, c.unlockedSkins);
+    m.redeemedCodes = union(l.redeemedCodes, c.redeemedCodes);   // eingelöste Aktions-Codes (nie doppelt einlösbar)
+    var sumAttr = 0; Object.keys(m.attr).forEach(function (k) { sumAttr += m.attr[k] || 0; });
+    m.level = 1 + sumAttr + (m.unspent || 0);   // Level ist deterministisch (wie in ladeMeta)
+    m.attrMigrated = !!(l.attrMigrated || c.attrMigrated);
+    m.attrVer = Math.max(l.attrVer || 0, c.attrVer || 0);
+    m.resetVersion = Math.max(l.resetVersion || 0, c.resetVersion || 0);
+    m.activeSkinId = (l.activeSkinId != null) ? l.activeSkinId : c.activeSkinId;
+    m.activeSkinFilter = l.activeSkinFilter || c.activeSkinFilter || "";
+    return m;
+  }
+
   function cloudPush() {
     if (!ONLINE || !fbDB || !currentUser) return;
     var s = getStats();
@@ -631,6 +794,15 @@
       lb: baueLbMap(s),
       updatedAt: (firebase.firestore && firebase.firestore.FieldValue ? firebase.firestore.FieldValue.serverTimestamp() : Date.now())
     };
+    // Geräte-Sync: lokale Stände als JSON-Strings spiegeln — aber erst NACH dem Login-Merge,
+    // damit ein frisches Gerät den Cloud-Stand nicht mit leeren Daten überschreibt.
+    if (initialSyncDone) {
+      if (metaBackupPending) { doc.metaBackupStr = metaBackupPending; doc.metaBackupTs = Date.now(); metaBackupPending = null; }
+      try { var ms = localStorage.getItem("eldenRogueMeta"); if (ms) doc.metaStr = ms; } catch (e) {}
+      try { var hs = localStorage.getItem("eldenRogueHallOfFame"); if (hs) doc.hofStr = hs; } catch (e) {}
+      try { var us = localStorage.getItem("eldenRogueSeenUnlocks"); if (us) doc.seenStr = us; } catch (e) {}
+      try { doc.runStr = localStorage.getItem("eldenRogueSave") || ""; } catch (e) {}   // "" = kein aktiver Run (löscht beendete Runs auch in der Cloud)
+    }
     try { fbDB.collection("users").doc(currentUser.uid).set(doc, { merge: true }); } catch (e) { console.warn("[ER] cloudPush:", e); }
   }
 
@@ -678,11 +850,56 @@
         var ach = localAch.slice();
         (cloud.achievements || []).forEach(function (id) { if (ach.indexOf(id) === -1) ach.push(id); });
         saveUnlocked(ach);
+
+        // --- Geräte-Sync: Roundtable-Meta verlustfrei mergen (Seelen/Attribute/Truhen-Unlocks) ---
+        try {
+          var lMeta = JSON.parse(localStorage.getItem("eldenRogueMeta") || "null");
+          var cMeta = cloud.metaStr ? JSON.parse(cloud.metaStr) : null;
+          if (cloud.metaStr) metaBackupPending = cloud.metaStr;   // alten Cloud-Stand als Backup sichern (metaBackupStr)
+          var mMeta = mergeMeta(lMeta, cMeta);
+          if (mMeta) localStorage.setItem("eldenRogueMeta", JSON.stringify(mMeta));
+        } catch (e) { console.warn("[ER] Meta-Sync:", e); }
+
+        // --- Hall of Fame vereinen (Duplikate über Zeitstempel+Score erkennen, neueste zuerst, max 50) ---
+        try {
+          var lHof = JSON.parse(localStorage.getItem("eldenRogueHallOfFame") || "[]");
+          var cHof = cloud.hofStr ? JSON.parse(cloud.hofStr) : [];
+          if (Array.isArray(cHof) && cHof.length) {
+            var kennung = function (e2) { return (e2.ts || 0) + "|" + (e2.score || 0) + "|" + (e2.klasse || ""); };
+            var bekannt = {}; lHof.forEach(function (e2) { bekannt[kennung(e2)] = true; });
+            cHof.forEach(function (e2) { if (!bekannt[kennung(e2)]) lHof.push(e2); });
+            lHof.sort(function (a2, b2) { return (b2.ts || 0) - (a2.ts || 0); });
+            localStorage.setItem("eldenRogueHallOfFame", JSON.stringify(lHof.slice(0, 50)));
+          }
+        } catch (e) { console.warn("[ER] HoF-Sync:", e); }
+
+        // --- "Neu freigeschaltet"-Merker vereinen (verhindert Reveal-Spam auf dem Zweitgerät) ---
+        try {
+          var lSeen = JSON.parse(localStorage.getItem("eldenRogueSeenUnlocks") || "null");
+          var cSeen = cloud.seenStr ? JSON.parse(cloud.seenStr) : null;
+          if (Array.isArray(cSeen)) {
+            var seen = Array.isArray(lSeen) ? lSeen.slice() : [];
+            cSeen.forEach(function (id) { if (seen.indexOf(id) < 0) seen.push(id); });
+            localStorage.setItem("eldenRogueSeenUnlocks", JSON.stringify(seen));
+          }
+        } catch (e) {}
+
+        // --- Aktiver Run: neuester Zeitstempel gewinnt (Cloud-Run übernehmen, wenn er frischer ist) ---
+        try {
+          var lRun = JSON.parse(localStorage.getItem("eldenRogueSave") || "null");
+          var cRun = cloud.runStr ? JSON.parse(cloud.runStr) : null;
+          if (cRun && cRun.gewaehlteKlasse && (!lRun || (cRun.ts || 0) > (lRun.ts || 0))) {
+            localStorage.setItem("eldenRogueSave", JSON.stringify(cRun));
+          }
+        } catch (e) { console.warn("[ER] Run-Sync:", e); }
       }
       // Namen aus Google übernehmen, falls vorhanden
       if (currentUser.displayName && !lsGet(NAME_KEY, null)) lsSet(NAME_KEY, currentUser.displayName);
+      initialSyncDone = true;   // ab jetzt dürfen Pushes die lokalen Stände spiegeln
       checkAchievements();
       cloudPush();
+      // UI informieren (Menü: Seelen-Badge, Continue-Button, Freischaltungen aktualisieren)
+      try { window.dispatchEvent(new CustomEvent("er-cloud-sync")); } catch (e) {}
     }).catch(function (e) { console.warn("[ER] Login-Sync:", e); });
   }
 
