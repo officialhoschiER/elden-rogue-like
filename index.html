@@ -16,8 +16,8 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-  <script src="lang.js?v=1.5.8"></script>
-  <script src="eldenrogue-online.js?v=1.5.8"></script>
+  <script src="lang.js?v=1.5.26"></script>
+  <script src="eldenrogue-online.js?v=1.5.26"></script>
   
   <style>
     :root { --gold: #cda34f; --gold-dark: #8c6d2d; --bg-dark: #0b0b0b; --border-color: #3a3224; --panel: #161616; }
@@ -116,6 +116,21 @@
 
     .btn-tower { background: linear-gradient(135deg, #2a1d0c, #3a2a12); color: #e6a23c; border: 1px solid #e6a23c; position: relative; overflow: hidden; }
     .btn-tower:hover { background: linear-gradient(135deg, #e6a23c, #d4892a); color: #1a1208; box-shadow: 0 0 26px rgba(230,162,60,0.55); transform: translateY(-2px); }
+    .btn-ico { height: 1.15em; width: auto; vertical-align: -0.22em; margin-right: 7px; display: inline-block; }
+    /* Seelen-Anzeige oben links */
+    #souls-badge { position: fixed; top: 18px; left: 86px; z-index: 40; display: flex; align-items: center; gap: 10px;
+      background: rgba(8,8,8,0.72); border: 1px solid var(--gold-dark); border-radius: 8px; padding: 9px 18px;
+      font-family: 'Cinzel', serif; color: var(--gold); font-size: 1.3rem; font-weight: bold; letter-spacing: 1px; line-height: 1; backdrop-filter: blur(2px); }
+    #souls-badge span { display: inline-block; transform: translateY(1px); }
+    /* Roundtable & Bestenliste exakt gleich groß */
+    .btn-row .btn-secondary { flex: 1 1 0; min-width: 0; }
+    /* Event-Banner (globale Aktionen, z.B. Doppel-Seelen-Wochenende) */
+    #event-banner { width: 100%; max-width: 340px; margin: 0 0 12px; padding: 9px 16px; text-align: center;
+      background: linear-gradient(135deg, rgba(46,204,113,0.12), rgba(205,163,79,0.14)); border: 1px solid #2ecc71; border-radius: 6px;
+      font-family: 'Cinzel', serif; color: #2ecc71; font-size: 0.92rem; font-weight: bold; letter-spacing: 1px;
+      animation: continuePulse 2.5s ease infinite; }
+    #souls-badge img { width: 32px; height: 32px; object-fit: contain; filter: drop-shadow(0 0 6px rgba(205,163,79,0.4)); }
+    @media (max-width: 600px) { #souls-badge { left: 70px; top: 12px; font-size: 1.05rem; padding: 6px 12px; } #souls-badge img { width: 24px; height: 24px; } }
     .btn-autobattle { background: linear-gradient(135deg, #0c1f2a, #123039); color: #3ac6e6; border: 1px solid #3ac6e6; font-size: 1rem; }
     .btn-autobattle:hover { background: linear-gradient(135deg, #3ac6e6, #2aa8d4); color: #08171d; box-shadow: 0 0 26px rgba(58,198,230,0.55); transform: translateY(-2px); }
     /* ===== Unlock-Reveal (BoI-Stil) ===== */
@@ -369,6 +384,11 @@
   <div class="sb-brand">ELDEN ROGUE</div>
 </nav>
 
+<div id="souls-badge" title="Seelen">
+  <img src="images/icons/lords-rune-tools-elden-ring-wiki-guide.png" alt="" onerror="this.style.display='none'">
+  <span id="souls-badge-value">0</span>
+</div>
+
 
 <div class="menu-wrap">
   <h1>Elden Rogue</h1>
@@ -376,6 +396,7 @@
 
   <div class="grace-divider reveal d1"><img src="images/icons/icon_grace.png" alt=""></div>
 
+  <div id="event-banner" style="display:none;"></div>
   <a href="game.html?resume=true" class="btn-main btn-continue" id="btn-continue" style="display:none;">▶ Run fortsetzen</a>
 
   <div class="btn-duo reveal d2">
@@ -384,16 +405,16 @@
   </div>
 
   <div class="btn-duo reveal d3">
-    <button class="btn-main btn-tower" id="btn-tower"><span id="btn-tower-label">🏯 Battle Tower</span></button>
-    <a href="game.html?challenge=autobattle" class="btn-main btn-autobattle" id="btn-autobattle" onclick="return checkOverwrite('game.html?challenge=autobattle')">⚡ Auto-Battle</a>
+    <button class="btn-main btn-tower" id="btn-tower"><span id="btn-tower-label">Battle Tower</span></button>
+    <a href="game.html?challenge=autobattle" class="btn-main btn-autobattle" id="btn-autobattle" onclick="return checkOverwrite('game.html?challenge=autobattle')">Auto-Battle</a>
   </div>
 
   <div class="btn-row reveal d4">
     <button class="btn-secondary" onclick="openModal('seelenschmiede')">
-      <span class="btn-icon">⚜️</span> <span id="btn-shop-text">Roundtable</span><span id="btn-shop-souls" style="color:#cda34f;font-weight:bold;"></span>
+      <span id="btn-shop-text">Roundtable</span><span id="btn-shop-souls" style="display:none;"></span>
     </button>
     <button class="btn-secondary" onclick="openModal('bestenliste')">
-      <span class="btn-icon">🏆</span> <span id="btn-lb-text">Bestenliste</span>
+      <span id="btn-lb-text">Bestenliste</span>
     </button>
   </div>
 
@@ -463,6 +484,24 @@
         <span id="set-vol-val" style="font-family:sans-serif; font-size:0.8rem; color:var(--gold); min-width:38px; text-align:right;">60%</span>
       </div>
     </div>
+    <div class="set-row">
+      <div>
+        <div class="set-label" id="set-speedrun-label">Speedrun-Modus</div>
+        <div class="set-sub" id="set-speedrun-sub">Neben ein Pop-up klicken = nichts nehmen &amp; weiter</div>
+      </div>
+      <button class="btn-mini" id="set-speedrun-btn" onclick="toggleSpeedrun()" style="min-width:64px;">Aus</button>
+    </div>
+    <div class="set-row" style="flex-wrap:wrap;">
+      <div>
+        <div class="set-label" id="set-code-label">Code einlösen</div>
+        <div class="set-sub" id="set-code-sub">Aktions-Codes aus der Community</div>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <input type="text" id="set-code-input" maxlength="24" placeholder="CODE" style="width:130px; background:#111; color:var(--gold); border:1px solid var(--gold-dark); border-radius:4px; padding:7px 10px; font-family:'Cinzel',serif; letter-spacing:1.5px; text-transform:uppercase;">
+        <button class="btn-mini" id="set-code-btn" onclick="einloeseCode()">Einlösen</button>
+      </div>
+      <div id="set-code-result" style="width:100%; font-family:sans-serif; font-size:0.78rem; margin-top:6px; min-height:1em;"></div>
+    </div>
   </div>
 </div>
 
@@ -490,7 +529,7 @@
 <div class="modal-bg" id="modal-tower-guide">
   <div class="modal-box" style="max-width:520px;">
     <button class="modal-close" onclick="closeModals()">&times;</button>
-    <div class="modal-title" id="tg-title" style="color:#e6a23c;">🏯 Battle Tower</div>
+    <div class="modal-title" id="tg-title" style="color:#e6a23c;"><img src="images/icons/Godfrey Icon.webp" class="btn-ico" onerror="this.style.display='none'">Battle Tower</div>
     <p id="tg-sub" style="text-align:center; color:#b5a98f; font-family:sans-serif; font-size:0.85rem; margin:-6px 0 4px;">Ein Aufstieg, kein Spaziergang. So funktioniert er:</p>
     <ul class="tower-guide-list">
       <li id="tg-l1"></li>
@@ -500,7 +539,7 @@
       <li id="tg-l5"></li>
       <li id="tg-l6"></li>
     </ul>
-    <a href="#" id="tg-start" onclick="return checkOverwrite('game.html?challenge=tower')" class="btn-main btn-tower" style="max-width:none; margin-top:4px;">Turm betreten ⚔️</a>
+    <a href="#" id="tg-start" onclick="return checkOverwrite('game.html?challenge=tower')" class="btn-main btn-tower" style="max-width:none; margin-top:4px;">Turm betreten</a>
     <button class="btn-mini" id="tg-close" onclick="closeModals()" style="display:block; margin:12px auto 0;">Zurück</button>
   </div>
 </div>
@@ -515,11 +554,18 @@
       <select id="lb-patch" onchange="ladeBestenliste()" style="background:#111; color:var(--gold); border:1px solid var(--gold-dark); padding:3px 10px; font-family:'Cinzel',serif; font-size:0.7rem; letter-spacing:1px; border-radius:3px; cursor:pointer;"><option value="1.5" selected>PATCH v1.5</option><option value="1.4">PATCH v1.4</option><option value="1.3">PATCH v1.3</option></select>
     </div>
     <div id="lb-cat-tabs" class="lb-tabs"></div>
-    <div id="lb-status" class="muted">Lade Bestenliste…</div>
-    <table class="lb-table hidden" id="lb-table">
-      <thead><tr><th>#</th><th id="th-player">Befleckter</th><th id="th-stage">Etappe</th><th id="th-bosses">Bosse</th><th style="text-align:right;" id="th-score">Score</th></tr></thead>
-      <tbody id="lb-body"></tbody>
-    </table>
+    <div id="lb-area" style="min-height:470px; display:flex; flex-direction:column;">
+      <div id="lb-status" class="muted">Lade Bestenliste…</div>
+      <table class="lb-table hidden" id="lb-table">
+        <thead><tr><th>#</th><th id="th-player">Befleckter</th><th id="th-stage">Etappe</th><th id="th-bosses">Bosse</th><th style="text-align:right;" id="th-score">Score</th></tr></thead>
+        <tbody id="lb-body"></tbody>
+      </table>
+      <div id="lb-pagenav" style="visibility:hidden; display:flex; align-items:center; justify-content:center; gap:14px; margin-top:auto; padding-top:10px;">
+        <button class="btn-mini" id="lb-prev" onclick="lbGoPage(-1)">‹</button>
+        <span id="lb-pageinfo" style="font-family:'Cinzel',serif; color:#b8a96f; font-size:0.8rem; letter-spacing:1px;"></span>
+        <button class="btn-mini" id="lb-next" onclick="lbGoPage(1)">›</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -587,6 +633,18 @@
 </div>
 
 <script>
+  // ?wipe=1 — lokalen Spielstand komplett zurücksetzen (zum Testen; Cloud bleibt unberührt).
+  // Loggt zusätzlich aus, sonst holt der Login-Merge den alten Stand sofort zurück.
+  if (new URLSearchParams(window.location.search).get("wipe") === "1") {
+    if (confirm("Lokalen Spielstand KOMPLETT zurücksetzen?\n(Cloud-Speicher bleibt unberührt — per Login später wiederherstellbar)")) {
+      try { Object.keys(localStorage).filter(function(k){ return k.indexOf("eldenRogue") === 0; }).forEach(function(k){ localStorage.removeItem(k); }); } catch (e) {}
+      var wipeZurueck = function () { window.location.href = "index.html"; };
+      try { if (window.ER && ER.signOut) { ER.signOut().then(wipeZurueck, wipeZurueck); setTimeout(wipeZurueck, 1500); } else wipeZurueck(); } catch (e) { wipeZurueck(); }
+    } else {
+      window.location.href = "index.html";
+    }
+  }
+
   /* ===== UI Translation Logic ===== */
   function renderStaticText() {
     if (!window.i18n) return;
@@ -617,11 +675,11 @@
     document.getElementById("btn-dex-text").innerText = t("dex_title");
     document.getElementById("dex-title").innerText = t("dex_title");
     // Battle Tower button + guide
-    document.getElementById("btn-tower-label").innerText = t("tower_btn");
-    document.getElementById("tg-title").innerText = t("tower_guide_title");
+    document.getElementById("btn-tower-label").innerText = t("tower_btn").replace("🏯 ", "");
+    document.getElementById("tg-title").innerHTML = '<img src="images/icons/Godfrey Icon.webp" class="btn-ico" onerror="this.style.display=\'none\'">' + t("tower_guide_title").replace("🗼 ", "").replace("🏯 ", "");
     document.getElementById("tg-sub").innerText = t("tower_guide_sub");
     for (var i = 1; i <= 6; i++) document.getElementById("tg-l" + i).innerHTML = t("tower_guide_l" + i);
-    document.getElementById("tg-start").innerText = t("tower_guide_start");
+    document.getElementById("tg-start").innerHTML = t("tower_guide_start").replace(" ⚔️", "") + ' <img src="images/icons/Rotten Winged Sword Insignia Talisman.png" class="btn-ico" style="margin:0 0 0 8px" onerror="this.style.display=\'none\'">';
     document.getElementById("tg-close").innerText = t("tower_guide_close");
     // Continue button
     checkContinueButtons(t);
@@ -830,7 +888,7 @@
     var PATCHES = [
       { ver:"1.5.2", sections: [
         { icon:"🆕", title: shopL("Neu","New"), items: [
-          shopL("<b>🏯 Battle Tower:</b> Ein 20-stöckiger Aufstieg – jede Etage ein Bosskampf, dazwischen Melinas Segen und Große Runen. Wie hoch schaffst du es?", "<b>🏯 Battle Tower:</b> A 20-floor ascent — every floor a boss fight, with Melina's blessings and Great Runes in between. How high can you climb?"),
+          shopL("<b><img src='images/icons/Godfrey Icon.webp' class='btn-ico' onerror=\"this.style.display='none'\">Battle Tower:</b> Ein 20-stöckiger Aufstieg – jede Etage ein Bosskampf, dazwischen Melinas Segen und Große Runen. Wie hoch schaffst du es?", "<b><img src='images/icons/Godfrey Icon.webp' class='btn-ico' onerror=\"this.style.display='none'\">Battle Tower:</b> A 20-floor ascent — every floor a boss fight, with Melina's blessings and Great Runes in between. How high can you climb?"),
           shopL("<b>Progressions-System:</b> Zu Beginn nur der Normale Modus. Hard Mode, Battle Tower, der Haligtree-Pfad zu Malenia u. a. schaltest du nach und nach frei – übersichtlich im neuen <b>Freischaltungen</b>-Menü.", "<b>Progression system:</b> Only Normal Mode at the start. Hard Mode, Battle Tower, the Haligtree path to Malenia and more unlock over time — all shown in the new <b>Unlocks</b> menu."),
           shopL("<b>Elementar-Resistenzen:</b> Jedes Gebiet hat jetzt Schwächen & Resistenzen (Normal / Magie / Feuer / Heilig). Frühe Gebiete verzeihen jede Waffe, späte verlangen den richtigen Schadenstyp – nachlesbar per Info-Icon, im Kampf und beim Boss-Hover.", "<b>Elemental resistances:</b> Every area now has weaknesses & resistances (Physical / Magic / Fire / Holy). Early areas forgive any weapon, later ones demand the right damage type — readable via the info icon, in combat and on boss hover."),
           shopL("<b>Geheime Inhalte:</b> Es gibt neue versteckte Freischaltungen. Viel Spaß beim Suchen. 👀", "<b>Hidden content:</b> New secret unlocks await. Happy hunting. 👀")
@@ -963,7 +1021,6 @@
     DEX_CATS.forEach(function(c){
       var ct = dex.cats[c.key] || { found:0, total:0, items:[] };
       var dFound = ct.found, dTotal = ct.total;
-      if (c.key === "weapons" && ct.items) { dTotal = ct.items.length; dFound = ct.items.filter(function(it){ return meta.unlockedWeapons.indexOf(it.name) >= 0; }).length; }
       var active = c.key === dexCurrentCat;
       var btn = document.createElement("button");
       btn.className = "btn-mini";
@@ -989,8 +1046,29 @@
         var items = cat.items.filter(function(it){ return dexRarityOf(it) === rar; });
         if (items.length) pages.push({ rar: rar, title: shopL(RARITY_NAME[rar][0], RARITY_NAME[rar][1]), color: RARITY_COL[rar], items: items });
       });
+    } else if (dexCurrentCat === "gegner") {
+      // Gegner: EIN Gebiet pro Seite (Reihenfolge = erstes Auftreten in der Liste)
+      var DEX_REG_LABEL = {
+        limgrave:["Limgrave","Limgrave"], caelid:["Caelid","Caelid"],
+        liurnia:["Liurnia der Seen","Liurnia of the Lakes"], gelmir:["Berg Gelmir","Mount Gelmir"],
+        mohgwyn:["Mohgwyn-Dynastie","Mohgwyn Dynasty"], leyndell:["Leyndell","Leyndell"],
+        mountaintops:["Gipfel der Riesen","Mountaintops"], farumazula:["Farum Azula","Farum Azula"],
+        ashencapital:["Aschene Hauptstadt","Ashen Capital"], haligtree:["Haligtree","Haligtree"],
+        minibosse:["Minibosse & Dungeons","Minibosses & Dungeons"]
+      };
+      var regOrder = [], regMap = {};
+      cat.items.forEach(function(it){
+        var r = it.reg || "sonstige";
+        if (!regMap[r]) { regMap[r] = []; regOrder.push(r); }
+        regMap[r].push(it);
+      });
+      regOrder.forEach(function(r){
+        var lab = DEX_REG_LABEL[r] ? (en ? DEX_REG_LABEL[r][1] : DEX_REG_LABEL[r][0]) : r;
+        pages.push({ rar: null, title: lab, color: "var(--gold)", items: regMap[r] });
+      });
     } else {
-      var per = 8;
+      // Bosse & Rest: so viele pro Seite, wie ohne Scrollen ins feste Panel passen (2 Reihen × 6 = 12)
+      var per = 12;
       for (var i = 0; i < cat.items.length; i += per) {
         pages.push({ rar: null, title: (en ? "Page " : "Seite ") + (Math.floor(i/per)+1), color: "var(--gold)", items: cat.items.slice(i, i+per) });
       }
@@ -1038,8 +1116,7 @@
     }
   }
   function dexCellSeen(it, meta) {
-    // Waffen nur sichtbar, wenn im Roundtable freigeschaltet; sonst normale "entdeckt"-Logik
-    if (it.cat === "weapons") return meta.unlockedWeapons.indexOf(it.name) >= 0;
+    // Zentrale Regel kommt aus ER.getDex (discovered ODER Boss-Kill ODER Roundtable-Freischaltung)
     return !!it.seen;
   }
   /* ===== ⚜️ ROUNDTABLE (Meta-Shop im Hauptmenü) ===== */
@@ -1091,7 +1168,7 @@
       return r; } } catch(e) {}
     return metaDefault();
   }
-  function speichereMeta(m) { try { localStorage.setItem(META_KEY, JSON.stringify(m)); } catch(e) {} }
+  function speichereMeta(m) { try { localStorage.setItem(META_KEY, JSON.stringify(m)); } catch(e) {} if (window.ER && ER.syncNow) try { ER.syncNow(); } catch(e) {} }
   function shopL(de, en) { return (window.i18n && window.i18n.getLang && window.i18n.getLang() === "en") ? en : de; }
   var RARITY_COL = { common:"#9aa0a6", rare:"#4aa3ff", epic:"#a55eea", legendary:"#f1c40f" };
   var RARITY_NAME = { common:["Gewöhnlich","Common"], rare:["Selten","Rare"], epic:["Episch","Epic"], legendary:["Legendär","Legendary"] };
@@ -1200,7 +1277,7 @@
       var stats = typ === "waffe" ? ('⚔️ ' + item.dmg + ' · ' + item.arten.join("/"))
         : ('🛡️ ' + Math.round(ARMOR_RED[item.rarity]*100) + '% ' + shopL("Schadensreduktion","damage reduction"));
       var titel = dup ? shopL("Schon im Besitz – Duplikat","Already owned – duplicate") : shopL("Neu freigeschaltet!","Newly unlocked!");
-      var unten = dup ? (shopL("Hälfte erstattet: ","Half refunded: ") + '✨' + refund)
+      var unten = dup ? (shopL("Hälfte erstattet: ","Half refunded: ") + refund)
                       : shopL("Taucht ab jetzt als Beute in deinen Runs auf.","From now on it appears as loot in your runs.");
       var pityBadge = pityWar
         ? '<div style="display:inline-block;margin-bottom:8px;padding:3px 12px;border:1px solid #f1c40f;border-radius:20px;background:rgba(241,196,15,0.12);color:#f1c40f;font-family:sans-serif;font-size:0.72rem;font-weight:bold;letter-spacing:1px;box-shadow:0 0 14px rgba(241,196,15,0.35);">★ ' + shopL("PECH-SCHUTZ – GARANTIERT NEU","PITY – GUARANTEED NEW") + ' ★</div><br>'
@@ -1264,7 +1341,7 @@
     var total = sumAttr(m.attr);
     if (total === 0 && (m.unspent||0) === 0) return;
     if (m.seelen < RESPEC_COST) return;
-    if (!confirm(shopL("Alle " + (total + (m.unspent||0)) + " Attributpunkte für ✨" + RESPEC_COST + " Seelen neu verteilen?", "Redistribute all " + (total + (m.unspent||0)) + " attribute points for ✨" + RESPEC_COST + " souls?"))) return;
+    if (!confirm(shopL("Alle " + (total + (m.unspent||0)) + " Attributpunkte für " + RESPEC_COST + " Seelen neu verteilen?", "Redistribute all " + (total + (m.unspent||0)) + " attribute points for " + RESPEC_COST + " souls?"))) return;
     m.seelen -= RESPEC_COST;
     m.unspent = (m.unspent||0) + total;
     m.attr = attrDefault();
@@ -1273,10 +1350,45 @@
   window.shopAllocate = shopAllocate; window.shopRespec = shopRespec;
 
   function updateShopButtonSouls() {
-    var b = document.getElementById("btn-shop-souls"); if (b) b.innerText = " ✨" + ladeMeta().seelen;
+    var s = ladeMeta().seelen || 0;
+    var b = document.getElementById("btn-shop-souls"); if (b) b.innerText = "";
     var t = document.getElementById("btn-shop-text"); if (t) t.innerText = "Roundtable";
+    var v = document.getElementById("souls-badge-value"); if (v) v.innerText = s.toLocaleString("de-DE");
   }
   window.updateShopButtonSouls = updateShopButtonSouls;
+
+  /* ===== Aktions-Codes einlösen (Codes legt der Admin in Firestore unter codes/{CODE} an) ===== */
+  function einloeseCode() {
+    var en = _menuIsEn();
+    var input = document.getElementById("set-code-input");
+    var out = document.getElementById("set-code-result");
+    var code = (input.value || "").trim().toUpperCase();
+    if (!code) return;
+    if (!window.ER || !ER.redeemCode) { out.style.color = "#e74c3c"; out.innerText = en ? "Not available." : "Nicht verfügbar."; return; }
+    out.style.color = "#b5a98f"; out.innerText = en ? "Checking…" : "Prüfe…";
+    ER.redeemCode(code, function (res) {
+      if (res.ok) {
+        var m = ladeMeta();
+        m.seelen = (m.seelen || 0) + (res.seelen || 0);
+        m.redeemedCodes = (m.redeemedCodes || []); if (m.redeemedCodes.indexOf(res.code) < 0) m.redeemedCodes.push(res.code);
+        speichereMeta(m);   // speichert lokal + stößt den Geräte-Sync an
+        updateShopButtonSouls();
+        out.style.color = "#2ecc71";
+        out.innerText = (en ? "Redeemed! +" : "Eingelöst! +") + (res.seelen || 0) + (en ? " souls" : " Seelen");
+        input.value = "";
+      } else {
+        out.style.color = "#e74c3c";
+        var meldungen = {
+          schon:      en ? "Code already redeemed." : "Code wurde bereits eingelöst.",
+          ungueltig:  en ? "Invalid code." : "Ungültiger Code.",
+          abgelaufen: en ? "This code has expired." : "Dieser Code ist abgelaufen.",
+          offline:    en ? "No connection — try again later." : "Keine Verbindung — versuch es später erneut."
+        };
+        out.innerText = meldungen[res.grund] || meldungen.ungueltig;
+      }
+    });
+  }
+  window.einloeseCode = einloeseCode;
 
   function shopTabBtn(id, label) {
     var a = shopTab === id;
@@ -1314,7 +1426,7 @@
     var titel = typ === "waffe" ? shopL("Waffentruhe","Weapon Chest") : shopL("Rüstungstruhe","Armor Chest");
     var leer = pool.length === 0; var ok = m.seelen >= CHEST_COST && !leer;
     var rechts = leer ? '<span style="color:#54d98c;font-weight:bold;font-size:0.8rem;">' + shopL("KOMPLETT","COMPLETE") + '</span>'
-      : '<span style="color:' + (ok?'#cda34f':'#777') + ';font-weight:bold;white-space:nowrap;">✨ ' + CHEST_COST + '</span>';
+      : '<span style="color:' + (ok?'#cda34f':'#777') + ';font-weight:bold;white-space:nowrap;">' + CHEST_COST + '</span>';
     var inner = '<img src="' + CHEST_IMG + '" alt="" style="width:58px;height:46px;object-fit:contain;flex-shrink:0;">'
       + '<div style="flex:1;"><strong style="color:#ede6d4;">' + titel + '</strong><br>'
       + '<span style="color:#9aa0a6;font-size:0.78rem;">' + (leer ? shopL("Alle gesammelt","All collected") : shopL("Zufälliges Item","Random item")) + ' · ' + frei + '/' + gesamt + '</span></div>' + rechts;
@@ -1325,7 +1437,7 @@
     var m = ladeMeta();
     updateShopButtonSouls();
     var bar = document.getElementById("shop-souls-bar");
-    if (bar) bar.innerHTML = '✨ <b style="color:#cda34f;">' + m.seelen + '</b> ' + shopL("Seelen","Souls");
+    if (bar) bar.innerHTML = '<img src="images/icons/lords-rune-tools-elden-ring-wiki-guide.png" style="width:24px;height:24px;object-fit:contain;vertical-align:-6px;margin-right:7px;filter:drop-shadow(0 0 5px rgba(205,163,79,0.4));" onerror="this.style.display=\'none\'"><b style="color:#cda34f;">' + m.seelen + '</b> ' + shopL("Seelen","Souls");
     var tabs = document.getElementById("shop-tabs");
     if (tabs) tabs.innerHTML = shopTabBtn("upgrades","⚒️ "+shopL("Upgrades","Upgrades")) + shopTabBtn("truhen","📦 "+shopL("Truhen","Chests")) + shopTabBtn("skins","🎭 "+shopL("Skins","Skins"));
     var body = document.getElementById("shop-body"); if (!body) return;
@@ -1336,13 +1448,11 @@
       var nextCost = levelKosten(lvl);
       var canLevel = m.seelen >= nextCost;
       var free = m.unspent || 0;
-      // Kopf: Stufe + nächste Kosten (oder freie Respec-Punkte)
+      // Kopf: Stufe (Kosten stehen an den Attribut-Zeilen; freie Respec-Punkte werden weiterhin angezeigt)
       html += '<div style="text-align:center;margin:2px 0 14px;">'
         + '<div style="font-family:\'Cinzel\',serif;color:var(--gold);font-size:2rem;letter-spacing:2px;line-height:1;">' + shopL("Stufe","Level") + ' ' + lvl + '</div>'
-        + '<div style="font-family:sans-serif;font-size:0.8rem;color:#9aa0a6;margin-top:5px;">'
-        + (free>0 ? ('<span style="color:#f1c40f;font-weight:bold;">' + free + ' ' + shopL("freie Punkte zu verteilen","free points to spend") + '</span>')
-                  : (shopL("Nächste Stufe","Next level") + ': <b style="color:' + (canLevel?'#cda34f':'#777') + ';">✨ ' + nextCost + ' ' + shopL("Seelen","Souls") + '</b>'))
-        + '</div></div>';
+        + (free>0 ? ('<div style="font-family:sans-serif;font-size:0.8rem;margin-top:5px;"><span style="color:#f1c40f;font-weight:bold;">' + free + ' ' + shopL("freie Punkte zu verteilen","free points to spend") + '</span></div>') : '')
+        + '</div>';
       // Attribut-Zeilen
       for (var i=0;i<ATTRS.length;i++) {
         var A = ATTRS[i];
@@ -1353,7 +1463,7 @@
           ? '<span style="color:#54d98c;font-weight:bold;font-size:0.8rem;white-space:nowrap;">MAX</span>'
           : (free>0
             ? '<span style="color:#f1c40f;font-weight:bold;white-space:nowrap;">＋ ' + shopL("Punkt","point") + '</span>'
-            : '<span style="color:' + (canLevel?'#cda34f':'#777') + ';font-weight:bold;white-space:nowrap;">✨ ' + nextCost + '</span>');
+            : '<span style="color:' + (canLevel?'#cda34f':'#777') + ';font-weight:bold;white-space:nowrap;">' + nextCost + '</span>');
         var inner = '<span style="font-size:1.5rem;width:30px;text-align:center;flex-shrink:0;">' + A.icon + '</span>'
           + '<div style="flex:1;min-width:0;"><strong style="color:' + A.col + ';">' + shopL(A.de[0],A.en[0]) + ' <span style="color:#888;font-weight:normal;font-family:sans-serif;">· ' + pts + '/' + A.max + '</span></strong><br>'
           + '<span style="color:#9aa0a6;font-size:0.76rem;">' + shopL(A.de[1],A.en[1]) + '</span></div>'
@@ -1364,7 +1474,7 @@
       var totalPts = sumAttr(m.attr) + free;
       if (totalPts>0) {
         html += '<div style="text-align:center;margin-top:12px;">'
-          + '<button class="btn-mini" onclick="shopRespec()"' + (m.seelen<RESPEC_COST?' style="opacity:0.5;"':'') + '>↻ ' + shopL("Punkte neu verteilen","Respec") + ' · ✨' + RESPEC_COST + '</button></div>';
+          + '<button class="btn-mini" onclick="shopRespec()"' + (m.seelen<RESPEC_COST?' style="opacity:0.5;"':'') + '>↻ ' + shopL("Punkte neu verteilen","Respec") + ' · ' + RESPEC_COST + '</button></div>';
       }
     } else if (shopTab === "truhen") {
       html += '<p style="color:#aaa;font-size:0.82rem;font-family:sans-serif;margin-top:0;">' + shopL("Kaufe eine Truhe für ein zufälliges Item. Besitzt du es schon, bekommst du die Hälfte der Kosten zurück. Freigeschaltete Items tauchen als Beute in deinen Runs auf.","Buy a chest for a random item. If you already own it, you get half the cost back. Unlocked items appear as loot in your runs.") + '</p>';
@@ -1383,7 +1493,7 @@
         var sk = SHOP_SKINS[s]; var col3 = RARITY_COL[sk.rarity];
         var links3 = '<span style="font-size:1.7rem;width:34px;text-align:center;flex-shrink:0;">' + sk.emoji + '</span>'
           + '<div style="flex:1;"><strong style="color:' + col3 + ';">' + shopL(sk.de[0],sk.de[1]) + '</strong><br><span style="color:#9aa0a6;font-size:0.74rem;">' + shopL(RARITY_NAME[sk.rarity][0],RARITY_NAME[sk.rarity][1]) + '</span></div>';
-        html += zeile(links3 + '<span style="color:#777;font-weight:bold;font-size:0.8rem;white-space:nowrap;">✨ ' + sk.cost + '</span>', { border: col3 });
+        html += zeile(links3 + '<span style="color:#777;font-weight:bold;font-size:0.8rem;white-space:nowrap;">' + sk.cost + '</span>', { border: col3 });
       }
       html += '</div>';
       html += '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;">'
@@ -1458,28 +1568,59 @@
     document.getElementById("th-stage").innerText = istTower ? t("lb_th_akt") : t("lb_th_stage");
     document.getElementById("th-bosses").innerText = t("lb_th_bosses");
 
-    ER.getLeaderboard(20, function (rows, online) {
+    lbPage = 0;
+    ER.getLeaderboard(50, function (rows, online) {
       if (!rows || rows.length === 0) {
+        document.getElementById("lb-pagenav").style.visibility = "hidden";
         status.textContent = online
           ? (window.i18n ? t("lb_no_entries_online") : "Noch keine Einträge – sei der Erste!")
           : (window.i18n ? t("lb_no_entries_local") : "Noch keine lokalen Läufe. Spiel eine Runde!");
         return;
       }
-      body.innerHTML = "";
-      rows.forEach(function (r, i) {
-        var rankClass = i === 0 ? "gold" : (i === 1 ? "silver" : (i === 2 ? "bronze" : ""));
-        var tr = document.createElement("tr");
-        tr.innerHTML =
-          '<td class="lb-rank ' + rankClass + '">' + (i + 1) + '</td>' +
-          '<td><span class="lb-name">' + (r.photo ? '<img src="' + r.photo + '">' : "") + (r.name || (window.i18n ? t("lb_th_player") : "Befleckter")) + (r.patch ? ' <span class="lb-patch">v' + r.patch + '</span>' : "") + '</span></td>' +
-          '<td>' + (r.stage || 0) + '</td>' +
-          '<td>' + (r.bosses || 0) + '</td>' +
-          '<td class="lb-score">' + (r.score || 0) + '</td>';
-        body.appendChild(tr);
-      });
+      _lbRows = rows;
+      renderLbPage();
       status.classList.add("hidden"); table.classList.remove("hidden");
     }, lbKategorie, lbPatch);
   }
+
+  /* Bestenliste: feste Größe — immer 10 Zeilen pro Seite, darunter blättern (wie im Eldendex) */
+  var _lbRows = []; var lbPage = 0; var LB_PER_PAGE = 10;
+  function renderLbPage() {
+    var body = document.getElementById("lb-body"); if (!body) return;
+    let t = window.i18n ? window.i18n.t : (k) => k;
+    var pages = Math.max(1, Math.ceil(_lbRows.length / LB_PER_PAGE));
+    if (lbPage >= pages) lbPage = pages - 1; if (lbPage < 0) lbPage = 0;
+    var start = lbPage * LB_PER_PAGE;
+    var slice = _lbRows.slice(start, start + LB_PER_PAGE);
+    body.innerHTML = "";
+    slice.forEach(function (r, i) {
+      var rank = start + i;
+      var rankClass = rank === 0 ? "gold" : (rank === 1 ? "silver" : (rank === 2 ? "bronze" : ""));
+      var tr = document.createElement("tr");
+      tr.innerHTML =
+        '<td class="lb-rank ' + rankClass + '">' + (rank + 1) + '</td>' +
+        '<td><span class="lb-name">' + (r.photo ? '<img src="' + r.photo + '">' : "") + (r.name || (window.i18n ? t("lb_th_player") : "Befleckter")) + (r.patch ? ' <span class="lb-patch">v' + r.patch + '</span>' : "") + '</span></td>' +
+        '<td>' + (r.stage || 0) + '</td>' +
+        '<td>' + (r.bosses || 0) + '</td>' +
+        '<td class="lb-score">' + (r.score || 0) + '</td>';
+      body.appendChild(tr);
+    });
+    // Auffüllen auf exakt 10 Zeilen, damit das Fenster immer gleich groß bleibt
+    for (var p = slice.length; p < LB_PER_PAGE; p++) {
+      var trE = document.createElement("tr");
+      trE.innerHTML = '<td colspan="5" style="opacity:0;">&nbsp;</td>';
+      body.appendChild(trE);
+    }
+    var nav = document.getElementById("lb-pagenav");
+    if (nav) {
+      nav.style.visibility = pages > 1 ? "visible" : "hidden";   // Platz bleibt reserviert -> Fenster immer gleich groß
+      document.getElementById("lb-pageinfo").innerText = (lbPage + 1) + " / " + pages;
+      document.getElementById("lb-prev").disabled = lbPage === 0;
+      document.getElementById("lb-next").disabled = lbPage >= pages - 1;
+    }
+  }
+  function lbGoPage(delta) { lbPage += delta; renderLbPage(); }
+  window.lbGoPage = lbGoPage;
 
   /* ===== Achievements ===== */
   function ladeAchievements() {
@@ -1532,12 +1673,15 @@
       var name = en ? u.name.en : u.name.de;
       var desc = en ? u.desc.en : u.desc.de;
       var hint = en ? u.hint.en : u.hint.de;
+      var how = u.how ? (en ? u.how.en : u.how.de) : hint;
+      var icHtml = u.img ? '<img src="' + u.img + '" style="width:34px;height:34px;object-fit:contain;filter:drop-shadow(0 0 6px rgba(205,163,79,0.35));" onerror="this.replaceWith(document.createTextNode(\'' + u.icon + '\'))">' : u.icon;
       if (u.unlocked) {
         return '<div class="ach-card">' +
-          '<div class="ic">' + u.icon + '</div>' +
+          '<div class="ic">' + icHtml + '</div>' +
           '<div style="min-width:0;"><div class="nm">' + name + '</div>' +
           '<div class="ds">' + desc + '</div>' +
-          '<div style="margin-top:5px; font-size:0.7rem; color:#2ecc71; font-weight:bold; letter-spacing:1px; font-family:sans-serif;">✓ ' + (en ? "UNLOCKED" : "FREIGESCHALTET") + '</div></div></div>';
+          '<div style="margin-top:5px; font-size:0.7rem; color:#2ecc71; font-weight:bold; letter-spacing:1px; font-family:sans-serif;">✓ ' + (en ? "UNLOCKED" : "FREIGESCHALTET") + '</div>' +
+          '<div style="margin-top:3px; font-size:0.68rem; color:#8c8377; font-style:italic; font-family:sans-serif; line-height:1.35;">' + (en ? "Unlocked by: " : "Freigeschaltet durch: ") + how + '</div></div></div>';
       }
       var bar = "";
       if (u.max) {
@@ -1674,6 +1818,21 @@ function setSoundVol(v){
   _updateSoundBtn();
 }
 function previewSound(){ if (_soundOn) playClick(); }
+
+// Speedrun-Modus (im Spiel: neben ein Loot-/Talisman-Popup klicken = nichts nehmen & weiter)
+function _updateSpeedrunBtn(){
+  var on = localStorage.getItem("eldenRogueSpeedrun") === "1";
+  var en = _menuIsEn();
+  var btn = document.getElementById("set-speedrun-btn");
+  if (btn) { btn.innerText = on ? (en ? "On" : "An") : (en ? "Off" : "Aus"); btn.style.color = on ? "#2ecc71" : ""; btn.style.borderColor = on ? "#2ecc71" : ""; }
+}
+function toggleSpeedrun(){
+  var on = localStorage.getItem("eldenRogueSpeedrun") === "1";
+  localStorage.setItem("eldenRogueSpeedrun", on ? "0" : "1");
+  _updateSpeedrunBtn();
+  if (_soundOn) playClick();
+}
+window.toggleSpeedrun = toggleSpeedrun;
 (function(){
   var sel = ".btn-main, .btn-secondary, .btn-social, .sb-item, .sb-toggle, .btn-mini, .btn-google, .lb-pill, .mode-tab, .btn-lang";
   function ok(el){ return el && !el.classList.contains("coming-soon-btn") && !el.classList.contains("btn-hard-locked"); }
@@ -1775,12 +1934,12 @@ function applyTowerLock(){
   btn.removeAttribute("disabled"); btn.removeAttribute("aria-disabled");
   if (!unlocked){
     btn.classList.add("tower-locked");
-    btn.innerHTML = '<span id="btn-tower-label">🏯 Battle Tower</span><span class="cs-badge">🔒 ' + (en ? "LOCKED" : "GESPERRT") + '</span>';
+    btn.innerHTML = '<span id="btn-tower-label">Battle Tower</span><span class="cs-badge">🔒 ' + (en ? "LOCKED" : "GESPERRT") + '</span>';
     btn.title = en ? "Locked – finish Normal Mode with every class" : "Gesperrt – schließe den Normal-Modus mit allen Klassen ab";
     btn.onclick = function(){ showToast(en ? "Finish Normal Mode with every class to unlock the Battle Tower." : "Schließe den Normal-Modus mit allen Klassen ab, um den Battle Tower freizuschalten.", "🔒"); return false; };
   } else {
     btn.classList.remove("tower-locked");
-    btn.innerHTML = '<span id="btn-tower-label">🏯 Battle Tower</span>';
+    btn.innerHTML = '<span id="btn-tower-label">Battle Tower</span>';
     btn.title = "";
     btn.onclick = function(){ openTowerGuide(); return false; };
   }
@@ -1807,7 +1966,13 @@ function localizeMenuExtras(){
   set("set-sound-label", "Sound", "Sound");
   set("set-sound-sub", "UI-Klänge an/aus", "UI sounds on/off");
   set("set-vol-label", "Lautstärke", "Volume");
+  set("set-code-label", "Code einlösen", "Redeem code");
+  set("set-code-sub", "Aktions-Codes aus der Community", "Community promo codes");
+  set("set-code-btn", "Einlösen", "Redeem");
   set("set-vol-sub", "SFX-Lautstärke", "SFX volume");
+  set("set-speedrun-label", "Speedrun-Modus", "Speedrun Mode");
+  set("set-speedrun-sub", "Neben ein Pop-up klicken = nichts nehmen & weiter", "Click beside a pop-up = take nothing & continue");
+  _updateSpeedrunBtn();
   setH("info-l1", "<b>Modus wählen:</b> Starte einen <b>Normalen</b> Run. Den <b>Hard Mode</b> schaltest du frei, sobald du einmal durchgespielt hast.", "<b>Pick a mode:</b> Start a <b>Normal</b> run. <b>Hard Mode</b> unlocks once you've finished the game.");
   setH("info-l2", "<b>Run fortsetzen:</b> Ein laufender Run wird gespeichert und erscheint oben als grüner Button.", "<b>Resume:</b> An active run is saved and shows up as the green button at the top.");
   setH("info-l3", "<b>Karte:</b> Wähle deinen Pfad über ein verzweigtes Netz – jeder Knoten ist ein anderes Event.", "<b>Map:</b> Choose your path across a branching web – every node is a different event.");
@@ -1843,7 +2008,7 @@ function showNextUnlock() {
   var u = _unlockQueue.shift(); if (!u) return;
   var en = _menuIsEn();
   document.getElementById("ur-kicker").innerText = en ? "🔓 NEW UNLOCK" : "🔓 NEU FREIGESCHALTET";
-  document.getElementById("ur-icon").innerText = u.icon || "🔓";
+  document.getElementById("ur-icon").innerHTML = u.img ? '<img src="' + u.img + '" style="width:76px;height:76px;object-fit:contain;filter:drop-shadow(0 0 18px rgba(205,163,79,0.6));" onerror="this.replaceWith(document.createTextNode(\'' + (u.icon || "🔓") + '\'))">' : (u.icon || "🔓");
   document.getElementById("ur-name").innerText = en ? u.name.en : u.name.de;
   document.getElementById("ur-desc").innerText = en ? u.desc.en : u.desc.de;
   document.getElementById("ur-btn").innerText = _unlockQueue.length ? (en ? "Next ▸" : "Weiter ▸") : (en ? "Let's go!" : "Los geht's!");
@@ -1857,6 +2022,27 @@ function dismissUnlockReveal() {
   if (typeof ladeUnlocks === "function" && document.getElementById("modal-unlocks").classList.contains("open")) ladeUnlocks();
 }
 window.dismissUnlockReveal = dismissUnlockReveal;
+
+// Globales Event (config/event in Firestore) -> Banner im Menü anzeigen
+window.addEventListener("er-event", function(e){
+  try {
+    var d = e.detail || {}; var en = _menuIsEn();
+    var el = document.getElementById("event-banner"); if (!el) return;
+    var titel = (en ? (d.titelEn || d.titel) : d.titel) || (en ? "Event active!" : "Event aktiv!");
+    var zusatz = (d.seelenMult && d.seelenMult > 1) ? ("  ·  ×" + d.seelenMult + (en ? " souls" : " Seelen")) : "";
+    el.innerText = "🎉 " + titel + zusatz;
+    el.style.display = "block";
+  } catch(err){}
+});
+
+// Nach dem Geräte-Sync (Login-Merge abgeschlossen): Menü mit dem frischen Stand aktualisieren
+window.addEventListener("er-cloud-sync", function(){
+  try { updateShopButtonSouls(); } catch(e){}
+  try { checkContinueButtons(); } catch(e){}
+  try { applyHardLock(); applyTowerLock(); } catch(e){}
+  try { checkNewUnlocks(); } catch(e){}
+  try { if (document.getElementById("modal-unlocks").classList.contains("open")) ladeUnlocks(); } catch(e){}
+});
 
 document.addEventListener("languageChanged", function(){ localizeMenuExtras(); applyHardLock(); applyTowerLock(); });
 if (window.ER) { ER.onUserChange(function(){ applyHardLock(); applyTowerLock(); setTimeout(checkNewUnlocks, 400); }); }
