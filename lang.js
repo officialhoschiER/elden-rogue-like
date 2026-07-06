@@ -293,6 +293,11 @@
       lb_cat_normal: "Normal",
       lb_cat_hard: "Hard",
       lb_cat_tower: "Battle Tower",
+      lb_cat_speedrun: "Speedrun",
+      lb_cat_completionist: "100% Club",
+      lb_th_time: "Zeit",
+      lb_th_date: "Erreicht am",
+      lb_th_achievements: "Erfolge",
 
       talisman_found_title: "Friedhof geplündert!",
       talisman_cursed_title: "Verfluchter Talisman!",
@@ -718,6 +723,11 @@
       lb_cat_normal: "Normal",
       lb_cat_hard: "Hard",
       lb_cat_tower: "Battle Tower",
+      lb_cat_speedrun: "Speedrun",
+      lb_cat_completionist: "100% Club",
+      lb_th_time: "Time",
+      lb_th_date: "Reached on",
+      lb_th_achievements: "Feats",
 
       talisman_found_title: "Graveyard Plundered!",
       talisman_cursed_title: "Cursed Talisman!",
