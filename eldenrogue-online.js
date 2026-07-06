@@ -98,6 +98,8 @@
     // --- Progression / Freischaltungen ---
     normalCompletions: 0, classesNormalDone: {}, normalNoBlaiddClears: 0, normalNoArmorClears: 0,
     ryaInvites: 0, mohgwynVisits: 0, gelmirVisits: 0, fallDeaths: 0,
+    // --- Speedrun (schnellste abgeschlossene Zeit) + 100%-Achievements-Bestenliste ---
+    bestTimeMs: 0, bestTimeMeta: null, allAchDate: 0, allAchCount: 0,
     // --- Eldendex: entdeckte Katalog-IDs ---
     discovered: {},
     // --- Bestwerte pro Patch: { "1_3": { normal:{score,stage,bosses}, hard:{...} }, "1_4": {...} } ---
@@ -346,7 +348,7 @@
     { id: "malenia", icon: "🌸", img: "images/icons/scarlet_rot_status_effect_elden_ring_wiki_guide_100px.png",
       name: { de: "Der Pfad des Haligtree", en: "The Haligtree Path" },
       desc: { de: "Die geheimen Medaillons, der Haligtree und der Kampf gegen Malenia, Klinge Miquellas.", en: "The secret medallions, the Haligtree and the fight against Malenia, Blade of Miquella." },
-      hint: { de: "Schließe den Normal-Modus ab, ohne Blaidd überhaupt zu begegnen.", en: "Finish Normal Mode without ever encountering Blaidd." },
+      hint: { de: "Schließe das Spiel ab, ohne Blaidd überhaupt zu begegnen (Normal oder Hard).", en: "Finish the game without ever encountering Blaidd (Normal or Hard)." },
       check: s => (s.normalNoBlaiddClears || 0) >= 1 || (s.maleniaKills || 0) >= 1,
       progress: s => ({ cur: Math.min(1, s.normalNoBlaiddClears || 0), max: 1 }) },
     { id: "battle_tower", icon: "🗼", img: "images/icons/Godfrey Icon.webp",
@@ -428,11 +430,18 @@
         unlocked.push(a.id); neu.push(a);
       }
     });
+    var pushCloud = false;
     if (neu.length) {
       saveUnlocked(unlocked);
       neu.forEach(function (a) { if (typeof window.onERAchievement === "function") { try { window.onERAchievement(locAch(a)); } catch (e) {} } });
-      cloudPush();
+      pushCloud = true;
     }
+    // 100%-Club: sobald ALLE Achievements erspielt sind, Datum + Anzahl EINMALIG festhalten
+    // (läuft unabhängig von neu, damit auch Bestands-Completionisten beim nächsten Check erfasst werden)
+    if (unlocked.length >= ACHIEVEMENTS.length && !(s.allAchDate > 0)) {
+      s.allAchDate = Date.now(); s.allAchCount = ACHIEVEMENTS.length; saveStats(s); pushCloud = true;
+    }
+    if (pushCloud) cloudPush();
     return neu;
   }
 
@@ -509,14 +518,25 @@
       var s = getStats();
       // Klasse gilt als "durchgespielt" bei JEDER Schwierigkeit (Hard ist strenger als Normal) -> Battle-Tower-Freischaltung
       if (klasse) { s.classesNormalDone = s.classesNormalDone || {}; s.classesNormalDone[klasse] = true; }
+      // Haligtree/Malenia: ein Durchlauf OHNE Blaidd zählt auf Normal ODER Hard
+      if (noBlaidd) s.normalNoBlaiddClears = (s.normalNoBlaiddClears || 0) + 1;
       if (diff !== "hard") {    // die übrigen Freischaltungen bleiben Normal-spezifisch
         s.normalCompletions = (s.normalCompletions || 0) + 1;
-        if (noBlaidd) s.normalNoBlaiddClears = (s.normalNoBlaiddClears || 0) + 1;                              // Haligtree: ohne Blaidd
         if (noArmor && klasse === "schwertkaempfer") s.normalNoArmorClears = (s.normalNoArmorClears || 0) + 1;  // Liurnia: NUR Vagabund + bewusst abgelegte Rüstung (Samurai/Bettler folgen später)
       }
       saveStats(s);
       checkAchievements();      // Freischaltungen können sich geändert haben
       ER.endRun();
+    },
+    // Schnellste ABGESCHLOSSENE Laufzeit (ms) für die Speedrun-Bestenliste — kleinerer Wert gewinnt
+    recordCompletionTime: function (ms, meta) {
+      ms = Math.round(ms || 0); if (ms <= 0) return;
+      var s = getStats();
+      if (!(s.bestTimeMs > 0) || ms < s.bestTimeMs) {
+        s.bestTimeMs = ms;
+        s.bestTimeMeta = { klasse: (meta && meta.klasse) || "", diff: (meta && meta.diff) || "normal", stage: (meta && meta.stage) || 0, ts: Date.now() };
+        saveStats(s); cloudPush();
+      }
     },
     maleniaKilled:        function () { bump("maleniaKills"); },
     ryaInvite:            function () { bump("ryaInvites"); },      // Ryas Einladung nach Haus Vulkan (Gelmir-Freischaltung)
@@ -644,6 +664,34 @@
     /* --- Bestenliste (getrennt nach Patch + Kategorie) --- */
     getLeaderboard: function (limit, cb, category, patch) {
       limit = limit || 20;
+      // Speedrun-Board: schnellste abgeschlossene Zeit (aufsteigend)
+      if (category === "speedrun") {
+        if (ONLINE && fbDB) {
+          fbDB.collection("users").orderBy("bestTimeMs", "asc").limit(limit).get()
+            .then(function (snap) {
+              var rows = [];
+              snap.forEach(function (d) { var x = d.data(); if (!(x.bestTimeMs > 0)) return;
+                rows.push({ name: x.displayName || "Befleckter", photo: x.photoURL || "", timeMs: x.bestTimeMs, meta: x.bestTimeMeta || {} }); });
+              cb(rows, true);
+            })
+            .catch(function (e) { console.warn("[ER] Speedrun-Board:", e); cb(localSpeedrun(), false); });
+        } else { cb(localSpeedrun(), false); }
+        return;
+      }
+      // 100%-Achievements-Board: wer zuerst alle Achievements hatte (nach Datum aufsteigend)
+      if (category === "completionist") {
+        if (ONLINE && fbDB) {
+          fbDB.collection("users").orderBy("allAchDate", "asc").limit(limit).get()
+            .then(function (snap) {
+              var rows = [];
+              snap.forEach(function (d) { var x = d.data(); if (!(x.allAchDate > 0)) return;
+                rows.push({ name: x.displayName || "Befleckter", photo: x.photoURL || "", date: x.allAchDate, count: x.allAchCount || 0 }); });
+              cb(rows, true);
+            })
+            .catch(function (e) { console.warn("[ER] 100%-Board:", e); cb(localCompletionist(), false); });
+        } else { cb(localCompletionist(), false); }
+        return;
+      }
       var cat = normCat(category);
       var pk = patchKey(patch || PATCH);
       var scoreField = "lb." + pk + "." + cat + "Score";
@@ -686,6 +734,15 @@
     });
     b.sort(function (a, c) { return c.score - a.score; });
     return b.slice(0, limit);
+  }
+  // Lokale Fallbacks (offline / Query-Fehler): nur der eigene Eintrag
+  function localSpeedrun() {
+    var s = getStats(); if (!(s.bestTimeMs > 0)) return [];
+    return [{ name: ER.getPlayerName(), photo: "", timeMs: s.bestTimeMs, meta: s.bestTimeMeta || {} }];
+  }
+  function localCompletionist() {
+    var s = getStats(); if (!(s.allAchDate > 0)) return [];
+    return [{ name: ER.getPlayerName(), photo: "", date: s.allAchDate, count: s.allAchCount || 0 }];
   }
   function submitToBoard(score, meta) {
     if (score <= 0) return;
@@ -803,6 +860,11 @@
       lb: baueLbMap(s),
       updatedAt: (firebase.firestore && firebase.firestore.FieldValue ? firebase.firestore.FieldValue.serverTimestamp() : Date.now())
     };
+    // Speedrun-Board (Sortierung aufsteigend) — Feld nur schreiben, wenn es eine echte Zeit gibt,
+    // sonst würde eine 0 die Bestenliste anführen.
+    if (s.bestTimeMs > 0) { doc.bestTimeMs = s.bestTimeMs; doc.bestTimeMeta = s.bestTimeMeta || null; }
+    // 100%-Achievements-Board (Sortierung nach Datum, wer zuerst alles hatte)
+    if (s.allAchDate > 0) { doc.allAchDate = s.allAchDate; doc.allAchCount = s.allAchCount || 0; }
     // Geräte-Sync: lokale Stände als JSON-Strings spiegeln — aber erst NACH dem Login-Merge,
     // damit ein frisches Gerät den Cloud-Stand nicht mit leeren Daten überschreibt.
     if (initialSyncDone) {
@@ -838,6 +900,17 @@
             merged.patchBest = mergePatchBest(local.patchBest || {}, cs.patchBest || {});
           } else if (k === "hardNoDeath") {
             merged[k] = !!(local[k] || cs[k]);
+          } else if (k === "bestTimeMs") {
+            // Speedrun: die KLEINERE (schnellere) Zeit gewinnt (0 = keine Zeit)
+            var lt = local.bestTimeMs || 0, ct = cs.bestTimeMs || 0;
+            merged.bestTimeMs = (lt > 0 && ct > 0) ? Math.min(lt, ct) : (lt || ct);
+            merged.bestTimeMeta = (merged.bestTimeMs === lt) ? (local.bestTimeMeta || cs.bestTimeMeta) : (cs.bestTimeMeta || local.bestTimeMeta);
+          } else if (k === "bestTimeMeta") {
+            /* zusammen mit bestTimeMs oben gesetzt */
+          } else if (k === "allAchDate") {
+            // 100%-Datum: das FRÜHERE (kleinere) gewinnt
+            var la = local.allAchDate || 0, ca = cs.allAchDate || 0;
+            merged.allAchDate = (la > 0 && ca > 0) ? Math.min(la, ca) : (la || ca);
           } else {
             merged[k] = Math.max(local[k] || 0, cs[k] || 0);
           }
