@@ -11,8 +11,8 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-  <script src="lang.js?v=1.5.28"></script>
-  <script src="eldenrogue-online.js?v=1.5.28"></script>
+  <script src="lang.js?v=1.5.30"></script>
+  <script src="eldenrogue-online.js?v=1.5.30"></script>
   <style>
     /* Lokale Font-Einbindung aus dem fonts-Ordner */
     @font-face {
@@ -331,6 +331,10 @@ h1, h2, h3, .btn-menu, .btn-combat, .btn-social, .game-author-tag, #region-displ
     #atk-btn.btn-combat:hover { background-color: var(--gold); color: #0b0b0b; box-shadow: 0 0 20px rgba(205, 163, 79, 0.5); transform: translateY(-2px); }
     .btn-heal { background-color: #141f19; color: #2ecc71; border: 1px solid #27ae60; }
     .btn-heal:hover { background-color: #2ecc71; color: #0b0b0b; box-shadow: 0 0 20px rgba(46, 204, 113, 0.4); transform: translateY(-2px); }
+    .btn-heal:hover img { filter: brightness(0) invert(0); }
+    /* Angreifen & Heilen exakt gleich groß, nebeneinander */
+    .battle-buttons { display: flex; gap: 12px; justify-content: center; align-items: stretch; }
+    .battle-buttons .btn-combat { flex: 1 1 0; max-width: 240px; margin: 6px 0; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
     
     .btn-combat:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; box-shadow: none !important; background-color: #111 !important; color: #555 !important; border-color: #333 !important; }
 
@@ -1844,10 +1848,11 @@ function updateUI() {
     } else {
       gelagerteWaffen.forEach((w, i) => {
         let f = raritaetFarben[w.rarity] || "#9aa0a6"; let d = document.createElement("div");
+        let wDmg = berechneWaffenEndschaden(w.basisDmg, w.schadensarten);   // gleicher Wert wie linke Leiste / Fund-Popup
         d.style.cssText = `background:rgba(0,0,0,0.4); border:1px solid ${f}; border-radius:5px; padding:8px 6px; font-family:sans-serif; text-transform:none; display:flex; flex-direction:column; align-items:center; gap:4px; text-align:center;`;
         d.innerHTML = `<img src="${gibWaffenBild(w.name)}" alt="" style="width:46px; height:46px; object-fit:contain;" onerror="this.style.display='none'">`
           + `<span style="color:${f}; font-weight:bold; font-size:0.8rem; line-height:1.15;">${waffenNameLoc(w.name)}</span>`
-          + `<span style="display:inline-flex; gap:4px;">${(w.schadensarten||[]).map(dmgTypIconHtml).join("")}</span>`;
+          + `<span style="display:inline-flex; align-items:center; gap:6px;"><span style="color:${f}; font-weight:bold; font-size:0.9rem;">${wDmg}</span>${(w.schadensarten||[]).map(dmgTypIconHtml).join("")}</span>`;
         if (!imKampf) { d.style.cursor = "pointer"; d.title = t("storage_swap_tip"); d.onclick = () => wechsleWaffe(i); } else { d.style.opacity = "0.5"; }
         wCont.appendChild(d);
       });
@@ -1973,7 +1978,7 @@ function updateUI() {
     { let __f = ladeMeta().activeSkinFilter || ""; let __pi = document.getElementById("player-combat-img"); if (__pi) __pi.style.filter = __f; }
     document.getElementById("atk-btn").disabled = aktionsSperre;
     document.getElementById("heal-btn").disabled = aktionsSperre || spielerFlasks <= 0;
-    document.getElementById("heal-btn").innerHTML = '<img src="images/icons/icon_estus.png" style="height:28px;width:auto;vertical-align:middle;display:inline-block;" onerror="this.outerHTML=\'🧪\'">';
+    document.getElementById("heal-btn").innerHTML = '<img src="images/icons/icon_estus.png" style="height:28px;width:auto;vertical-align:middle;display:inline-block;" onerror="this.outerHTML=\'🧪\'"><span style="font-family:sans-serif; font-weight:bold; font-size:1rem; letter-spacing:0;">+' + estusHeilVorschau + '</span>';
     document.getElementById("heal-btn").setAttribute("data-tooltip", t("btn_heal").replace("🧪 ", "") + " (" + spielerFlasks + ")");
   } else { 
     document.getElementById("battle-view").style.display = "none"; document.getElementById("map-view").style.display = "flex"; document.getElementById("atk-btn").style.display = ""; document.getElementById("heal-btn").style.display = ""; baueKarteHTML();
@@ -3582,6 +3587,10 @@ function bestaetigeStufe(naechsteEbene) { document.getElementById("popup-overlay
     geheim.appendChild(bSmall("Rykard-Kill", function(){ devEnsureRun(); try { ER.bossKilled("Rykard, Herr der Blasphemie"); } catch(e){} if (aktuelleRegion === "Leyndell") devGoto("Leyndell"); devRefresh(); }));
     geheim.appendChild(bSmall("Sewers", function(){ devEnsureRun(); try { ER.bossKilled("Rykard, Herr der Blasphemie"); } catch(e){} gewaehlteKlasse = "nackt"; devGoto("Leyndell"); }));
     panel.appendChild(geheim);
+    var geheim2 = row();
+    geheim2.appendChild(bSmall("Haligtree frei", function(){ devEnsureRun(); try { ER.gameCompleted("schwertkaempfer","normal",true,false); } catch(e){} devRefresh(); alert("Pfad des Haligtree freigeschaltet — ab jetzt spawnen Festungen (Medaillons) auf dem Weg zu Malenia."); }));
+    geheim2.appendChild(bSmall("Festung hier", function(){ devEnsureRun(); fortressPlacedRegions = []; try { if(window.ER&&ER.gameCompleted) ER.gameCompleted("schwertkaempfer","normal",true,false); } catch(e){} var k=netzKarte; for(var zi=1; zi<k.length-1; zi++){ var frei=k[zi].knoten.find(function(n){ return ![4,5,10,15].includes(n.typ); }); if(frei){ frei.typ=15; break; } } fortressPlacedRegions.push(aktuelleRegion); baueKarteHTML(); }));
+    panel.appendChild(geheim2);
     panel.appendChild(b("🗼 Battle-Tower Etage…", devTowerFloor, "#9b8cff"));
     panel.appendChild(b("🔄 Run neu starten", function(){ try{ direktNeustarten(); }catch(e){} devRefresh(); }, "#e67e22"));
     panel.appendChild(b("🧹 Lokalen Spielstand LÖSCHEN", function(){ window.location.href = "game.html?wipe=1"; }, "#e74c3c"));
