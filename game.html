@@ -1405,7 +1405,7 @@ const gebietsGegnerKonfig = {
   Gelmir: { elite: "images/Gegner/abductor-virgins.jpg", waechter: "images/Gegner/full-grown-fallingstar.jpg", invader: "images/Gegner/ER_Inquisitor_Ghiza.png", eliteName: "Eiserne Jungfrauen", waechterName: "Ausgewachsene Sternenbestie", invaderName: "Inquisitor Ghiza" },
   Mohgwyn: { elite: "images/Gegner/ER_Red_Albinauric_w_Shamshir.webp", waechter: "images/Gegner/monstrous-crow-2-hq-elden-ring-wiki-guide.jpg", invader: "images/Gegner/nameless-white-mask-in-elden-ring.avif", eliteName: "Roter Albinauriker", waechterName: "Monströse Krähe", invaderName: "Namenlose Weißmaske" },
   // --- DLC: Land des Schattens (Bilder in images/Gegner/ nachlegen — Fallback greift bis dahin) ---
-  Gravesite: { elite: "images/Gegner/GRAVESITE_ELITE.jpg", waechter: "images/Gegner/GRAVESITE_WAECHTER.jpg", invader: "images/Gegner/GRAVESITE_INVADER.jpg", eliteName: "Messmer-Soldat", waechterName: "Schwarzkerker-Ritter", invaderName: "Feuerritter Queelign" },
+  Gravesite: { elite: "images/Gegner/GRAVESITE_ELITE.jpg", waechter: "images/Gegner/GRAVESITE_WAECHTER.png", invader: "images/Gegner/GRAVESITE_INVADER.webp", eliteName: "Geisterflammen-Drache", waechterName: "Lamenter", invaderName: "Fluchklinge Meera" },
   CastleEnsis: { elite: "images/Gegner/ENSIS_ELITE.jpg", waechter: "images/Gegner/ENSIS_WAECHTER.jpg", invader: "images/Gegner/ENSIS_INVADER.jpg", eliteName: "Karianischer Ritter", waechterName: "Kampfmagier von Ensis", invaderName: "Zwillingsmond-Adept" },
   AbyssalWoods: { elite: "images/Gegner/ABYSS_ELITE.jpg", waechter: "images/Gegner/ABYSS_WAECHTER.jpg", invader: "images/Gegner/ABYSS_INVADER.jpg", eliteName: "Erblindeter Wahnsinniger", waechterName: "Winterlaterne", invaderName: "Anhänger der Wahnsinnigen Flamme" },
   Mountaintops: { elite: "images/MOUNTAINTOPS_ELITE.jpg", waechter: "images/MOUNTAINTOPS_WAECHTER.jpg", invader: "images/MOUNTAINTOPS_INVADER.jpg", eliteName: "Feuermönch", waechterName: "Troll", invaderName: "Okina" },
@@ -1416,8 +1416,8 @@ const gebietsGegnerKonfig = {
 const bilderDatenbankBosse = {
   // --- DLC: Land des Schattens (Bilder in images/bosse/ nachlegen) ---
   "Göttliches Tanzlöwenbiest": "images/bosse/tanzloewe.jpg",
-  "Rellana, Ritterin der Zwillingsmonde": "images/bosse/rellana.jpg",
-  "Midra, Herr der Wahnsinnigen Flamme": "images/bosse/midra.jpg",
+  "Rellana, Ritterin der Zwillingsmonde": "images/bosse/rellana.png",
+  "Midra, Herr der Wahnsinnigen Flamme": "images/bosse/midra.png",
   "Loretta, Knight of the Haligtree": "images/loretta-knight-of-haligtree.jpg",
   "Commander Niall": "images/commander-niall-elden-ring-wiki.jpg",
   "Malenia, Blade of Miquella": "images/maleniap1.webp",
@@ -1887,7 +1887,7 @@ function baueKarteHTML() {
     if (aktuelleRegion === "Haligtree") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(15,25,10,0.75), rgba(5,5,5,0.95)), url('images/background/elden_ring_elphael_hero_2.avif')";
     if (aktuelleRegion === "Mohgwyn") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(35,5,8,0.75), rgba(10,2,3,0.95)), url('images/background/mohgwyn.avif')";
     if (aktuelleRegion === "Gravesite") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(20,18,10,0.78), rgba(8,8,5,0.92)), url('images/background/gravesite.jpg')";
-    if (aktuelleRegion === "CastleEnsis") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(10,12,28,0.78), rgba(4,5,14,0.92)), url('images/background/castleensis.jpg')";
+    if (aktuelleRegion === "CastleEnsis") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(10,12,28,0.78), rgba(4,5,14,0.92)), url('images/background/castleensis.webp')";
     if (aktuelleRegion === "AbyssalWoods") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(4,4,6,0.92), rgba(2,2,3,0.985)), url('images/background/abyssalwoods.jpg')";
   }
   mapScrollArea.classList.toggle("abyss-fog", aktuelleRegion === "AbyssalWoods" && !inSubDungeon);
@@ -1915,14 +1915,18 @@ function baueKarteHTML() {
           else if (aktuelleRegion === "Haligtree") imgTag.src = "images/maleniap1.webp";
           else if (aktuelleRegion === "Mohgwyn") imgTag.src = "images/bosse/Titel-8-fc80008000ffff_1920x1080.avif";
           else if (aktuelleRegion === "Gravesite") imgTag.src = "images/bosse/tanzloewe.jpg";
-          else if (aktuelleRegion === "CastleEnsis") imgTag.src = "images/bosse/rellana.jpg";
-          else if (aktuelleRegion === "AbyssalWoods") imgTag.src = "images/bosse/midra.jpg";
+          else if (aktuelleRegion === "CastleEnsis") imgTag.src = "images/bosse/rellana.png";
+          else if (aktuelleRegion === "AbyssalWoods") imgTag.src = "images/bosse/midra.png";
         }
         imgTag.onerror = function(){ this.style.display = "none"; };   // fehlendes Bossbild -> leerer Knoten statt Broken-Image
         // Schwäche/Resistenz des Bosses beim Hovern anzeigen (kurz: Weak/Resist)
         let __bn = (activeChallenge === "tower") ? knoten.towerBoss : ((inSubDungeon || inSewers) ? "" : regionBossName(aktuelleRegion, zeile.ebene));
         let __wk = __bn ? bossSchwaecheText(__bn) : "";
         if (__wk) nodeDiv.setAttribute("data-tooltip", __wk);
+      } else if (knoten.typ === 20) {
+        // Torbogen: solange kein images/icons/torbogen.png existiert, zeigt der Knoten das ⛩️-Emoji
+        imgTag.src = bDatenbankHTML[20];
+        imgTag.onerror = function(){ this.outerHTML = '<span style="font-size:1.8rem; pointer-events:none;">⛩️</span>'; };
       } else {
         let iconPfad = bDatenbankHTML[knoten.typ] || "images/icon_loot.webp"; imgTag.src = iconPfad;
         imgTag.onerror = function(){ this.onerror = null; this.src = "images/icon_loot.webp"; };   // fehlendes Icon -> generisches Fallback
@@ -2200,7 +2204,7 @@ function updateUI() {
       else if (aktuelleRegion === "EldenThrone") arenaView.style.backgroundImage = "linear-gradient(to bottom, rgba(40,30,10,0.5), rgba(5,5,5,0.9)), url('images/background/eldenthrone.jpg')";
       else if (aktuelleRegion === "Gelmir") arenaView.style.backgroundImage = "linear-gradient(to bottom, rgba(30,8,4,0.5), rgba(12,4,2,0.85)), url('images/background/gelmir.webp')";
       else if (aktuelleRegion === "Gravesite") arenaView.style.backgroundImage = "linear-gradient(to bottom, rgba(20,18,10,0.6), rgba(8,8,5,0.9)), url('images/background/gravesite.jpg')";
-      else if (aktuelleRegion === "CastleEnsis") arenaView.style.backgroundImage = "linear-gradient(to bottom, rgba(10,12,28,0.6), rgba(4,5,14,0.9)), url('images/background/castleensis.jpg')";
+      else if (aktuelleRegion === "CastleEnsis") arenaView.style.backgroundImage = "linear-gradient(to bottom, rgba(10,12,28,0.6), rgba(4,5,14,0.9)), url('images/background/castleensis.webp')";
       else if (aktuelleRegion === "AbyssalWoods") arenaView.style.backgroundImage = "linear-gradient(to bottom, rgba(4,4,6,0.8), rgba(2,2,3,0.95)), url('images/background/abyssalwoods.jpg')";
       else arenaView.style.backgroundImage = `linear-gradient(to bottom, rgba(11,11,11,0.3), rgba(11,11,11,0.6)), url('images/background/${aktuelleRegion.toLowerCase()}.jpg')`;
     }
