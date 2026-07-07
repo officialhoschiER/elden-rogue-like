@@ -1,0 +1,8 @@
+name = "elden-rogue-discord"
+main = "worker.js"
+compatibility_date = "2024-09-23"
+
+# Secrets werden NICHT hier gesetzt, sondern per:
+#   wrangler secret put DISCORD_PUBLIC_KEY
+#   wrangler secret put DISCORD_BOT_TOKEN
+#   wrangler secret put GCP_SERVICE_ACCOUNT
