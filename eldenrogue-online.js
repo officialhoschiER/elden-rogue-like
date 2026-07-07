@@ -263,7 +263,7 @@
     { id:"Eldenbiest",                        cat:"bosse", name:"Eldenbiest",                        img:"images/bosse/eldenbeast.jpg" },
     { id:"Blaidd, der Halbwolf",              cat:"bosse", name:"Blaidd, der Halbwolf",              img:"images/Gegner/blaidd.avif" },
     { id:"Cemetery Shade",                    cat:"bosse", name:"Cemetery Shade",                    img:"images/bosse/catacomb_boss.jpg" },
-    { id:"Promised Consort Radahn",           cat:"bosse", name:"Promised Consort Radahn",           img:"images/bosse/pcr.webp" }
+    { id:"Baby PCR",                          cat:"bosse", name:"Baby PCR",                          img:"images/bosse/pcr.webp" }
   ];
   const ELDENDEX_IDS = ELDENDEX.map(function (e) { return e.id; });
 
@@ -333,7 +333,7 @@
     { id: "tower_10",     name: "Aufstrebend",        icon: "🪜", desc: "Erreiche Etage 5 im Battle Tower.",          check: s => (s.towerBestFloor || 0) >= 5 },
     { id: "tower_25",     name: "Turmwächter",        icon: "🗼", desc: "Erreiche Etage 10 im Battle Tower.",         check: s => (s.towerBestFloor || 0) >= 10 },
     { id: "tower_15",     name: "Hoch hinaus",        icon: "⛰️", desc: "Erreiche Etage 15 im Battle Tower.",         check: s => (s.towerBestFloor || 0) >= 15 },
-    { id: "tower_master", name: "Meister des Turms",  icon: "👑", desc: "Bezwinge alle 20 Etagen und Promised Consort Radahn.", check: s => !!(s.challengesCompleted && s.challengesCompleted.tower) },
+    { id: "tower_master", name: "Meister des Turms",  icon: "👑", desc: "Bezwinge alle 20 Etagen und Baby PCR.", check: s => !!(s.challengesCompleted && s.challengesCompleted.tower) },
     /* --- Eldendex --- */
     { id: "true_100", name: "Nashy", icon: "📖", desc: "Entdecke jeden Eintrag im Eldendex.", check: s => ELDENDEX.every(function (e) { return dexIstGesehen(e, s); }) }
   ];

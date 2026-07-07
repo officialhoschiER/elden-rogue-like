@@ -1541,7 +1541,7 @@ const bilderDatenbankBosse = {
   "Gideon Ofnir, der Allwissende": "images/gideon.webp", "Godfrey, der Erste Eldenlord": "images/godfrey.webp",
   "Radagon von der Goldenen Ordnung": "images/radagon.jpg", "Eldenbiest": "images/eldenbeast.jpg",
   "Dungeon Skelett": "images/skeleton.webp", "Cemetery Shade": "images/catacomb_boss.jpg",
-  "Promised Consort Radahn": "images/bosse/pcr.webp"
+  "Baby PCR": "images/bosse/pcr.webp"
 };
 
 const bDatenbankHTML = {
@@ -2993,7 +2993,7 @@ function starteTowerModus() {
 }
 
 function towerBossFuerEtage(etage) {
-  if (etage >= TOWER_MAX) return "Promised Consort Radahn";
+  if (etage >= TOWER_MAX) return "Baby PCR";
   let pool = TOWER_BOSSES.filter(b => b !== letzterTowerBoss);
   let name = pool[Math.floor(Math.random() * pool.length)];
   letzterTowerBoss = name;
@@ -3094,8 +3094,8 @@ function towerUpdatePhaseBox() {
 }
 
 function towerBossBesiegt() {
-  // Promised Consort Radahn: 2. Phase
-  if (gegnerName === "Promised Consort Radahn" && !towerRadahnPhase2) {
+  // Baby PCR (Turm-Version): 2. Phase
+  if (gegnerName === "Baby PCR" && !towerRadahnPhase2) {
     towerRadahnPhase2 = true;
     document.getElementById("battle-log").innerText = L("Miquella erhebt sich — Radahn kämpft weiter!", "Miquella rises — Radahn fights on!");
     gegnerMaxHp = Math.round(gegnerMaxHp * 1.25); gegnerHp = gegnerMaxHp; gegnerSchaden = Math.round(gegnerSchaden * 1.1);
@@ -3265,7 +3265,7 @@ function towerSegenWaehlen(i) {
   starteTowerEtage();
 }
 
-// --- Turm bezwungen (Etage 20 / Promised Consort Radahn gefallen) ---
+// --- Turm bezwungen (Etage 20 / Baby PCR gefallen) ---
 function oeffneTowerSieg() {
   loescheRunSave(); stopRunTimer();
   // Sicherheitsnetz: alle Tower-Achievements freischalten (höchste Etage + Turm bezwungen)
@@ -3276,7 +3276,7 @@ function oeffneTowerSieg() {
   content.innerHTML =
     '<div style="font-size:0.72rem; letter-spacing:3px; color:#cda34f; text-transform:uppercase; font-family:sans-serif;">' + ICO("Godfrey Icon.webp", "margin-right:5px;") + L("Der Turm ist bezwungen", "The Tower is Conquered") + '</div>'
     + '<h3 style="color: var(--gold); font-size:1.8rem; margin:8px 0 4px; letter-spacing:2px; font-family: \'Cinzel\', serif;">' + L("MEISTER DES TURMS", "MASTER OF THE TOWER") + '</h3>'
-    + '<p style="color:#e6dcc4; font-size:0.95rem; font-family:sans-serif; line-height:1.6; margin:8px 0;">' + L("Promised Consort Radahn ist gefallen. Du hast alle " + TOWER_MAX + " Etagen bezwungen.", "Promised Consort Radahn has fallen. You conquered all " + TOWER_MAX + " floors.") + '</p>'
+    + '<p style="color:#e6dcc4; font-size:0.95rem; font-family:sans-serif; line-height:1.6; margin:8px 0;">' + L("Baby PCR ist gefallen. Du hast alle " + TOWER_MAX + " Etagen bezwungen.", "Baby PCR has fallen. You conquered all " + TOWER_MAX + " floors.") + '</p>'
     + '<div style="display:flex; gap:22px; justify-content:center; margin:16px 0; font-family:sans-serif;">'
     +   '<div><div style="font-family:\'Cinzel\',serif; color:var(--gold); font-size:1.4rem;">' + ICO("carian_inverted_statue_elden_ring_wiki_guide_200px.png", "margin-right:5px;") + zeit + '</div><div style="font-size:0.66rem; color:#888; text-transform:uppercase; letter-spacing:1px;">' + L("Zeit", "Time") + '</div></div>'
     +   '<div><div style="font-family:\'Cinzel\',serif; color:var(--gold); font-size:1.4rem;">+500 ' + ICO("lords-rune-tools-elden-ring-wiki-guide.png", "margin:0 0 0 3px;") + '</div><div style="font-size:0.66rem; color:#888; text-transform:uppercase; letter-spacing:1px;">' + L("Seelen", "Souls") + '</div></div>'
