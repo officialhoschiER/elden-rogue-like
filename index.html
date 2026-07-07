@@ -202,6 +202,27 @@
     .btn-google { display: flex; align-items: center; gap: 8px; background: #fff; color: #444; border: none; border-radius: 4px; padding: 8px 14px; font-family: sans-serif; font-weight: bold; font-size: 0.85rem; cursor: pointer; }
     .btn-google:hover { box-shadow: 0 0 14px rgba(255,255,255,0.25); }
     .btn-google img { width: 16px; height: 16px; }
+    /* ===== To-Do / "Erste Schritte" ===== */
+    .todo-card { max-width: 520px; margin: 16px auto 0; background: linear-gradient(160deg, rgba(30,24,14,0.92), rgba(15,13,9,0.92)); border: 1px solid var(--gold-dark); border-radius: 10px; padding: 12px 14px; text-align: left; }
+    .todo-top { display: flex; justify-content: space-between; align-items: center; font-family: 'Cinzel', serif; color: var(--gold); font-size: 0.95rem; letter-spacing: 1px; margin-bottom: 8px; }
+    .todo-x { background: none; border: none; color: #6a6250; font-size: 0.85rem; cursor: pointer; padding: 2px 6px; line-height: 1; }
+    .todo-x:hover { color: var(--gold); }
+    .todo-item { display: flex; align-items: center; gap: 12px; padding: 8px; border-radius: 8px; }
+    .todo-item.clickable { cursor: pointer; }
+    .todo-item.clickable:hover { background: rgba(205,163,79,0.09); }
+    .todo-chk { flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid var(--gold-dark); color: var(--gold); display: flex; align-items: center; justify-content: center; font-family: sans-serif; font-weight: bold; font-size: 0.85rem; }
+    .todo-item.done .todo-chk { background: var(--gold); color: #1a1206; border-color: var(--gold); }
+    .todo-item.todo-fun .todo-chk { border-style: dashed; }
+    .todo-txt b { display: block; font-family: sans-serif; font-size: 0.88rem; color: #ede6d4; }
+    .todo-item.done .todo-txt b { color: #9fce8f; }
+    .todo-txt small { color: #8a7f68; font-size: 0.71rem; font-family: sans-serif; }
+    .todo-tut { margin: 2px 0 8px 46px; padding: 10px 12px; background: rgba(0,0,0,0.3); border-left: 2px solid var(--gold-dark); border-radius: 6px; font-family: sans-serif; font-size: 0.8rem; color: #cdbfa3; }
+    .todo-step { margin-bottom: 8px; line-height: 1.5; }
+    .todo-step:last-of-type { margin-bottom: 6px; }
+    .todo-link { color: var(--gold); text-decoration: none; font-weight: bold; }
+    .todo-link:hover { text-decoration: underline; }
+    .todo-code { margin-top: 6px; font-family: sans-serif; font-size: 0.82rem; }
+    .todo-done { margin-top: 4px; }
     .btn-mini { background: #2c2214; color: var(--gold); border: 1px solid var(--gold-dark); border-radius: 4px; padding: 7px 12px; font-family: sans-serif; font-size: 0.8rem; cursor: pointer; }
     .btn-mini:hover { background: var(--gold); color: #111; }
     .name-input { background: #0e0e0e; border: 1px solid var(--border-color); color: #ede6d4; border-radius: 4px; padding: 7px 8px; font-family: sans-serif; font-size: 0.8rem; width: 120px; }
@@ -437,6 +458,8 @@
       <div id="account-right"></div>
     </div>
   </div>
+
+  <div class="todo-card reveal d5" id="todo-card"></div>
 
   <div class="social-row reveal d6">
     <a href="https://www.twitch.tv/officialhoschi" target="_blank" class="btn-social btn-twitch">🎥 Twitch</a>
@@ -2083,6 +2106,59 @@
     try { hasSave = localStorage.getItem("eldenRogueSave"); } catch (e) {}
     if (!seen && !hasSave) { setTimeout(function () { try { openModal("onboarding"); } catch (e) {} }, 450); }
   })();
+
+  /* ===== To-Do / "Erste Schritte"-Liste im Hauptmenü ===== */
+  var TODO_DISCORD_KEY = "eldenRogueTodoDiscord";
+  var TODO_HIDE_KEY = "eldenRogueTodoHidden";
+  var _todoTutOpen = false;
+  function todoLoggedIn() { try { return !!(window.ER && ER.currentUser && ER.currentUser()); } catch (e) { return false; } }
+  function todoDiscordIsDone() { try { return localStorage.getItem(TODO_DISCORD_KEY) === "1"; } catch (e) { return false; } }
+  function _todoItem(num, done, clickable, title, sub, onclick) {
+    return '<div class="todo-item' + (done ? " done" : "") + (clickable ? " clickable" : "") + (num === "🎮" ? " todo-fun" : "") + '"' + (onclick ? ' onclick="' + onclick + '"' : "") + '>' +
+      '<span class="todo-chk">' + (done ? "✓" : num) + '</span>' +
+      '<div class="todo-txt"><b>' + title + '</b><small>' + sub + '</small></div></div>';
+  }
+  function _todoTut(en) {
+    return '<div class="todo-tut">' +
+      '<div class="todo-step"><a href="https://discord.gg/mUSzTDw8Ns" target="_blank" class="todo-link">1) ' + (en ? "Join the Discord server →" : "Discord-Server beitreten →") + '</a></div>' +
+      '<div class="todo-step">2) <button class="btn-mini" onclick="todoGenCode()">' + (en ? "Generate link code" : "Verknüpfungs-Code erzeugen") + '</button><div id="todo-code" class="todo-code"></div></div>' +
+      '<div class="todo-step">3) ' + (en ? "On your server, type <b>/verify YOURCODE</b> — your roles are assigned automatically." : "Tippe auf dem Server <b>/verify DEINCODE</b> — deine Rollen kommen automatisch.") + '</div>' +
+      '<button class="btn-mini todo-done" onclick="todoDiscordDone()">✓ ' + (en ? "Mark as done" : "Als erledigt markieren") + '</button></div>';
+  }
+  function renderTodo() {
+    var card = document.getElementById("todo-card"); if (!card) return;
+    try { if (localStorage.getItem(TODO_HIDE_KEY) === "1") { card.style.display = "none"; return; } } catch (e) {}
+    card.style.display = "";
+    var en = (typeof _menuIsEn === "function") ? _menuIsEn() : false;
+    var s1 = todoLoggedIn(), s2 = todoDiscordIsDone(), s3 = s1 && s2;
+    var allDone = s1 && s2;
+    card.innerHTML =
+      '<div class="todo-top"><span>' + (allDone ? (en ? "✨ You're all set!" : "✨ Alles startklar!") : (en ? "✨ First steps" : "✨ Erste Schritte")) + '</span>' +
+        '<button class="todo-x" title="' + (en ? "Hide" : "Ausblenden") + '" onclick="todoHide()">✕</button></div>' +
+      _todoItem("1", s1, !s1, en ? "Sign in with Google" : "Mit Google anmelden", en ? "Cloud saves, leaderboard & achievements" : "Cloud-Speicher, Bestenliste & Achievements", s1 ? "" : "todoLoginClick()") +
+      _todoItem("2", s2, true, en ? "Join Discord & verify" : "Discord beitreten & verifizieren", (en ? "Get your roles — guide " : "Hol dir deine Rollen — Anleitung ") + (_todoTutOpen ? "▴" : "▾"), "todoDiscordToggle()") +
+      (_todoTutOpen ? _todoTut(en) : "") +
+      _todoItem("🎮", s3, false, en ? "Just have fun!" : "Einfach Spaß haben!", en ? "Start a run and become Elden Lord" : "Starte einen Run und werde Elden Lord", "");
+  }
+  function todoLoginClick() { if (todoLoggedIn()) return; if (window.ER && ER.signInWithGoogle) ER.signInWithGoogle().catch(function () {}); }
+  function todoDiscordToggle() { _todoTutOpen = !_todoTutOpen; renderTodo(); }
+  function todoGenCode() {
+    var out = document.getElementById("todo-code"); if (!out) return;
+    var en = (typeof _menuIsEn === "function") ? _menuIsEn() : false;
+    if (!todoLoggedIn()) { out.innerHTML = '<span style="color:#e74c3c;">' + (en ? "Please sign in first (step 1)." : "Bitte zuerst anmelden (Schritt 1).") + '</span>'; return; }
+    if (!(window.ER && ER.generateDiscordCode)) { out.textContent = en ? "Not available offline." : "Offline nicht verfügbar."; return; }
+    out.textContent = en ? "Generating…" : "Erzeuge…";
+    ER.generateDiscordCode(function (r) {
+      if (r && r.ok) out.innerHTML = (en ? "Your code: " : "Dein Code: ") + '<b style="color:var(--gold);letter-spacing:2px;font-size:1.05rem;">' + r.code + '</b> — ' + (en ? "type " : "tippe ") + '<b>/verify ' + r.code + '</b>';
+      else out.innerHTML = '<span style="color:#e74c3c;">' + (en ? "Failed — online & signed in?" : "Fehlgeschlagen — online & angemeldet?") + '</span>';
+    });
+  }
+  function todoDiscordDone() { try { localStorage.setItem(TODO_DISCORD_KEY, "1"); } catch (e) {} renderTodo(); }
+  function todoHide() { try { localStorage.setItem(TODO_HIDE_KEY, "1"); } catch (e) {} var c = document.getElementById("todo-card"); if (c) c.style.display = "none"; }
+  window.todoLoginClick = todoLoginClick; window.todoDiscordToggle = todoDiscordToggle; window.todoGenCode = todoGenCode; window.todoDiscordDone = todoDiscordDone; window.todoHide = todoHide;
+  if (window.ER && ER.onUserChange) ER.onUserChange(function () { renderTodo(); });
+  document.addEventListener("languageChanged", function () { renderTodo(); });
+  renderTodo();
 </script>
 
 <script>

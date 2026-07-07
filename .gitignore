@@ -17,3 +17,6 @@ discord-rollen/.firebaserc
 
 # Cloudflare Worker lokaler Cache
 discord-rollen/cloudflare/.wrangler/
+
+# Lokales Test-Deploy-Paket (nicht committen)
+_deploy/
