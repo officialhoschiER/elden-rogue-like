@@ -203,8 +203,9 @@
     .btn-google:hover { box-shadow: 0 0 14px rgba(255,255,255,0.25); }
     .btn-google img { width: 16px; height: 16px; }
     /* ===== To-Do / "Erste Schritte" ===== */
-    .todo-card { position: fixed; top: 70px; left: 86px; width: 250px; z-index: 35; margin: 0; background: linear-gradient(160deg, rgba(30,24,14,0.94), rgba(15,13,9,0.94)); border: 1px solid var(--gold-dark); border-radius: 10px; padding: 11px 13px; text-align: left; box-shadow: 0 6px 26px rgba(0,0,0,0.55); }
-    .sidebar.open ~ #souls-badge + #todo-card, .sidebar.open ~ #todo-card { left: 240px; }
+    .todo-card { position: fixed; top: 96px; left: 86px; width: 250px; z-index: 35; margin: 0; background: linear-gradient(160deg, rgba(30,24,14,0.94), rgba(15,13,9,0.94)); border: 1px solid var(--gold-dark); border-radius: 10px; padding: 11px 13px; text-align: left; box-shadow: 0 6px 26px rgba(0,0,0,0.55); transition: left 0.25s ease; }
+    /* wandert exakt wie die Seelen mit dem Seitenmenü mit */
+    .sidebar.open ~ #todo-card { left: 240px; }
     @media (max-width: 900px) { .todo-card { display: none; } }
     .todo-top { display: flex; justify-content: space-between; align-items: center; font-family: 'Cinzel', serif; color: var(--gold); font-size: 0.95rem; letter-spacing: 1px; margin-bottom: 8px; }
     .todo-x { background: none; border: none; color: #6a6250; font-size: 0.85rem; cursor: pointer; padding: 2px 6px; line-height: 1; }
@@ -423,6 +424,8 @@
   <span id="souls-badge-value">0</span>
 </div>
 
+<div class="todo-card" id="todo-card"></div>
+
 <div id="version-tag" onclick="openModal('patchnotes')" title="Patch Notes">v1.5.3</div>
 
 
@@ -460,8 +463,6 @@
       <div id="account-right"></div>
     </div>
   </div>
-
-  <div class="todo-card reveal d5" id="todo-card"></div>
 
   <div class="social-row reveal d6">
     <a href="https://www.twitch.tv/officialhoschi" target="_blank" class="btn-social btn-twitch">🎥 Twitch</a>
