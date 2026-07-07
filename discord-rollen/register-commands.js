@@ -10,7 +10,9 @@
 
 const APP_ID = "1524143492815781898";   // Discord Developer Portal > General Information
 const GUILD_ID = "861966344786673664";  // Rechtsklick auf deinen Server > "ID kopieren"
-const BOT_TOKEN = "HIER_BOT_TOKEN";     // Developer Portal > Bot > Token (GEHEIM halten!) — NEUEN Token einsetzen, ausführen, danach wieder löschen
+// Token kommt aus der Terminal-Variable DISCORD_BOT_TOKEN (nichts in die Datei schreiben!):
+//   PowerShell:  $env:DISCORD_BOT_TOKEN="dein-token"; node register-commands.js
+const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN || "HIER_BOT_TOKEN";
 
 const commands = [
   {
