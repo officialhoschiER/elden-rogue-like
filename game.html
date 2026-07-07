@@ -451,26 +451,34 @@ h1, h2, h3, .btn-menu, .btn-combat, .btn-social, .game-author-tag, #region-displ
     .region-info-icon:hover { border-color: var(--gold); background: rgba(205,163,79,0.18); box-shadow: 0 0 10px rgba(205,163,79,0.3); }
     @keyframes achIn { to { transform: translateX(0); } }
     @keyframes achOut { to { transform: translateX(120%); opacity: 0; } }
-    /* ===== DLC Castle Ensis: verborgener Schalter im Rellana-Kampf ===== */
     .battle-arena { position: relative; }
-    #ensis-schalter { position: absolute; left: 28px; bottom: 130px; width: 34px; height: 48px; cursor: pointer; opacity: 0.3; transition: opacity 0.3s ease; z-index: 45; }
-    #ensis-schalter:hover { opacity: 0.85; }
-    #ensis-schalter::after { content: ""; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 28px; height: 10px; background: #2c2214; border: 1px solid #6a5a34; border-radius: 3px; box-shadow: 0 2px 6px rgba(0,0,0,0.7); }
-    #ensis-schalter-stick { position: absolute; bottom: 8px; left: 50%; width: 5px; height: 36px; background: linear-gradient(#cda34f, #6a5a34); border-radius: 3px 3px 0 0; transform-origin: bottom center; transform: translateX(-50%) rotate(-32deg); transition: transform 0.45s ease; box-shadow: 0 0 6px rgba(0,0,0,0.6); }
-    #ensis-schalter-stick::before { content: ""; position: absolute; top: -5px; left: 50%; transform: translateX(-50%); width: 11px; height: 11px; border-radius: 50%; background: #cda34f; box-shadow: 0 0 8px rgba(205,163,79,0.5); }
-    #ensis-schalter.umgelegt #ensis-schalter-stick { transform: translateX(-50%) rotate(32deg); }
-    #ensis-schalter.umgelegt { opacity: 0.15; cursor: default; }
 
-    /* ===== DLC Abgrundwald: Nebel-Karte & Todesfluch ===== */
-    .abyss-fog .map-node { opacity: 0.14; border-color: #2a2a33; box-shadow: none; }
-    .abyss-fog .map-node .map-node-img, .abyss-fog .map-node .map-node-boss-img { filter: grayscale(1) brightness(0.45); }
-    .abyss-fog .map-node.selectable { opacity: 0.34; border-color: #4a4a58; box-shadow: none; }
+    /* ===== DLC Abgrundwald: Nebel-Karte (Icons pechschwarz) & Wahnsinn ===== */
+    .abyss-fog .map-node { opacity: 0.16; border-color: #1c1c22; box-shadow: none; }
+    .abyss-fog .map-node .map-node-img, .abyss-fog .map-node .map-node-boss-img { filter: brightness(0); }   /* alle Icons pechschwarz */
+    .abyss-fog .map-node.selectable { opacity: 0.32; border-color: #3a3a46; box-shadow: none; }
     .abyss-fog .map-node.current-pos { opacity: 0.6; }
     .abyss-fog .map-node.completed { opacity: 0.3; }
     .abyss-fog .map-node::after { display: none; }              /* keine Tooltips — man erkennt die Knoten kaum */
-    .abyss-fog #map-lines { opacity: 0.22; }
+    .abyss-fog #map-lines { opacity: 0.18; }
+    /* der richtige Weg glimmt ganz sacht — nur wer genau hinsieht, findet ihn */
     .abyss-fog .map-node.abyss-sicher.selectable { animation: abyssGlimmer 3.2s ease-in-out infinite; }
-    @keyframes abyssGlimmer { 0%, 100% { opacity: 0.34; } 50% { opacity: 0.46; box-shadow: 0 0 14px rgba(150, 110, 190, 0.18); } }
+    @keyframes abyssGlimmer { 0%, 100% { opacity: 0.32; } 50% { opacity: 0.5; box-shadow: 0 0 14px rgba(200, 150, 60, 0.22); } }
+    /* aufgedeckter Fehltritt: der Wahnsinns-Knoten (Aging Untouchable) leuchtet voll auf */
+    .abyss-fog .map-node.wahn-knoten { opacity: 1 !important; border-color: #d1a33a; box-shadow: 0 0 16px rgba(209,163,58,0.55); }
+    .abyss-fog .map-node.wahn-knoten .map-node-img { filter: none !important; }
+
+    /* ===== DLC: Wahnsinns-Balken (ER-Stil) oben links über der Karte ===== */
+    #madness-overlay { position: absolute; top: 52px; left: 16px; z-index: 55; width: 210px; background: rgba(8,6,4,0.82); border: 1px solid #7a5a12; border-radius: 5px; padding: 6px 9px; backdrop-filter: blur(2px); display: none; }
+    #madness-overlay .mad-head { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+    #madness-overlay .mad-head img { width: 18px; height: 18px; object-fit: contain; }
+    #madness-overlay .mad-head span { font-family: sans-serif; font-size: 0.62rem; letter-spacing: 1.5px; text-transform: uppercase; color: #e0b23a; font-weight: bold; }
+    #madness-track { position: relative; height: 11px; background: #1a1206; border: 1px solid #4a380f; border-radius: 2px; overflow: hidden; }
+    #madness-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #a8720e, #f2c53a, #ffe07a); box-shadow: 0 0 8px rgba(242,197,58,0.6); transition: width 0.45s ease; }
+    #madness-fill.crit { animation: madPulse 0.6s ease-in-out infinite; }
+    @keyframes madPulse { 0%,100% { filter: brightness(1); } 50% { filter: brightness(1.5); } }
+    /* Scharlachfäule-Chip (Ruinen von Rauh) */
+    #rot-chip { position: absolute; top: 52px; left: 16px; z-index: 55; background: rgba(20,4,6,0.85); border: 1px solid #7a1520; border-radius: 5px; padding: 5px 11px; font-family: sans-serif; font-size: 0.66rem; letter-spacing: 0.5px; color: #e06a6a; backdrop-filter: blur(2px); display: none; }
 
     /* ===== MOBILE: Status-Button & ausklappbare Seitenleiste ===== */
     #mobile-status-toggle { display: none; position: fixed; top: 8px; left: 8px; z-index: 710;
@@ -558,10 +566,6 @@ h1, h2, h3, .btn-menu, .btn-combat, .btn-social, .game-author-tag, #region-displ
   <div class="side-panel left-panel">
     <div style="font-size:0.85rem; color:var(--gold); text-transform:uppercase; letter-spacing:3px; text-align:center; font-family:'Mantinia',serif; margin-bottom:4px; border-bottom:1px solid var(--border-color); padding-bottom:4px;" id="ui-status-heading">STATUS</div>
     <div id="run-timer" style="text-align:center; font-family:'Mantinia',serif; color:#cdbfa3; font-size:0.92rem; letter-spacing:2px; margin-bottom:6px;"><img src="images/icons/carian_inverted_statue_elden_ring_wiki_guide_200px.png" class="btn-ico" style="margin-right:5px;" onerror="this.style.display='none'">0:00</div>
-    <div id="deathblight-wrap" style="display:none; margin:0 0 8px;">
-      <div style="font-size:0.62rem; color:#b06ad4; text-transform:uppercase; letter-spacing:1.5px; text-align:center; font-family:sans-serif; margin-bottom:3px;">☠ Todesfluch <span id="deathblight-pct">0%</span></div>
-      <div style="height:9px; background:#141018; border:1px solid #4a2a5a; border-radius:3px; overflow:hidden;"><div id="deathblight-bar" style="height:100%; width:0%; background:linear-gradient(90deg,#4a2358,#b06ad4); transition:width 0.4s ease;"></div></div>
-    </div>
     <div class="player-card">
       <div class="vitals-row">
         <div style="flex:1; min-width:0;">
@@ -678,6 +682,11 @@ h1, h2, h3, .btn-menu, .btn-combat, .btn-social, .game-author-tag, #region-displ
     <div id="seed-display" onclick="kopiereSeed()" title="Seed-Link kopieren / Copy seed link"></div>
     <div id="challenge-badge" style="display:none;"></div>
     <div id="seed-badge" style="display:none;"></div>
+    <div id="madness-overlay">
+      <div class="mad-head"><img src="images/icons/madness_status_effect_elden_ring_wiki_guide_100px.png" onerror="this.style.display='none'"><span>Wahnsinn <span id="madness-pct">0%</span></span></div>
+      <div id="madness-track"><div id="madness-fill"></div></div>
+    </div>
+    <div id="rot-chip">🩸 Scharlachfäule — <b>−10% HP</b> je Knoten</div>
     <div id="tower-phase-box" style="display:none;"></div>
     <div id="region-badge">
       <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
@@ -696,7 +705,6 @@ h1, h2, h3, .btn-menu, .btn-combat, .btn-social, .game-author-tag, #region-displ
     </div>
     
     <div id="battle-view" class="battle-arena" style="display: none;">
-      <div id="ensis-schalter" onclick="ensisSchalterUmlegen()" title="???" style="display:none;"><div id="ensis-schalter-stick"></div></div>
       <div class="fighters-container">
         <div class="fighter-wrapper" id="player-sprite-wrapper">
           <strong id="ui-combat-player" style="color:var(--gold); font-size:0.9rem; letter-spacing:1px; margin-bottom:5px;">DU</strong>
@@ -870,8 +878,10 @@ let gezaehlteBossKnoten = [];     // bereits für die Rangliste gezählte Boss-K
 // --- DLC: Land des Schattens ---
 let torbogenSpruenge = 0;         // Gräberebene: Sprünge durch Torbögen (3 = Wolfsgeheul — Check für späteren Secret Boss)
 let wolfsgeheulGehoert = false;   // der Wolf hat geantwortet (Flag für den kommenden Secret Boss)
-let deathblight = 0;              // Abgrundwald: Todesfluch in % — jeder Fehltritt +25, bei 100 ist der Run vorbei
-let hatAbyssFluestern = false;    // Castle Ensis: verborgenen Schalter im Rellana-Kampf umgelegt -> Abgrundwald öffnet sich nach dem Sieg
+let wahnsinn = 0;                 // Abgrundwald: WAHNSINN in % — jeder Griff des Aging Untouchable gibt +25, bei 100 ist der Run vorbei
+let untouchableRunden = 0;        // Runden im laufenden Untouchable-"Kampf"
+let rellanaGetroffen = false;     // Castle Ensis: wurde man im Rellana-Kampf getroffen? (hitless = Zugang zum Abgrundwald)
+let scharlachRot = false;         // Ruinen von Rauh: Scharlachfäule aktiv — jeder Knoten kostet 10% Max-HP
 let dlcWahlOffen = false;         // Mohg (2. Sieg) liegt: Wahl "Run vollenden" vs. "Miquellas Hand berühren" steht an
 
 let playerHitsOnEnemy = 0;
@@ -899,7 +909,7 @@ function speichereRun() {
   let save = {
     v: 1, hardMode: hardMode, challenge: activeChallenge, ts: Date.now(), runPlayMs: runPlayMs,
     runSeed, seedIsCustom, seedRngCalls,
-    torbogenSpruenge, wolfsgeheulGehoert, deathblight, hatAbyssFluestern, dlcWahlOffen,
+    torbogenSpruenge, wolfsgeheulGehoert, wahnsinn, untouchableRunden, rellanaGetroffen, scharlachRot, dlcWahlOffen,
     spielerHp, spielerMaxHp, spielerFlasks, maxKlassenFlasks, estusHeilProzent,
     gewaehlteKlasse, basisAusweichChance, playerImageStr,
     waffenName, waffenSchaden, waffenUpgrade, waffenRaritaet, waffenSchadensarten,
@@ -941,8 +951,8 @@ function ladeGespeichertenRun() {
     runSeed = d.runSeed || zufallsSeed(); seedIsCustom = !!d.seedIsCustom; initSeedRng(d.seedRngCalls || 0);
     if (window.ER && ER.setSeedRun) ER.setSeedRun(seedIsCustom);
     setTimeout(aktualisiereSeedAnzeige, 0);
-    torbogenSpruenge = d.torbogenSpruenge || 0; wolfsgeheulGehoert = !!d.wolfsgeheulGehoert; deathblight = d.deathblight || 0; hatAbyssFluestern = !!d.hatAbyssFluestern; dlcWahlOffen = !!d.dlcWahlOffen;
-    setTimeout(aktualisiereDeathblightAnzeige, 0);
+    torbogenSpruenge = d.torbogenSpruenge || 0; wolfsgeheulGehoert = !!d.wolfsgeheulGehoert; wahnsinn = d.wahnsinn || 0; untouchableRunden = d.untouchableRunden || 0; rellanaGetroffen = !!d.rellanaGetroffen; scharlachRot = !!d.scharlachRot; dlcWahlOffen = !!d.dlcWahlOffen;
+    setTimeout(aktualisiereWahnsinnAnzeige, 0);
     if (dlcWahlOffen) setTimeout(oeffneMohgDlcWahl, 100);   // Wahl-Popup übersteht einen Reload
     towerEtage=d.towerEtage||0;
     runPlayMs = d.runPlayMs || 0; startRunTimer();
@@ -1014,7 +1024,7 @@ function ladeMeta() {
 function speichereMeta(m) { try { localStorage.setItem(META_KEY, JSON.stringify(m)); } catch(e) {} if (window.ER && ER.syncNow) try { ER.syncNow(); } catch(e) {} }
 function L(de, en) { return (window.i18n && window.i18n.getLang && window.i18n.getLang() === "en") ? en : de; }
 
-const SEELEN_REGION_TIEFE = { Limgrave:0, Caelid:1, Leyndell:2, Mountaintops:3, FarumAzula:4, AshenCapital:5, EldenThrone:6, Haligtree:6, Gravesite:7, CastleEnsis:8, AbyssalWoods:9 };
+const SEELEN_REGION_TIEFE = { Limgrave:0, Caelid:1, Leyndell:2, Mountaintops:3, FarumAzula:4, AshenCapital:5, EldenThrone:6, Haligtree:6, Gravesite:7, CastleEnsis:8, AbyssalWoods:9, Rauh:9, EnirIlim:10 };
 function belohneSeelen(gewonnen) {
   if (seedIsCustom) { letzteRunSeelen = 0; return 0; }   // Seed-Run: keine Seelen (sonst Lucky-Seed-Farming)
   if (seelenVergeben) return letzteRunSeelen;
@@ -1264,7 +1274,9 @@ const gebietsResistenzen = {
   Haligtree:    { Feuer: 0.25, Heilig: -0.25, Magie: -0.15 },
   // --- DLC: Land des Schattens ---
   CastleEnsis:  { Normal: 0.15, Magie: -0.25 },              // Karianische Magier trotzen der Magie — roher Stahl wirkt
-  AbyssalWoods: { Heilig: 0.25, Feuer: -0.25 }               // die Wahnsinnige Flamme fürchtet das Heilige
+  AbyssalWoods: { Heilig: 0.25, Feuer: -0.25 },              // die Wahnsinnige Flamme fürchtet das Heilige
+  Rauh:         { Feuer: 0.20, Magie: -0.20 },               // die Scharlachfäule brennt weg — Feuer wirkt, Magie prallt ab
+  EnirIlim:     { Feuer: 0.15, Heilig: -0.25 }               // der Verheißene Gemahl badet in heiligem Licht
 };
 // Aktuelles Schadensprofil des Gegners: namentlicher Boss/Festung > Gebiets-Profil. Dungeons: keins.
 function gibSchadensProfilTabelle() {
@@ -1324,6 +1336,8 @@ function regionBossName(region, ebene) {
   if (region === "Gravesite") return "Göttliches Tanzlöwenbiest";
   if (region === "CastleEnsis") return "Rellana, Ritterin der Zwillingsmonde";
   if (region === "AbyssalWoods") return "Midra, Herr der Wahnsinnigen Flamme";
+  if (region === "Rauh") return "Romina, Heilige der Knospe";
+  if (region === "EnirIlim") return "Verheißener Gemahl Radahn";
   return "";
 }
 // Kurzer Schwäche/Resistenz-Text für einen Boss (für den Hover-Tooltip)
@@ -1338,7 +1352,7 @@ function bossSchwaecheText(bossName) {
   return lines.join("\n");
 }
 
-const regionStufe = { Limgrave:1, Liurnia:2, Caelid:2, Leyndell:3, Gelmir:3, Mountaintops:4, FarumAzula:5, AshenCapital:6, EldenThrone:7, Haligtree:8, Mohgwyn:8, Gravesite:9, CastleEnsis:10, AbyssalWoods:11 };
+const regionStufe = { Limgrave:1, Liurnia:2, Caelid:2, Leyndell:3, Gelmir:3, Mountaintops:4, FarumAzula:5, AshenCapital:6, EldenThrone:7, Haligtree:8, Mohgwyn:8, Gravesite:9, CastleEnsis:10, AbyssalWoods:11, Rauh:11, EnirIlim:12 };
 function gibStageNummer(){ return inSubDungeon ? 1 : (regionStufe[aktuelleRegion] || 1); }
 function gibTalismanTier(){ return Math.min(Math.max(gibStageNummer() - 1, 0), 3); }
 function tierSuffix(tier){ return tier > 0 ? " +" + tier : ""; }
@@ -1464,6 +1478,8 @@ const gebietsGegnerKonfig = {
   Gravesite: { elite: "images/Gegner/GRAVESITE_ELITE.jpg", waechter: "images/Gegner/GRAVESITE_WAECHTER.png", invader: "images/Gegner/GRAVESITE_INVADER.webp", eliteName: "Geisterflammen-Drache", waechterName: "Lamenter", invaderName: "Schwertmeister Onze" },
   CastleEnsis: { elite: "images/Gegner/ENSIS_ELITE.jpg", waechter: "images/Gegner/ENSIS_WAECHTER.jpg", invader: "images/Gegner/ENSIS_INVADER.jpg", eliteName: "Karianischer Ritter", waechterName: "Kampfmagier von Ensis", invaderName: "Zwillingsmond-Adept" },
   AbyssalWoods: { elite: "images/Gegner/ABYSS_ELITE.jpg", waechter: "images/Gegner/ABYSS_WAECHTER.jpg", invader: "images/Gegner/ABYSS_INVADER.jpg", eliteName: "Erblindeter Wahnsinniger", waechterName: "Winterlaterne", invaderName: "Anhänger der Wahnsinnigen Flamme" },
+  Rauh: { elite: "images/Gegner/RAUH_ELITE.jpg", waechter: "images/Gegner/RAUH_WAECHTER.jpg", invader: "images/Gegner/RAUH_INVADER.jpg", eliteName: "Ulkerbestie", waechterName: "Roter Wolf des Champions", invaderName: "Rakshasa" },
+  EnirIlim: { elite: "images/Gegner/ENIR_ELITE.jpg", waechter: "images/Gegner/ENIR_WAECHTER.jpg", invader: "images/Gegner/ENIR_INVADER.jpg", eliteName: "Wächter von Enir-Ilim", waechterName: "Hornbewehrter Wächter", invaderName: "Anhänger Miquellas" },
   Mountaintops: { elite: "images/MOUNTAINTOPS_ELITE.jpg", waechter: "images/MOUNTAINTOPS_WAECHTER.jpg", invader: "images/MOUNTAINTOPS_INVADER.jpg", eliteName: "Feuermönch", waechterName: "Troll", invaderName: "Okina" },
   FarumAzula: { elite: "images/FARUMAZULA_ELITE.jpg", waechter: "images/FARUMAZULA_WAECHTER.jpg", invader: "images/FARUMAZULA_INVADER.jpg", eliteName: "Bestienmensch of Farum Azula", waechterName: "Farum Azula Drache", invaderName: "Anastasia" },
   AshenCapital: { elite: "images/ASHENCAPITAL_ELITE.jpg", waechter: "images/ASHENCAPITAL_WAECHTER.jpg", invader: "images/ASHENCAPITAL_INVADER.jpg", eliteName: "Page", waechterName: "Königlicher Revenant", invaderName: "Varre" }
@@ -1474,6 +1490,9 @@ const bilderDatenbankBosse = {
   "Göttliches Tanzlöwenbiest": "images/bosse/tanzloewe.jpg",
   "Rellana, Ritterin der Zwillingsmonde": "images/bosse/rellana.png",
   "Midra, Herr der Wahnsinnigen Flamme": "images/bosse/midra.png",
+  "Romina, Heilige der Knospe": "images/bosse/romina.png",
+  "Verheißener Gemahl Radahn": "images/bosse/pcr.webp",
+  "Aging Untouchable": "images/icons/4026614_full.webp",
   "Loretta, Knight of the Haligtree": "images/loretta-knight-of-haligtree.jpg",
   "Commander Niall": "images/commander-niall-elden-ring-wiki.jpg",
   "Malenia, Blade of Miquella": "images/maleniap1.webp",
@@ -1592,8 +1611,9 @@ function entferneBlaidd(karte) {
   return karte;
 }
 function generiereRautenNetz(regionName) {
-  let layout = [2, 3, 4, 3, 4, 3, 2, 1]; 
+  let layout = [2, 3, 4, 3, 4, 3, 2, 1];
   if (regionName === "EldenThrone") { layout = [1, 1, 1]; }
+  if (regionName === "EnirIlim") { layout = [1, 1, 1]; }   // DLC-Finale: kurz wie der Eldenthron
   let temporaereKarte = [];
   let heilungEbene = Math.floor(srand() * 2) + 3; 
   let heilungKnotenIdx = -1;
@@ -1623,6 +1643,8 @@ function generiereRautenNetz(regionName) {
 
       if (regionName === "EldenThrone") {
         if (ebeneNummer === 1) typ = 5; if (ebeneNummer === 2) typ = 4; if (ebeneNummer === 3) typ = 5;
+      } else if (regionName === "EnirIlim") {
+        if (ebeneNummer === 1) typ = 1; if (ebeneNummer === 2) typ = 4; if (ebeneNummer === 3) typ = 5;   // Elite → Gnade → Verheißener Gemahl Radahn
       } else {
         if (ebeneNummer === 2 && k === 0 && (hatGodrickRune || hatRadahnRune || hatMorgottRune)) { typ = 8; }
         else if (ebeneNummer === 7) { if (k === 0) { typ = 4; } }
@@ -1883,7 +1905,7 @@ function direktNeustarten() {
   playerHitsOnEnemy = 0; enemyIsStaggered = false; staggerVisualActive = false; nextHitBonusDamage = false;
   currentAffinity = "Keine"; affinityHits = 0; completedDungeonsCount = 0;
   backpackItems = [null, null, null]; activeBuffs = []; inSubDungeon = false; inSewers = false; mainMapState = null; towerEtage = 0;
-  torbogenSpruenge = 0; wolfsgeheulGehoert = false; deathblight = 0; hatAbyssFluestern = false; dlcWahlOffen = false; aktualisiereDeathblightAnzeige();
+  torbogenSpruenge = 0; wolfsgeheulGehoert = false; wahnsinn = 0; untouchableRunden = 0; rellanaGetroffen = false; scharlachRot = false; dlcWahlOffen = false; aktualisiereWahnsinnAnzeige();
   // Seed-Run (geteilter Seed): derselbe Seed bleibt für den Retry — normaler Run: frisch würfeln
   setzeSeed(seedIsCustom ? runSeed : zufallsSeed(), seedIsCustom);
   oeffneKlassenAuswahl();
@@ -1945,6 +1967,8 @@ function baueKarteHTML() {
     if (aktuelleRegion === "Gravesite") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(20,18,10,0.78), rgba(8,8,5,0.92)), url('images/background/gravesite.jpg')";
     if (aktuelleRegion === "CastleEnsis") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(10,12,28,0.78), rgba(4,5,14,0.92)), url('images/background/castleensis.webp')";
     if (aktuelleRegion === "AbyssalWoods") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(4,4,6,0.92), rgba(2,2,3,0.985)), url('images/background/abyssalwoods.jpg')";
+    if (aktuelleRegion === "Rauh") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(24,6,8,0.78), rgba(10,4,4,0.92)), url('images/background/rauh.jpg')";
+    if (aktuelleRegion === "EnirIlim") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(28,22,6,0.78), rgba(8,6,3,0.94)), url('images/background/enir.jpg')";
   }
   mapScrollArea.classList.toggle("abyss-fog", aktuelleRegion === "AbyssalWoods" && !inSubDungeon);
 
@@ -1973,12 +1997,19 @@ function baueKarteHTML() {
           else if (aktuelleRegion === "Gravesite") imgTag.src = "images/bosse/tanzloewe.jpg";
           else if (aktuelleRegion === "CastleEnsis") imgTag.src = "images/bosse/rellana.png";
           else if (aktuelleRegion === "AbyssalWoods") imgTag.src = "images/bosse/midra.png";
+          else if (aktuelleRegion === "Rauh") imgTag.src = "images/bosse/romina.png";
+          else if (aktuelleRegion === "EnirIlim") imgTag.src = "images/bosse/pcr.webp";
         }
         imgTag.onerror = function(){ this.style.display = "none"; };   // fehlendes Bossbild -> leerer Knoten statt Broken-Image
         // Schwäche/Resistenz des Bosses beim Hovern anzeigen (kurz: Weak/Resist)
         let __bn = (activeChallenge === "tower") ? knoten.towerBoss : ((inSubDungeon || inSewers) ? "" : regionBossName(aktuelleRegion, zeile.ebene));
         let __wk = __bn ? bossSchwaecheText(__bn) : "";
         if (__wk) nodeDiv.setAttribute("data-tooltip", __wk);
+      } else if (knoten.wahnKnoten) {
+        // Abgrundwald: aufgedeckter Fehltritt — der Aging Untouchable lauert hier
+        nodeDiv.classList.add("wahn-knoten");
+        imgTag.src = "images/icons/4026614_full.webp";
+        imgTag.classList.add("fullbleed");
       } else if (knoten.typ === 20) {
         // Torbogen: solange kein images/icons/torbogen.png existiert, zeigt der Knoten das ⛩️-Emoji
         imgTag.src = bDatenbankHTML[20];
@@ -2211,8 +2242,10 @@ function updateUI() {
   if (!inSubDungeon) {
     if (areaText === "FarumAzula") areaText = "Farum Azula"; if (areaText === "Haligtree") areaText = "Haligtree"; if (areaText === "AshenCapital") areaText = "Aschehauptstadt"; if (areaText === "EldenThrone") areaText = "Eldenthron";
     if (areaText === "Gravesite") areaText = L("Gräberebene", "Gravesite Plain"); if (areaText === "CastleEnsis") areaText = "Castle Ensis"; if (areaText === "AbyssalWoods") areaText = L("Abgrundwald", "Abyssal Woods");
+    if (areaText === "Rauh") areaText = L("Ruinen von Rauh", "Ruins of Rauh"); if (areaText === "EnirIlim") areaText = "Enir-Ilim";
   }
   document.getElementById("region-display-name").innerText = areaText;
+  aktualisiereWahnsinnAnzeige();   // DLC: Wahnsinns-Balken (Abgrundwald) & Scharlachfäule-Chip (Rauh) über der Karte
   { let __ri = document.getElementById("region-info-icon"); if (__ri) { let __tip = gibGebietsResistenzTooltip(); if (__tip) { __ri.setAttribute("data-tooltip", __tip); __ri.style.display = "inline-flex"; } else { __ri.style.display = "none"; } } }
 
   if (imKampf) {
@@ -2238,7 +2271,8 @@ function updateUI() {
       affInfo.innerHTML = teile.join("<br>"); affInfo.style.display = "block";
     } else { affInfo.style.display = "none"; }
 
-    if (aktuellerKnotenTyp === 15) document.getElementById("enemy-img").src = bilderDatenbankBosse[gegnerName] || "images/icons/fort-nightreign-full.jpg";
+    if (gegnerName === "Aging Untouchable") document.getElementById("enemy-img").src = "images/icons/4026614_full.webp";
+    else if (aktuellerKnotenTyp === 15) document.getElementById("enemy-img").src = bilderDatenbankBosse[gegnerName] || "images/icons/fort-nightreign-full.jpg";
     else if (aktuellerKnotenTyp === 19) document.getElementById("enemy-img").src = bilderDatenbankBosse[gegnerName] || "";
     else if (aktuellerKnotenTyp === 9) document.getElementById("enemy-img").src = "images/blaidd.avif";
     else if (aktuellerKnotenTyp === 14) { let mb = gibAktuellenMiniboss(); document.getElementById("enemy-img").src = (mb.bild === "__TARNISHED__") ? playerImageStr : mb.bild; }
@@ -2262,9 +2296,10 @@ function updateUI() {
       else if (aktuelleRegion === "Gravesite") arenaView.style.backgroundImage = "linear-gradient(to bottom, rgba(20,18,10,0.6), rgba(8,8,5,0.9)), url('images/background/gravesite.jpg')";
       else if (aktuelleRegion === "CastleEnsis") arenaView.style.backgroundImage = "linear-gradient(to bottom, rgba(10,12,28,0.6), rgba(4,5,14,0.9)), url('images/background/castleensis.webp')";
       else if (aktuelleRegion === "AbyssalWoods") arenaView.style.backgroundImage = "linear-gradient(to bottom, rgba(4,4,6,0.8), rgba(2,2,3,0.95)), url('images/background/abyssalwoods.jpg')";
+      else if (aktuelleRegion === "Rauh") arenaView.style.backgroundImage = "linear-gradient(to bottom, rgba(24,6,8,0.6), rgba(10,4,4,0.9)), url('images/background/rauh.jpg')";
+      else if (aktuelleRegion === "EnirIlim") arenaView.style.backgroundImage = "linear-gradient(to bottom, rgba(28,22,6,0.55), rgba(8,6,3,0.92)), url('images/background/enir.jpg')";
       else arenaView.style.backgroundImage = `linear-gradient(to bottom, rgba(11,11,11,0.3), rgba(11,11,11,0.6)), url('images/background/${aktuelleRegion.toLowerCase()}.jpg')`;
     }
-    aktualisiereEnsisSchalter();   // DLC: verborgener Schalter nur im Rellana-Kampf sichtbar
 
     document.getElementById("player-combat-img").src = playerImageStr;
     { let __f = ladeMeta().activeSkinFilter || ""; let __pi = document.getElementById("player-combat-img"); if (__pi) __pi.style.filter = __f; }
@@ -2297,18 +2332,20 @@ function klickeKnoten(ebene, knoten) {
 
   playerHitsOnEnemy = 0; enemyIsStaggered = false; staggerVisualActive = false; nextHitBonusDamage = false; affinityHits = 0;
 
-  // DLC Abgrundwald: abseits des (kaum sichtbaren) sicheren Pfads wächst der Todesfluch — +25% pro Fehltritt, 100% = Tod
+  // DLC Abgrundwald: Verlässt man den (kaum sichtbaren) richtigen Pfad, deckt sich der Knoten als
+  // Wahnsinns-Knoten auf und der Aging Untouchable stellt sich dir — er kostet kein Leben, treibt aber den Wahnsinn.
   if (aktuelleRegion === "AbyssalWoods" && !inSubDungeon && !knoten.sicher) {
-    deathblight = Math.min(100, deathblight + 25);
-    aktualisiereDeathblightAnzeige();
-    if (deathblight >= 100) {
-      spielerHp = 0; speichereRun(); updateUI();
-      let overlayDb = document.getElementById("popup-overlay"); if (overlayDb) overlayDb.style.display = "none";
-      let logDb = document.getElementById("battle-log"); if (logDb) logDb.innerText = L("☠ Der Todesfluch verschlingt dich. Dornen brechen aus deinem Leib.", "☠ Deathblight consumes you. Thorns burst from your body.");
-      zeigeTodesBildschirm(true);   // endgültig — gegen den Todesfluch hilft kein Vollmond
-      return;
-    }
-    zeigeBlightToast();
+    knoten.wahnKnoten = true;
+    starteUntouchableKampf();
+    return;
+  }
+
+  // DLC Ruinen von Rauh: Scharlachfäule — jeder betretene Knoten kostet 10% der Max-HP (Gnade heilt danach wieder voll)
+  if (aktuelleRegion === "Rauh" && !inSubDungeon && knoten.typ !== 4) {
+    let rot = Math.max(1, Math.round(berechneFinalMaxHp() * 0.10));
+    spielerHp = Math.max(1, spielerHp - rot);   // die Fäule allein tötet nicht — sie schwächt (min. 1 HP)
+    zeigeRotToast(rot);
+    updateUI();
   }
 
   if (knoten.typ === 20) {   // DLC Gräberebene: der Torbogen — hindurchspringen kostet den Knoten, aber…
@@ -2422,6 +2459,8 @@ function klickeKnoten(ebene, knoten) {
       else if (aktuelleRegion === "Gravesite") { gegnerName = "Göttliches Tanzlöwenbiest"; gegnerMaxHp = 2400; gegnerSchaden = 150; }
       else if (aktuelleRegion === "CastleEnsis") { gegnerName = "Rellana, Ritterin der Zwillingsmonde"; gegnerMaxHp = 2700; gegnerSchaden = 160; }
       else if (aktuelleRegion === "AbyssalWoods") { gegnerName = "Midra, Herr der Wahnsinnigen Flamme"; gegnerMaxHp = 3200; gegnerSchaden = 175; }
+      else if (aktuelleRegion === "Rauh") { gegnerName = "Romina, Heilige der Knospe"; gegnerMaxHp = 2900; gegnerSchaden = 165; }
+      else if (aktuelleRegion === "EnirIlim") { gegnerName = "Verheißener Gemahl Radahn"; gegnerMaxHp = 3400; gegnerSchaden = 185; }
       else if (aktuelleRegion === "EldenThrone") {
         if (ebene === 1) { gegnerName = "Godfrey, der Erste Eldenlord"; gegnerMaxHp = 1800; gegnerSchaden = 100; }
         if (ebene === 3) { gegnerName = "Radagon von der Goldenen Ordnung"; gegnerMaxHp = 2000; gegnerSchaden = 110; }
@@ -2434,6 +2473,7 @@ function klickeKnoten(ebene, knoten) {
   }
   if (activeChallenge === "tower") towerApplyModifierBeimKampf(knoten);
   gegnerHp = gegnerMaxHp; imKampf = true; aktionsSperre = false;
+  if (gegnerName === "Rellana, Ritterin der Zwillingsmonde") rellanaGetroffen = false;   // Hitless-Zähler für diesen Kampf zurücksetzen
   if (window.ER) try { ER.discover(gegnerName); } catch(e){}   // Eldendex: Gegner/Boss gesehen
   playerHitsOnEnemy = 0; enemyIsStaggered = false; staggerVisualActive = false; nextHitBonusDamage = false;
   let __log = t("log_start") + gegnerNameLoc(gegnerName) + "!";
@@ -2659,6 +2699,23 @@ async function gegnerKonter(opts) {
   // Kampf bereits entschieden -> kein Konter mehr.
   if (gegnerHp <= 0 || spielerHp <= 0) return;
 
+  // DLC Abgrundwald: der Aging Untouchable macht KEINEN Schaden — sein Griff treibt nur den Wahnsinn (+25%).
+  // Man kann ihn nicht töten (99999 HP); nach seinem Griff reißt man sich los und geht (mit dem Wahnsinn) weiter.
+  if (gegnerName === "Aging Untouchable") {
+    wahnsinn = Math.min(100, wahnsinn + 25);
+    untouchableRunden++;
+    zeigeFloatingZahl(playerWrapper, "+25% " + L("WAHNSINN", "MADNESS"), "dmg-enemy");
+    document.getElementById("battle-log").innerText = L("Der Aging Untouchable ergreift dich — dein Geist splittert. Wahnsinn +25%.", "The Aging Untouchable seizes you — your mind splinters. Madness +25%.");
+    aktualisiereWahnsinnAnzeige();
+    await wait(650);
+    if (wahnsinn >= 100) {
+      spielerHp = 0; document.getElementById("battle-log").innerText = L("☠ Der Wahnsinn verzehrt dich. Die Flamme des Frenzy bricht aus deinen Augen.", "☠ Madness consumes you. The Frenzied Flame bursts from your eyes.");
+      updateUI(); zeigeTodesBildschirm(true); return;
+    }
+    entkommeUntouchable();
+    return;
+  }
+
   // Gegner taumelt -> setzt mit seinem Angriff aus (kein Schaden), die Runde dauert aber
   // GENAUSO LANGE wie ein normaler Konter — sonst öffnet sich beim Stagger ein Spam-Fenster.
   if (enemyIsStaggered) {
@@ -2699,6 +2756,7 @@ async function gegnerKonter(opts) {
       gSchaden = Math.max(1, gSchaden);
     }
     spielerHp = Math.max(0, spielerHp - gSchaden);
+    if (gegnerName === "Rellana, Ritterin der Zwillingsmonde") rellanaGetroffen = true;   // Treffer kassiert -> kein Hitless-Bonus mehr
     playerWrapper.classList.add("enemy-hurt");
     zeigeFloatingZahl(playerWrapper, "-" + gSchaden, "dmg-enemy");
     document.getElementById("battle-log").innerText += t(opts.logFail, { name: gegnerNameLoc(gegnerName), dmg: gSchaden });
@@ -3320,6 +3378,16 @@ function kampfGewonnen() {
     if (activeChallenge === "autobattle") setTimeout(autoBattleTick, 500);
     return;
   }
+  // Verheißener Gemahl Radahn (DLC-Finale) Phase 1 -> Phase 2: VOR dem ER-Block (P1 zählt nicht separat)
+  if (gegnerName === "Verheißener Gemahl Radahn" && aktuelleRegion === "EnirIlim") {
+    document.getElementById("battle-log").innerText = L("Miquella erhebt sich auf Radahns Schultern — das Zeitalter der Barmherzigkeit bricht an!", "Miquella rises upon Radahn's shoulders — the Age of Compassion dawns!");
+    gegnerName = "Radahn, Gemahl Miquellas"; gegnerMaxHp = Math.round(gegnerMaxHp * 1.25); gegnerHp = gegnerMaxHp; gegnerSchaden = Math.round(gegnerSchaden * 1.1);
+    if (window.ER) try { ER.discover("Radahn, Gemahl Miquellas"); } catch(e){}
+    bossPhaseWechsel = true; aktionsSperre = false;
+    updateUI(); speichereRun();
+    if (activeChallenge === "autobattle") setTimeout(autoBattleTick, 500);
+    return;
+  }
 
   activeBuffs.forEach(b => { if (b.remaining > 0) b.remaining--; }); activeBuffs = activeBuffs.filter(b => b.remaining > 0);
 
@@ -3428,16 +3496,30 @@ function kampfGewonnen() {
     return;
   }
   if (gegnerName === "Rellana, Ritterin der Zwillingsmonde") {
-    if (hatAbyssFluestern) { oeffneWegwahlEnsis(); return; }
-    vollendeRunMitAbschluss(
-      L("DAS SCHATTENLAND RUFT", "THE SHADOW LANDS CALL"),
-      L("Rellana ist gefallen — die Zwillingsmonde erlöschen.\n\nVor dir teilt sich der Weg: die <b>Schattenfeste</b> Messmers und die <b>Ruinen von Rauh</b> liegen am Horizont. Doch beide Pfade sind noch von Nebel verschlossen…\n\n<i>Die Reise ins Land des Schattens wird fortgesetzt. (Kommt im nächsten Patch!)</i>", "Rellana has fallen — the twin moons go dark.\n\nAhead, the road divides: Messmer's <b>Shadow Keep</b> and the <b>Ruins of Rauh</b> lie on the horizon. But both paths are still sealed in mist…\n\n<i>The journey into the Land of Shadow continues. (Coming in the next patch!)</i>"));
+    // Hitless (kein einziger Treffer kassiert) -> Wahl zwischen dem Abgrundwald und den Ruinen von Rauh.
+    // Wer getroffen wurde, nimmt den regulären Weg über die Ruinen von Rauh.
+    if (!rellanaGetroffen) { oeffneWegwahlEnsis(); return; }
+    starteRauh(true);
     return;
   }
   if (gegnerName === "Midra, Herr der Wahnsinnigen Flamme") {
+    aktuelleRegion = "EnirIlim"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null; wahnsinn = 0; netzKarte = generiereRautenNetz("EnirIlim");
+    heileUndRegeneriereVoll(hardMode);
+    oeffneStatPopup(L("Der Wahnsinn erlischt", "The Frenzy Gutters Out"),
+      L("Midras Haupt sinkt herab, und die Wahnsinnige Flamme verglimmt.\n\nDu hast das finsterste Geheimnis des Schattenlands bezwungen — und stehst nun vor dem Aufgang nach <b>Enir-Ilim</b>, wo der Verheißene Gemahl auf dich wartet.", "Midra's head sinks low, and the Frenzied Flame gutters out.\n\nYou have conquered the Shadow Lands' darkest secret — and now stand before the ascent to <b>Enir-Ilim</b>, where the Promised Consort awaits."), 1);
+    return;
+  }
+  if (gegnerName === "Romina, Heilige der Knospe") {
+    aktuelleRegion = "EnirIlim"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null; scharlachRot = false; netzKarte = generiereRautenNetz("EnirIlim");
+    heileUndRegeneriereVoll(hardMode);
+    oeffneStatPopup(L("Romina ist gefallen", "Romina Has Fallen"),
+      L("Die Heilige der Knospe sinkt in ihre eigenen Ranken zurück, und die Scharlachfäule ebbt ab.\n\nVor dir ragt der Turm von <b>Enir-Ilim</b> in den verhangenen Himmel — am Ende des Aufstiegs wartet der Verheißene Gemahl.", "The Saint of the Bud sinks back into her own vines, and the Scarlet Rot recedes.\n\nBefore you, the tower of <b>Enir-Ilim</b> rises into the veiled sky — at the summit of the ascent waits the Promised Consort."), 1);
+    return;
+  }
+  if (gegnerName === "Radahn, Gemahl Miquellas") {
     vollendeRunMitAbschluss(
-      L("DER WAHNSINN ERLISCHT", "THE FRENZY GUTTERS OUT"),
-      L("Midras Haupt sinkt herab, und die Wahnsinnige Flamme verglimmt im Dunkel des Abgrundwalds.\n\nDu hast das finsterste Geheimnis des Schattenlands bezwungen — als einer der ganz wenigen.", "Midra's head sinks low, and the Frenzied Flame gutters out in the dark of the Abyssal Woods.\n\nYou have conquered the Shadow Lands' darkest secret — one of the very few."));
+      L("ZEITALTER DER BARMHERZIGKEIT", "AGE OF COMPASSION"),
+      L("Der Verheißene Gemahl Radahn ist gefallen, und Miquellas Traum zerbricht an der Spitze von Enir-Ilim.\n\nDu hast das Land des Schattens bis zu seinem Ende durchschritten und den größten aller Feinde bezwungen. <b>Nur die Allerwenigsten kommen je so weit.</b>", "Promised Consort Radahn has fallen, and Miquella's dream shatters at the summit of Enir-Ilim.\n\nYou have walked the Land of Shadow to its very end and defeated the greatest foe of all. <b>Only the fewest of the few ever come this far.</b>"));
     return;
   }
 
@@ -3810,40 +3892,24 @@ function starteDLC() {
   document.getElementById("popup-overlay").style.display = "none";
   aktuelleRegion = "Gravesite"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null;
   inSubDungeon = false; inSewers = false; mainMapState = null;
-  torbogenSpruenge = 0; wolfsgeheulGehoert = false; deathblight = 0; hatAbyssFluestern = false;
+  torbogenSpruenge = 0; wolfsgeheulGehoert = false; wahnsinn = 0; rellanaGetroffen = false; scharlachRot = false;
   netzKarte = generiereRautenNetz("Gravesite");
   heileUndRegeneriereVoll(hardMode);
-  speichereRun(); baueKarteHTML(); updateUI(); aktualisiereDeathblightAnzeige();
+  speichereRun(); baueKarteHTML(); updateUI(); aktualisiereWahnsinnAnzeige();
   oeffneStatPopup(L("Das Land des Schattens", "The Land of Shadow"),
     L("Du berührst die verwelkte Hand — und die Welt zerfließt zu goldener Asche.\n\nAls du erwachst, liegt ein fremdes Land unter einem verhangenen Himmel vor dir: die <b>Gräberebene</b>. Steinerne Torbögen säumen die Gräber, und die Gegner hier sind von ganz anderer Härte.\n\n<b>Es gibt kein Zurück.</b>", "You touch the withered hand — and the world dissolves into golden ash.\n\nWhen you wake, a strange land lies before you beneath a veiled sky: the <b>Gravesite Plain</b>. Stone archways line the graves, and the enemies here are of a different caliber entirely.\n\n<b>There is no way back.</b>"), 1);
 }
 
-// Castle Ensis: Im Rellana-Kampf ist im Arena-Hintergrund ein verborgener SCHALTER zu sehen.
-// Wer ihn während des Kampfes umlegt, bekommt nach dem Sieg den Abstieg in den Abgrundwald angeboten.
-function ensisSchalterUmlegen() {
-  if (hatAbyssFluestern) return;
-  hatAbyssFluestern = true; speichereRun();
-  let s = document.getElementById("ensis-schalter"); if (s) s.classList.add("umgelegt");
-  let log = document.getElementById("battle-log");
-  if (log) log.innerText = L("⚙ Du legst den verborgenen Schalter um. Irgendwo tief unter der Festung rumpelt Stein auf Stein…", "⚙ You flip the hidden switch. Somewhere deep beneath the fortress, stone grinds on stone…");
-}
-function aktualisiereEnsisSchalter() {
-  let s = document.getElementById("ensis-schalter"); if (!s) return;
-  let zeigen = imKampf && gegnerName === "Rellana, Ritterin der Zwillingsmonde";
-  s.style.display = zeigen ? "block" : "none";
-  s.classList.toggle("umgelegt", hatAbyssFluestern);
-}
-
-// Nach Rellana (mit gehörtem Flüstern): Wahl zwischen Abgrundwald und dem normalen Weiterweg
+// Nach Rellana OHNE Treffer (hitless): Wahl zwischen dem geheimen Abgrundwald und den Ruinen von Rauh
 function oeffneWegwahlEnsis() {
   let overlay = document.getElementById("popup-overlay"); let content = document.getElementById("popup-content");
   content.innerHTML = `
-    <div style="color:#888; font-size:0.72rem; letter-spacing:3px; text-transform:uppercase; font-family:sans-serif; margin-bottom:6px;">${L("Rellana ist gefallen", "Rellana has fallen")}</div>
-    <h3 style="color: var(--gold); font-size:1.6rem; margin-top:0; letter-spacing:2px; font-family: 'Mantinia', serif;">${L("DER SCHACHT RUFT", "THE SHAFT CALLS")}</h3>
-    <p style="color:#ddd; font-size:0.92rem; font-family: sans-serif; line-height:1.55;">${L("Der Schalter, den du im Kampf umgelegt hast, hat gewirkt: Hinter dem Thron der Zwillingsmonde ist eine steinerne Pforte aufgeglitten. Ein Schacht führt hinab in die Tiefe — und von unten dringt fahles, gelbes Glimmen.\n\nSteigst du hinab?", "The switch you flipped during the battle has done its work: behind the throne of the twin moons, a stone gate has slid open. A shaft leads down into the depths — and a pale yellow glow seeps up from below.\n\nWill you descend?")}</p>
+    <div style="color:#888; font-size:0.72rem; letter-spacing:3px; text-transform:uppercase; font-family:sans-serif; margin-bottom:6px;">${L("Rellana ist gefallen — makellos", "Rellana has fallen — flawless")}</div>
+    <h3 style="color: var(--gold); font-size:1.6rem; margin-top:0; letter-spacing:2px; font-family: 'Mantinia', serif;">${L("ZWEI PFADE", "TWO PATHS")}</h3>
+    <p style="color:#ddd; font-size:0.92rem; font-family: sans-serif; line-height:1.55;">${L("Kein Hieb hat dich getroffen. Als die Zwillingsmonde erlöschen, öffnet dir deine makellose Klinge einen verborgenen Weg: Hinter dem Thron gleitet eine steinerne Pforte auf und gibt den Abstieg in den <b>Abgrundwald</b> frei.\n\nDu kannst hinabsteigen — oder den regulären Weg über die <b>Ruinen von Rauh</b> nehmen. Beide führen ans Ende.", "Not a single blow has touched you. As the twin moons go dark, your flawless blade reveals a hidden way: behind the throne, a stone gate slides open, baring the descent into the <b>Abyssal Woods</b>.\n\nYou may descend — or take the regular road through the <b>Ruins of Rauh</b>. Both lead to the end.")}</p>
     <button class="btn-modal-action" style="border-color:#8a7a2a; color:#c9b84a;" onclick="starteAbyssalWoods()">🕯 ${L("In den Abgrundwald hinabsteigen", "Descend into the Abyssal Woods")}</button>
-    <button class="btn-modal-action" onclick="vollendeRunMitAbschluss(L('DAS SCHATTENLAND RUFT','THE SHADOW LANDS CALL'), L('Du lässt den Abgrund hinter dir. Schattenfeste und Ruinen von Rauh liegen am Horizont — noch von Nebel verschlossen…\\n\\n<i>Die Reise wird fortgesetzt. (Kommt im nächsten Patch!)</i>','You leave the abyss behind. Shadow Keep and the Ruins of Rauh lie on the horizon — still sealed in mist…\\n\\n<i>The journey continues. (Coming in the next patch!)</i>'))">${L("Dem Pfad weiter folgen", "Follow the path onward")}</button>
-    <p style="color:#666; font-size:0.72rem; font-family:sans-serif; margin-top:10px;">${L("Warnung: Im Abgrundwald siehst du fast nichts — und jeder Fehltritt nährt den Todesfluch.", "Warning: in the Abyssal Woods you can barely see — and every misstep feeds the deathblight.")}</p>
+    <button class="btn-modal-action" style="border-color:#7a1520; color:#e06a6a;" onclick="starteRauh(false)">🩸 ${L("Zu den Ruinen von Rauh", "To the Ruins of Rauh")}</button>
+    <p style="color:#666; font-size:0.72rem; font-family:sans-serif; margin-top:10px;">${L("Warnung: Im Abgrundwald siehst du fast nichts — jeder falsche Schritt weckt den Aging Untouchable und treibt den Wahnsinn.", "Warning: in the Abyssal Woods you can barely see — every wrong step wakes the Aging Untouchable and feeds the madness.")}</p>
   `;
   overlay.style.display = "flex";
 }
@@ -3851,30 +3917,64 @@ function oeffneWegwahlEnsis() {
 function starteAbyssalWoods() {
   document.getElementById("popup-overlay").style.display = "none";
   aktuelleRegion = "AbyssalWoods"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null;
-  deathblight = 0;
+  wahnsinn = 0; untouchableRunden = 0;
   netzKarte = generiereRautenNetz("AbyssalWoods");
-  speichereRun(); baueKarteHTML(); updateUI(); aktualisiereDeathblightAnzeige();
+  speichereRun(); baueKarteHTML(); updateUI(); aktualisiereWahnsinnAnzeige();
   oeffneStatPopup(L("Der Abgrundwald", "The Abyssal Woods"),
-    L("Kein Licht. Kein Laut. Nur ein Wald aus schwarzen Stämmen unter einem Himmel, der keiner ist.\n\nDie Karte ist hier kaum zu erkennen — doch es gibt <b>einen sicheren Pfad</b>. Wer ihn verlässt, nährt den <b>Todesfluch: +25% pro Fehltritt</b>. Bei 100% gehörst du dem Wald.\n\nSieh genau hin. Und geh leise.", "No light. No sound. Only a forest of black trunks beneath a sky that is no sky.\n\nThe map is barely visible here — but there is <b>one safe path</b>. Stray from it and the <b>deathblight grows: +25% per misstep</b>. At 100%, you belong to the woods.\n\nLook closely. And tread quietly."), 1);
+    L("Kein Licht. Kein Laut. Nur ein Wald aus schwarzen Stämmen unter einem Himmel, der keiner ist.\n\nAlle Wege sind pechschwarz — doch es gibt <b>einen richtigen Pfad</b>, der ganz sacht glimmt. Verlässt du ihn, deckt sich der Knoten auf und der <b>Aging Untouchable</b> ergreift dich: kein Schaden, aber <b>+25% Wahnsinn</b> je Griff. Bei 100% ist dein Geist verloren.\n\nSieh genau hin. Und geh leise.", "No light. No sound. Only a forest of black trunks beneath a sky that is no sky.\n\nEvery path is pitch-black — but there is <b>one right way</b> that glimmers ever so faintly. Stray from it and the node reveals itself as the <b>Aging Untouchable</b> seizes you: no damage, but <b>+25% madness</b> per grasp. At 100%, your mind is lost.\n\nLook closely. And tread quietly."), 1);
 }
 
-// Todesfluch-Anzeige (Seitenleiste) + Kurz-Toast beim Fehltritt
-function aktualisiereDeathblightAnzeige() {
-  let wrap = document.getElementById("deathblight-wrap"); if (!wrap) return;
-  let aktiv = aktuelleRegion === "AbyssalWoods" && !inSubDungeon;
-  wrap.style.display = aktiv ? "block" : "none";
-  if (!aktiv) return;
-  let bar = document.getElementById("deathblight-bar"); if (bar) bar.style.width = deathblight + "%";
-  let pct = document.getElementById("deathblight-pct"); if (pct) pct.textContent = deathblight + "%";
+// Ruinen von Rauh betreten (regulärer Weg nach Rellana). hitless = kam über die makellose Wahl
+function starteRauh(hitless) {
+  document.getElementById("popup-overlay").style.display = "none";
+  aktuelleRegion = "Rauh"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null;
+  scharlachRot = true;
+  netzKarte = generiereRautenNetz("Rauh");
+  heileUndRegeneriereVoll(hardMode);
+  speichereRun(); baueKarteHTML(); updateUI(); aktualisiereWahnsinnAnzeige();
+  oeffneStatPopup(L("Die Ruinen von Rauh", "The Ruins of Rauh"),
+    L("Uralte Tempel, überwuchert von blühender Scharlachfäule. Kaum betrittst du das Gelände, kriecht das Rot bereits durch deine Adern.\n\n<b>Scharlachfäule:</b> Jeder Knoten, den du betrittst, kostet dich <b>10% deiner maximalen Lebenskraft</b>. Nur an Orten der Gnade ebbt sie ab. Am Ende thront <b>Romina, Heilige der Knospe</b>.", "Ancient temples, overgrown with blooming Scarlet Rot. The moment you set foot here, the red already creeps through your veins.\n\n<b>Scarlet Rot:</b> Every node you step onto costs you <b>10% of your maximum health</b>. Only at sites of grace does it recede. At the end reigns <b>Romina, Saint of the Bud</b>."), 1);
 }
-function zeigeBlightToast() {
+
+// Wahnsinns-Balken (Abgrundwald) & Scharlachfäule-Chip (Rauh) — Overlays oben links über der Karte
+function aktualisiereWahnsinnAnzeige() {
+  let ov = document.getElementById("madness-overlay");
+  if (ov) {
+    let aktiv = aktuelleRegion === "AbyssalWoods";
+    ov.style.display = aktiv ? "block" : "none";
+    if (aktiv) {
+      let fill = document.getElementById("madness-fill"); if (fill) { fill.style.width = wahnsinn + "%"; fill.classList.toggle("crit", wahnsinn >= 75); }
+      let pct = document.getElementById("madness-pct"); if (pct) pct.textContent = wahnsinn + "%";
+    }
+  }
+  let chip = document.getElementById("rot-chip");
+  if (chip) chip.style.display = (aktuelleRegion === "Rauh" && scharlachRot) ? "block" : "none";
+}
+
+// Aging Untouchable: erscheint bei einem Fehltritt im Abgrundwald — ein "Kampf", der nur den Wahnsinn treibt
+function starteUntouchableKampf() {
+  gegnerName = "Aging Untouchable"; gegnerMaxHp = 99999; gegnerHp = 99999; gegnerSchaden = 0;
+  untouchableRunden = 0; imKampf = true; aktionsSperre = false;
+  playerHitsOnEnemy = 0; enemyIsStaggered = false; staggerVisualActive = false; nextHitBonusDamage = false;
+  if (window.ER) try { ER.discover("Aging Untouchable"); } catch(e){}
+  document.getElementById("battle-log").innerText = L("Aus der Schwärze tritt der Aging Untouchable — du kannst ihn nicht töten. Greif an, um dich loszureißen!", "Out of the blackness steps the Aging Untouchable — you cannot kill it. Attack to tear yourself free!");
+  speichereRun(); updateUI();
+}
+// Nach dem Griff des Untouchable: man reißt sich los und geht (mit dem angesammelten Wahnsinn) weiter
+function entkommeUntouchable() {
+  imKampf = false; aktionsSperre = false;
+  let naechste = aktuelleEbene + 1;
+  document.getElementById("battle-view").style.display = "none"; document.getElementById("map-view").style.display = "flex";
+  oeffneStatPopup(L("Losgerissen", "Torn Free"),
+    L("Mit letzter Kraft reißt du dich aus dem Griff des Uralten und stolperst zurück auf den Pfad.\n\n<b>Wahnsinn: " + wahnsinn + "%</b>", "With the last of your strength you tear free of the Ancient's grasp and stumble back onto the path.\n\n<b>Madness: " + wahnsinn + "%</b>"), naechste);
+}
+function zeigeRotToast(rot) {
   let wrap = document.getElementById("ach-toast-wrap"); if (!wrap) return;
   let el = document.createElement("div");
-  el.className = "ach-toast";
-  el.style.borderColor = "#b06ad4";
-  el.innerHTML = '<div class="ach-ic">☠</div><div><div class="ach-label" style="color:#b06ad4;">' + L("TODESFLUCH", "DEATHBLIGHT") + " " + deathblight + '%</div><div class="ach-desc">' + L("Du hast den sicheren Pfad verlassen.", "You strayed from the hidden path.") + '</div></div>';
+  el.className = "ach-toast"; el.style.borderColor = "#7a1520";
+  el.innerHTML = '<div class="ach-ic">🩸</div><div><div class="ach-label" style="color:#e06a6a;">' + L("SCHARLACHFÄULE", "SCARLET ROT") + '</div><div class="ach-desc">−' + rot + ' HP</div></div>';
   wrap.appendChild(el);
-  setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 4200);
+  setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 3200);
 }
 
 function oeffneAbschlussPopup(titel, text) {
@@ -4045,9 +4145,10 @@ function bestaetigeStufe(naechsteEbene) { document.getElementById("popup-overlay
     activeChallenge = "";
     hatGodrickRune = hatRadahnRune = hatMorgottRune = true;
     aktuelleRegion = region; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null;
-    torbogenSpruenge = 0; wolfsgeheulGehoert = false; deathblight = 0; hatAbyssFluestern = false;
+    torbogenSpruenge = 0; wolfsgeheulGehoert = false; wahnsinn = 0; untouchableRunden = 0; rellanaGetroffen = false;
+    scharlachRot = (region === "Rauh");
     try { netzKarte = generiereRautenNetz(region); } catch(e){ console.warn(e); }
-    devClosePopups(); devApply(); aktualisiereDeathblightAnzeige();
+    devClosePopups(); devApply(); aktualisiereWahnsinnAnzeige();
   }
 
   function devTowerFloor(){
@@ -4102,7 +4203,7 @@ function bestaetigeStufe(naechsteEbene) { document.getElementById("popup-overlay
     panel.appendChild(geheim2);
     panel.appendChild(b("🩸 Mohg-Kampf (DLC-Zugang testen)", devMohgFight, "#c0392b"));
     var dlcRow = row();
-    [["Grave","Gravesite"],["Ensis","CastleEnsis"],["Abyss","AbyssalWoods"]].forEach(function(p){ dlcRow.appendChild(bSmall(p[0], function(){ devGotoDLC(p[1]); })); });
+    [["Grave","Gravesite"],["Ensis","CastleEnsis"],["Abyss","AbyssalWoods"],["Rauh","Rauh"],["Enir","EnirIlim"]].forEach(function(p){ dlcRow.appendChild(bSmall(p[0], function(){ devGotoDLC(p[1]); })); });
     panel.appendChild(dlcRow);
     panel.appendChild(b("🗼 Battle-Tower Etage…", devTowerFloor, "#9b8cff"));
     panel.appendChild(b("🔄 Run neu starten", function(){ try{ direktNeustarten(); }catch(e){} devRefresh(); }, "#e67e22"));
