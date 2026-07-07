@@ -203,7 +203,7 @@
     .btn-google:hover { box-shadow: 0 0 14px rgba(255,255,255,0.25); }
     .btn-google img { width: 16px; height: 16px; }
     /* ===== To-Do / "Erste Schritte" ===== */
-    .todo-card { position: fixed; top: 96px; left: 86px; width: 250px; z-index: 35; margin: 0; background: linear-gradient(160deg, rgba(30,24,14,0.94), rgba(15,13,9,0.94)); border: 1px solid var(--gold-dark); border-radius: 10px; padding: 11px 13px; text-align: left; box-shadow: 0 6px 26px rgba(0,0,0,0.55); transition: left 0.25s ease; }
+    .todo-card { position: fixed; top: 96px; left: 86px; width: 300px; z-index: 35; margin: 0; background: linear-gradient(160deg, rgba(30,24,14,0.94), rgba(15,13,9,0.94)); border: 1px solid var(--gold-dark); border-radius: 10px; padding: 11px 13px; text-align: left; box-shadow: 0 6px 26px rgba(0,0,0,0.55); transition: left 0.25s ease; }
     /* wandert exakt wie die Seelen mit dem Seitenmenü mit */
     .sidebar.open ~ #todo-card { left: 240px; }
     @media (max-width: 900px) { .todo-card { display: none; } }
@@ -219,7 +219,10 @@
     .todo-txt b { display: block; font-family: sans-serif; font-size: 0.88rem; color: #ede6d4; }
     .todo-item.done .todo-txt b { color: #9fce8f; }
     .todo-txt small { color: #8a7f68; font-size: 0.71rem; font-family: sans-serif; }
-    .todo-tut { margin: 2px 0 8px 46px; padding: 10px 12px; background: rgba(0,0,0,0.3); border-left: 2px solid var(--gold-dark); border-radius: 6px; font-family: sans-serif; font-size: 0.8rem; color: #cdbfa3; }
+    .todo-tut { margin: 4px 0 8px 10px; padding: 11px 13px; background: rgba(0,0,0,0.3); border-left: 2px solid var(--gold-dark); border-radius: 6px; font-family: sans-serif; font-size: 0.8rem; color: #cdbfa3; }
+    .todo-discord-btn { display: inline-flex; align-items: center; gap: 8px; background: #5865F2; color: #fff; border: 1px solid #727efd; border-radius: 6px; padding: 8px 14px; font-family: sans-serif; font-weight: bold; font-size: 0.82rem; text-decoration: none; }
+    .todo-discord-btn:hover { background: #727efd; box-shadow: 0 0 12px rgba(88,101,242,0.5); }
+    .todo-discord-btn img { width: 18px; height: 18px; object-fit: contain; }
     .todo-step { margin-bottom: 8px; line-height: 1.5; }
     .todo-step:last-of-type { margin-bottom: 6px; }
     .todo-link { color: var(--gold); text-decoration: none; font-weight: bold; }
@@ -556,6 +559,13 @@
       </div>
       <button class="btn-mini" id="set-discord-btn" onclick="erzeugeDiscordCode()">Code erzeugen</button>
       <div id="set-discord-result" style="width:100%; font-family:sans-serif; font-size:0.78rem; margin-top:6px; min-height:1em;"></div>
+    </div>
+    <div class="set-row">
+      <div>
+        <div class="set-label" id="set-todo-label">Erste-Schritte-Liste</div>
+        <div class="set-sub" id="set-todo-sub">Die To-Do-Karte im Hauptmenü wieder einblenden</div>
+      </div>
+      <button class="btn-mini" id="set-todo-btn" onclick="todoShowAgain(this)">Wieder anzeigen</button>
     </div>
   </div>
 </div>
@@ -2086,7 +2096,7 @@
   }
   function _todoTut(en) {
     return '<div class="todo-tut">' +
-      '<div class="todo-step"><a href="https://discord.gg/mUSzTDw8Ns" target="_blank" class="todo-link">1) ' + (en ? "Join the Discord server →" : "Discord-Server beitreten →") + '</a></div>' +
+      '<div class="todo-step" style="margin-bottom:11px;"><a href="https://discord.gg/mUSzTDw8Ns" target="_blank" class="todo-discord-btn"><img src="images/icons/discord-logo-discord-logo-transparent-discord-icon-transparent-free-free-png.webp" alt="" onerror="this.style.display=\'none\'">' + (en ? "Join the Discord server" : "Discord-Server beitreten") + '</a></div>' +
       '<div class="todo-step">2) <button class="btn-mini" onclick="todoGenCode()">' + (en ? "Generate link code" : "Verknüpfungs-Code erzeugen") + '</button><div id="todo-code" class="todo-code"></div></div>' +
       '<div class="todo-step">3) ' + (en ? "On your server, type <b>/verify YOURCODE</b> — your roles are assigned automatically." : "Tippe auf dem Server <b>/verify DEINCODE</b> — deine Rollen kommen automatisch.") + '</div>' +
       '<button class="btn-mini todo-done" onclick="todoDiscordDone()">✓ ' + (en ? "Mark as done" : "Als erledigt markieren") + '</button></div>';
@@ -2121,7 +2131,12 @@
   }
   function todoDiscordDone() { try { localStorage.setItem(TODO_DISCORD_KEY, "1"); } catch (e) {} renderTodo(); }
   function todoHide() { try { localStorage.setItem(TODO_HIDE_KEY, "1"); } catch (e) {} var c = document.getElementById("todo-card"); if (c) c.style.display = "none"; }
-  window.todoLoginClick = todoLoginClick; window.todoDiscordToggle = todoDiscordToggle; window.todoGenCode = todoGenCode; window.todoDiscordDone = todoDiscordDone; window.todoHide = todoHide;
+  function todoShowAgain(btn) {
+    try { localStorage.removeItem(TODO_HIDE_KEY); } catch (e) {}
+    renderTodo();
+    if (btn) { var en = (typeof _menuIsEn === "function") ? _menuIsEn() : false; btn.textContent = en ? "Shown ✓" : "Angezeigt ✓"; }
+  }
+  window.todoLoginClick = todoLoginClick; window.todoDiscordToggle = todoDiscordToggle; window.todoGenCode = todoGenCode; window.todoDiscordDone = todoDiscordDone; window.todoHide = todoHide; window.todoShowAgain = todoShowAgain;
   if (window.ER && ER.onUserChange) ER.onUserChange(function () { renderTodo(); });
   document.addEventListener("languageChanged", function () { renderTodo(); });
   renderTodo();
@@ -2388,6 +2403,9 @@ function localizeMenuExtras(){
   set("set-discord-label", "Discord verknüpfen", "Link Discord");
   set("set-discord-sub", "Rollen für deine Erfolge — automatisch", "Roles for your feats — automatic");
   set("set-discord-btn", "Code erzeugen", "Generate code");
+  set("set-todo-label", "Erste-Schritte-Liste", "First-steps list");
+  set("set-todo-sub", "Die To-Do-Karte im Hauptmenü wieder einblenden", "Show the to-do card in the main menu again");
+  set("set-todo-btn", "Wieder anzeigen", "Show again");
   _updateSpeedrunBtn();
   _updateTimerBtn();
   setH("info-l1", "<b>Modus wählen:</b> Starte einen <b>Normalen</b> Run. Den <b>Hard Mode</b> schaltest du frei, sobald du einmal durchgespielt hast.", "<b>Pick a mode:</b> Start a <b>Normal</b> run. <b>Hard Mode</b> unlocks once you've finished the game.");
