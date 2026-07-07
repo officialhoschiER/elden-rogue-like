@@ -25,6 +25,14 @@ const commands = [
   {
     name: "refresh",
     description: "Elden-Rogue-Rollen neu prüfen (nach neuen Erfolgen)"
+  },
+  {
+    name: "stats",
+    description: "Zeige deine Elden-Rogue-Statistik"
+  },
+  {
+    name: "leaderboard",
+    description: "Zeige die Top-Spieler von Elden Rogue"
   }
 ];
 

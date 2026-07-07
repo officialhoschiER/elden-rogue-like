@@ -61,6 +61,12 @@ export default {
         if (name === "refresh") {
           return json(msg(await verarbeiteRefresh(discordUserId, guildId, env)));
         }
+        if (name === "stats") {
+          return json(msg(await verarbeiteStats(discordUserId, env)));
+        }
+        if (name === "leaderboard") {
+          return json(msg(await verarbeiteLeaderboard(env)));
+        }
       } catch (e) {
         console.error("[discord-rollen]", e && e.stack ? e.stack : e);
         return json(msg("⚠️ Da ist etwas schiefgegangen. Versuch es gleich noch einmal."));
@@ -113,6 +119,61 @@ async function verarbeiteRefresh(discordUserId, guildId, env) {
   return rollen.length
     ? "✅ Rollen geprüft: " + rollen.map((r) => "<@&" + r + ">").join(", ")
     : "Alles aktuell — noch keine (neuen) Rollen verdient.";
+}
+
+/* /stats — eigene Statistik des verknüpften Kontos */
+async function verarbeiteStats(discordUserId, env) {
+  const token = await getAccessToken(env);
+  const doc = await firestoreQuery("discordUserId", discordUserId, token);
+  if (!doc) return "❌ Kein verknüpftes Konto. Nutze zuerst `/verify` (Code im Spiel: Einstellungen → Discord verknüpfen).";
+
+  const f = doc.fields || {};
+  const name = f.displayName ? f.displayName.stringValue : "Befleckter";
+  const st = (f.stats && f.stats.mapValue && f.stats.mapValue.fields) ? f.stats.mapValue.fields : {};
+  const num = (k) => { const v = st[k]; return v ? Number(v.integerValue || v.doubleValue || 0) : 0; };
+  const bt = num("bestTimeMs");
+
+  return "📊 **Statistik von " + name + "**\n" +
+    "⚔️ Kämpfe gewonnen: **" + num("fightsWon") + "**\n" +
+    "👹 Bosse besiegt: **" + num("bossesKilled") + "**\n" +
+    "🏁 Runs: **" + num("gamesCompleted") + "** abgeschlossen (von " + num("runsStarted") + " gestartet)\n" +
+    "💀 Tode: **" + num("deaths") + "**\n" +
+    "🏆 Bester Score (Normal): **" + num("bestScoreNormal").toLocaleString("de-DE") + "**" +
+      (num("bestScoreHard") ? " · Hard: **" + num("bestScoreHard").toLocaleString("de-DE") + "**" : "") + "\n" +
+    "⏱️ Schnellster Run: **" + (bt > 0 ? fmtZeit(bt) : "—") + "**\n" +
+    "🌸 Malenia-Siege: **" + num("maleniaKills") + "**";
+}
+
+/* /leaderboard — Top 10 nach Normal-Score */
+async function verarbeiteLeaderboard(env) {
+  const token = await getAccessToken(env);
+  const body = {
+    structuredQuery: {
+      from: [{ collectionId: "users" }],
+      orderBy: [{ field: { fieldPath: "bestScoreNormal" }, direction: "DESCENDING" }],
+      limit: 10
+    }
+  };
+  const r = await fetch(FS_BASE + ":runQuery", {
+    method: "POST",
+    headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+  if (!r.ok) throw new Error("Firestore leaderboard " + r.status + ": " + (await r.text()));
+  const arr = await r.json();
+  const medaille = ["🥇", "🥈", "🥉"];
+  const zeilen = (arr || []).filter((e) => e && e.document).map((e, i) => {
+    const f = e.document.fields || {};
+    const name = f.displayName ? f.displayName.stringValue : "—";
+    const score = f.bestScoreNormal ? Number(f.bestScoreNormal.integerValue || 0) : 0;
+    return (medaille[i] || (i + 1) + ".") + " **" + name + "** — " + score.toLocaleString("de-DE");
+  });
+  return zeilen.length ? "🏆 **Top-Spieler (Normal-Score)**\n" + zeilen.join("\n") : "Noch keine Einträge in der Bestenliste.";
+}
+
+function fmtZeit(ms) {
+  const s = Math.floor(ms / 1000), m = Math.floor(s / 60), ss = s % 60;
+  return m + ":" + String(ss).padStart(2, "0");
 }
 
 /* Vergibt alle verdienten Rollen (PUT ist idempotent) */

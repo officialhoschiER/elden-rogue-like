@@ -1811,13 +1811,13 @@
     // Translated Stats mapping
     let isDe = !window.i18n || window.i18n.getLang() === 'de';
 
-    statGrid.innerHTML = `
-      <div class="stat-box"><div class="v">${s.fightsWon || 0}</div><div class="l">${isDe ? 'Kämpfe gewonnen' : 'Battles Won'}</div></div>
-      <div class="stat-box"><div class="v">${s.bossesKilled || 0}</div><div class="l">${isDe ? 'Bosse besiegt' : 'Bosses Slain'}</div></div>
-      <div class="stat-box"><div class="v">${s.deaths || 0}</div><div class="l">${isDe ? 'Tode' : 'Deaths'}</div></div>
-      <div class="stat-box"><div class="v">${s.runsStarted || 0}</div><div class="l">${isDe ? 'Runs gestartet' : 'Runs Started'}</div></div>
-      <div class="stat-box"><div class="v">${s.dungeonsCleared || 0}</div><div class="l">Dungeons</div></div>
-      <div class="stat-box"><div class="v">${s.bestScore || 0}</div><div class="l">${isDe ? 'Bester Score' : 'Best Score'}</div></div>`;
+    // Persönliche Statistik gibt's jetzt nur noch im Discord (/stats) — hier nur ein Hinweis.
+    statGrid.style.display = "block";
+    statGrid.innerHTML =
+      '<div style="text-align:center;padding:6px 4px;font-family:sans-serif;color:#cdbfa3;font-size:0.85rem;line-height:1.5;">' +
+      '📊 ' + (isDe ? 'Deine Statistik gibt\'s in unserem <a href="https://discord.gg/mUSzTDw8Ns" target="_blank" style="color:var(--gold);font-weight:bold;">Discord</a> — tippe dort <b>/stats</b>.'
+                    : 'Your stats live in our <a href="https://discord.gg/mUSzTDw8Ns" target="_blank" style="color:var(--gold);font-weight:bold;">Discord</a> — type <b>/stats</b> there.') +
+      '</div>';
 
     var list = ER.getAchievements();
     var done = list.filter(function (a) { return a.unlocked; }).length;
@@ -1933,57 +1933,20 @@
   
   /* ===================== STATISTIK-PANEL ===================== */
   // Nutzt die bereits im Hintergrund geführten ER-Stats (eldenrogue-online.js) und macht sie sichtbar.
+  // Persönliche Statistik lebt jetzt im Discord (/stats). Das Panel funnelt nur noch dorthin.
   function ladeStats() {
     var body = document.getElementById("stats-body"); if (!body) return;
     var en = (typeof _menuIsEn === "function") ? _menuIsEn() : false;
-    if (!window.ER || !ER.getStats) {
-      body.innerHTML = '<div style="color:#888;text-align:center;padding:20px;font-family:sans-serif;">'
-        + (en ? "Stats unavailable. Please reload the page." : "Statistik konnte nicht geladen werden. Bitte Seite neu laden.") + '</div>';
-      return;
-    }
-    var s = ER.getStats();
-    function n(x) { return (x || 0).toLocaleString(en ? "en-US" : "de-DE"); }
-    function box(v, l) { return '<div class="stat-box"><div class="v">' + v + '</div><div class="l">' + l + '</div></div>'; }
-    function grp(title) { return '<div style="font-family:Cinzel,serif;color:var(--gold);font-size:0.9rem;letter-spacing:1px;margin:18px 0 8px;border-bottom:1px solid var(--border-color);padding-bottom:5px;">' + title + '</div>'; }
-    function grid(inner) { return '<div class="stat-grid">' + inner + '</div>'; }
-    var winRate  = s.runsStarted ? Math.round((s.gamesCompleted / s.runsStarted) * 100) : 0;
-    var avgBoss  = s.runsStarted ? (s.bossesKilled / s.runsStarted).toFixed(1) : "0";
-    var bestTime = s.bestTimeMs ? fmtRunTimeMenu(s.bestTimeMs) : "—";
     body.innerHTML =
-      grp(en ? "Combat" : "Kampf") +
-      grid(
-        box(n(s.fightsWon),        en ? "Battles Won"      : "Kämpfe gewonnen") +
-        box(n(s.bossesKilled),     en ? "Bosses Slain"     : "Bosse besiegt") +
-        box(n(s.elitesKilled),     en ? "Elites Slain"     : "Eliten besiegt") +
-        box(n(s.minibossesKilled), en ? "Minibosses"       : "Minibosse") +
-        box(n(s.invadersKilled),   en ? "Invaders Repelled": "Invasoren besiegt") +
-        box(n(s.flasksDrunk),      en ? "Estus Drunk"      : "Estus getrunken")
-      ) +
-      grp(en ? "Runs & Progress" : "Runs & Fortschritt") +
-      grid(
-        box(n(s.runsStarted),    en ? "Runs Started"    : "Runs gestartet") +
-        box(n(s.gamesCompleted), en ? "Runs Completed"  : "Runs abgeschlossen") +
-        box(n(s.deaths),         en ? "Deaths"          : "Tode") +
-        box(winRate + "%",       en ? "Completion Rate" : "Abschlussquote") +
-        box(n(s.furthestStage),  en ? "Furthest Stage"  : "Weiteste Ebene") +
-        box(avgBoss,             en ? "Avg. Bosses / Run": "Ø Bosse / Run")
-      ) +
-      grp(en ? "Loot" : "Beute") +
-      grid(
-        box(n(s.weaponsFound),    en ? "Weapons Found"   : "Waffen gefunden") +
-        box(n(s.armorsFound),     en ? "Armor Found"     : "Rüstungen gefunden") +
-        box(n(s.talismansFound),  en ? "Talismans Found" : "Talismane gefunden") +
-        box(n(s.dungeonsCleared), en ? "Dungeons Cleared": "Dungeons geklärt")
-      ) +
-      grp(en ? "Records & Deeds" : "Rekorde & Taten") +
-      grid(
-        box(n(s.bestScoreNormal),      en ? "Best Score (Normal)" : "Bester Score (Normal)") +
-        box(n(s.bestScoreHard),        en ? "Best Score (Hard)"   : "Bester Score (Hard)") +
-        box(bestTime,                  en ? "Fastest Clear"       : "Schnellster Run") +
-        box(n(s.hardModeCompletions),  en ? "Hard Clears"         : "Hard-Abschlüsse") +
-        box(n(s.maleniaKills),         en ? "Malenia Kills"       : "Malenia-Siege") +
-        box(n(s.mohgwynVisits),        en ? "Mohgwyn Visits"      : "Mohgwyn-Besuche")
-      );
+      '<div style="text-align:center;padding:12px 6px 4px;font-family:sans-serif;">' +
+        '<div style="font-size:2.4rem;margin-bottom:8px;">📊</div>' +
+        '<p class="info-lead" style="margin:0 auto 8px;max-width:430px;">' +
+          (en ? "Your personal stats now live on our Discord." : "Deine persönliche Statistik gibt's jetzt auf unserem Discord.") + '</p>' +
+        '<p style="color:#cdbfa3;font-size:0.88rem;line-height:1.6;max-width:450px;margin:0 auto 18px;">' +
+          (en ? "Join the server, link your account (Settings → Connect Discord) and type <b style=\"color:var(--gold)\">/stats</b> to see your numbers — or <b style=\"color:var(--gold)\">/leaderboard</b> for the top players."
+              : "Tritt dem Server bei, verknüpfe dein Konto (Einstellungen → Discord verknüpfen) und tippe <b style=\"color:var(--gold)\">/stats</b> für deine Zahlen — oder <b style=\"color:var(--gold)\">/leaderboard</b> für die Top-Spieler.") + '</p>' +
+        '<a href="https://discord.gg/mUSzTDw8Ns" target="_blank" class="btn-social btn-discord" style="display:inline-flex;">💬 ' + (en ? "Join Discord" : "Discord beitreten") + '</a>' +
+      '</div>';
   }
   window.ladeStats = ladeStats;
 
