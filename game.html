@@ -397,6 +397,16 @@ h1, h2, h3, .btn-menu, .btn-combat, .btn-social, .game-author-tag, #region-displ
     .region-info-icon:hover { border-color: var(--gold); background: rgba(205,163,79,0.18); box-shadow: 0 0 10px rgba(205,163,79,0.3); }
     @keyframes achIn { to { transform: translateX(0); } }
     @keyframes achOut { to { transform: translateX(120%); opacity: 0; } }
+    /* ===== DLC Castle Ensis: verborgener Schalter im Rellana-Kampf ===== */
+    .battle-arena { position: relative; }
+    #ensis-schalter { position: absolute; left: 28px; bottom: 130px; width: 34px; height: 48px; cursor: pointer; opacity: 0.3; transition: opacity 0.3s ease; z-index: 45; }
+    #ensis-schalter:hover { opacity: 0.85; }
+    #ensis-schalter::after { content: ""; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 28px; height: 10px; background: #2c2214; border: 1px solid #6a5a34; border-radius: 3px; box-shadow: 0 2px 6px rgba(0,0,0,0.7); }
+    #ensis-schalter-stick { position: absolute; bottom: 8px; left: 50%; width: 5px; height: 36px; background: linear-gradient(#cda34f, #6a5a34); border-radius: 3px 3px 0 0; transform-origin: bottom center; transform: translateX(-50%) rotate(-32deg); transition: transform 0.45s ease; box-shadow: 0 0 6px rgba(0,0,0,0.6); }
+    #ensis-schalter-stick::before { content: ""; position: absolute; top: -5px; left: 50%; transform: translateX(-50%); width: 11px; height: 11px; border-radius: 50%; background: #cda34f; box-shadow: 0 0 8px rgba(205,163,79,0.5); }
+    #ensis-schalter.umgelegt #ensis-schalter-stick { transform: translateX(-50%) rotate(32deg); }
+    #ensis-schalter.umgelegt { opacity: 0.15; cursor: default; }
+
     /* ===== DLC Abgrundwald: Nebel-Karte & Todesfluch ===== */
     .abyss-fog .map-node { opacity: 0.14; border-color: #2a2a33; box-shadow: none; }
     .abyss-fog .map-node .map-node-img, .abyss-fog .map-node .map-node-boss-img { filter: grayscale(1) brightness(0.45); }
@@ -630,6 +640,7 @@ h1, h2, h3, .btn-menu, .btn-combat, .btn-social, .game-author-tag, #region-displ
     </div>
     
     <div id="battle-view" class="battle-arena" style="display: none;">
+      <div id="ensis-schalter" onclick="ensisSchalterUmlegen()" title="???" style="display:none;"><div id="ensis-schalter-stick"></div></div>
       <div class="fighters-container">
         <div class="fighter-wrapper" id="player-sprite-wrapper">
           <strong id="ui-combat-player" style="color:var(--gold); font-size:0.9rem; letter-spacing:1px; margin-bottom:5px;">DU</strong>
@@ -804,7 +815,7 @@ let gezaehlteBossKnoten = [];     // bereits für die Rangliste gezählte Boss-K
 let torbogenSpruenge = 0;         // Gräberebene: Sprünge durch Torbögen (3 = Wolfsgeheul — Check für späteren Secret Boss)
 let wolfsgeheulGehoert = false;   // der Wolf hat geantwortet (Flag für den kommenden Secret Boss)
 let deathblight = 0;              // Abgrundwald: Todesfluch in % — jeder Fehltritt +25, bei 100 ist der Run vorbei
-let hatAbyssFluestern = false;    // Castle Ensis: dem Flüstern an der Gnade gefolgt -> Abgrundwald öffnet sich nach Rellana
+let hatAbyssFluestern = false;    // Castle Ensis: verborgenen Schalter im Rellana-Kampf umgelegt -> Abgrundwald öffnet sich nach dem Sieg
 let dlcWahlOffen = false;         // Mohg (2. Sieg) liegt: Wahl "Run vollenden" vs. "Miquellas Hand berühren" steht an
 
 let playerHitsOnEnemy = 0;
@@ -2193,6 +2204,7 @@ function updateUI() {
       else if (aktuelleRegion === "AbyssalWoods") arenaView.style.backgroundImage = "linear-gradient(to bottom, rgba(4,4,6,0.8), rgba(2,2,3,0.95)), url('images/background/abyssalwoods.jpg')";
       else arenaView.style.backgroundImage = `linear-gradient(to bottom, rgba(11,11,11,0.3), rgba(11,11,11,0.6)), url('images/background/${aktuelleRegion.toLowerCase()}.jpg')`;
     }
+    aktualisiereEnsisSchalter();   // DLC: verborgener Schalter nur im Rellana-Kampf sichtbar
 
     document.getElementById("player-combat-img").src = playerImageStr;
     { let __f = ladeMeta().activeSkinFilter || ""; let __pi = document.getElementById("player-combat-img"); if (__pi) __pi.style.filter = __f; }
@@ -2254,7 +2266,6 @@ function klickeKnoten(ebene, knoten) {
   }
 
   if (knoten.typ === 4) {
-    if (aktuelleRegion === "CastleEnsis" && !hatAbyssFluestern) { oeffneEnsisGnade(ebene + 1); return; }   // DLC: hier flüstert etwas im Nebel…
     spielerHp = berechneFinalMaxHp(); spielerFlasks = maxKlassenFlasks;
     oeffneStatPopup(t("grace_title"), t("grace_desc"), ebene + 1); return;
   }
@@ -3353,7 +3364,7 @@ function kampfGewonnen() {
   if (gegnerName === "Göttliches Tanzlöwenbiest") {
     aktuelleRegion = "CastleEnsis"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null; netzKarte = generiereRautenNetz("CastleEnsis");
     oeffneStatPopup(L("Das Tanzlöwenbiest ist gefallen", "The Dancing Lion Has Fallen"),
-      L("Das göttliche Biest zerfällt zu Sturmwind und Staub. Hinter Belurat öffnet sich der Weg zur Mondlichtfestung der Karianer: <b>Castle Ensis</b>.\n\nDort drüben, im Nebel… flüstert etwas.", "The divine beast dissolves into storm and dust. Beyond Belurat, the path opens to the Carian moonlight fortress: <b>Castle Ensis</b>.\n\nOver there, in the mist… something whispers."), 1);
+      L("Das göttliche Biest zerfällt zu Sturmwind und Staub. Hinter Belurat öffnet sich der Weg zur Mondlichtfestung der Karianer: <b>Castle Ensis</b>.\n\nMan erzählt sich, in den alten Mauern schlummern <i>Mechanismen</i>, die seit Äonen niemand mehr berührt hat…", "The divine beast dissolves into storm and dust. Beyond Belurat, the path opens to the Carian moonlight fortress: <b>Castle Ensis</b>.\n\nThey say ancient <i>mechanisms</i> slumber in those old walls, untouched for eons…"), 1);
     return;
   }
   if (gegnerName === "Rellana, Ritterin der Zwillingsmonde") {
@@ -3747,25 +3758,20 @@ function starteDLC() {
     L("Du berührst die verwelkte Hand — und die Welt zerfließt zu goldener Asche.\n\nAls du erwachst, liegt ein fremdes Land unter einem verhangenen Himmel vor dir: die <b>Gräberebene</b>. Steinerne Torbögen säumen die Gräber, und die Gegner hier sind von ganz anderer Härte.\n\n<b>Es gibt kein Zurück.</b>", "You touch the withered hand — and the world dissolves into golden ash.\n\nWhen you wake, a strange land lies before you beneath a veiled sky: the <b>Gravesite Plain</b>. Stone archways line the graves, and the enemies here are of a different caliber entirely.\n\n<b>There is no way back.</b>"), 1);
 }
 
-// Castle Ensis: Gnade mit Geheim-Option — rasten ODER dem Flüstern folgen (keine Heilung!)
-function oeffneEnsisGnade(naechsteEbene) {
-  let overlay = document.getElementById("popup-overlay"); let content = document.getElementById("popup-content");
-  content.innerHTML = `
-    <h3 style="color: var(--gold); font-size:1.5rem; margin-top:0; letter-spacing:2px; font-family: 'Mantinia', serif;">${t("grace_title")}</h3>
-    <p style="color:#ddd; font-size:0.95rem; font-family: sans-serif; line-height:1.5;">${L("Das goldene Licht der Gnade flackert unruhig. Und dort, jenseits der Festungsmauer, wabert ein Nebel — als würde er <i>flüstern</i>.", "The golden light of grace flickers uneasily. And there, beyond the fortress wall, a mist churns — as if it were <i>whispering</i>.")}</p>
-    <button class="btn-modal-action" onclick="ensisRasten(${naechsteEbene})">${L("An der Gnade rasten", "Rest at the grace")}</button>
-    <div style="margin-top:14px;"><a href="#" onclick="ensisFluesternFolgen(${naechsteEbene}); return false;" style="color:#5a5a6a; font-size:0.78rem; font-family:sans-serif; text-decoration:none; letter-spacing:0.5px;">${L("… dem Flüstern im Nebel folgen", "… follow the whispering in the mist")}</a></div>
-  `;
-  overlay.style.display = "flex";
+// Castle Ensis: Im Rellana-Kampf ist im Arena-Hintergrund ein verborgener SCHALTER zu sehen.
+// Wer ihn während des Kampfes umlegt, bekommt nach dem Sieg den Abstieg in den Abgrundwald angeboten.
+function ensisSchalterUmlegen() {
+  if (hatAbyssFluestern) return;
+  hatAbyssFluestern = true; speichereRun();
+  let s = document.getElementById("ensis-schalter"); if (s) s.classList.add("umgelegt");
+  let log = document.getElementById("battle-log");
+  if (log) log.innerText = L("⚙ Du legst den verborgenen Schalter um. Irgendwo tief unter der Festung rumpelt Stein auf Stein…", "⚙ You flip the hidden switch. Somewhere deep beneath the fortress, stone grinds on stone…");
 }
-function ensisRasten(naechsteEbene) {
-  spielerHp = berechneFinalMaxHp(); spielerFlasks = maxKlassenFlasks;
-  oeffneStatPopup(t("grace_title"), t("grace_desc"), naechsteEbene);
-}
-function ensisFluesternFolgen(naechsteEbene) {
-  hatAbyssFluestern = true; speichereRun();   // KEINE Heilung — der Preis des Geheimnisses
-  oeffneStatPopup(L("Das Flüstern", "The Whispering"),
-    L("Du wendest dich vom Licht ab und folgst dem Nebel bis an den Rand eines bodenlosen Schachts. Von tief unten weht dir ein Raunen entgegen — Stimmen, die keine sein sollten.\n\nDu kehrst zur Karte zurück. <b>Ungeheilt.</b> Aber du weißt jetzt: Unter Castle Ensis liegt ein Abgrund.", "You turn away from the light and follow the mist to the edge of a bottomless shaft. From far below, a murmur drifts up to meet you — voices that should not be.\n\nYou return to the map. <b>Unhealed.</b> But now you know: beneath Castle Ensis lies an abyss."), naechsteEbene);
+function aktualisiereEnsisSchalter() {
+  let s = document.getElementById("ensis-schalter"); if (!s) return;
+  let zeigen = imKampf && gegnerName === "Rellana, Ritterin der Zwillingsmonde";
+  s.style.display = zeigen ? "block" : "none";
+  s.classList.toggle("umgelegt", hatAbyssFluestern);
 }
 
 // Nach Rellana (mit gehörtem Flüstern): Wahl zwischen Abgrundwald und dem normalen Weiterweg
@@ -3774,7 +3780,7 @@ function oeffneWegwahlEnsis() {
   content.innerHTML = `
     <div style="color:#888; font-size:0.72rem; letter-spacing:3px; text-transform:uppercase; font-family:sans-serif; margin-bottom:6px;">${L("Rellana ist gefallen", "Rellana has fallen")}</div>
     <h3 style="color: var(--gold); font-size:1.6rem; margin-top:0; letter-spacing:2px; font-family: 'Mantinia', serif;">${L("DER SCHACHT RUFT", "THE SHAFT CALLS")}</h3>
-    <p style="color:#ddd; font-size:0.92rem; font-family: sans-serif; line-height:1.55;">${L("Das Flüstern ist jetzt lauter. Der Schacht unter der Festung steht offen — und aus der Tiefe dringt fahles, gelbes Glimmen.\n\nSteigst du hinab?", "The whispering is louder now. The shaft beneath the fortress stands open — and a pale yellow glow seeps up from the depths.\n\nWill you descend?")}</p>
+    <p style="color:#ddd; font-size:0.92rem; font-family: sans-serif; line-height:1.55;">${L("Der Schalter, den du im Kampf umgelegt hast, hat gewirkt: Hinter dem Thron der Zwillingsmonde ist eine steinerne Pforte aufgeglitten. Ein Schacht führt hinab in die Tiefe — und von unten dringt fahles, gelbes Glimmen.\n\nSteigst du hinab?", "The switch you flipped during the battle has done its work: behind the throne of the twin moons, a stone gate has slid open. A shaft leads down into the depths — and a pale yellow glow seeps up from below.\n\nWill you descend?")}</p>
     <button class="btn-modal-action" style="border-color:#8a7a2a; color:#c9b84a;" onclick="starteAbyssalWoods()">🕯 ${L("In den Abgrundwald hinabsteigen", "Descend into the Abyssal Woods")}</button>
     <button class="btn-modal-action" onclick="vollendeRunMitAbschluss(L('DAS SCHATTENLAND RUFT','THE SHADOW LANDS CALL'), L('Du lässt den Abgrund hinter dir. Schattenfeste und Ruinen von Rauh liegen am Horizont — noch von Nebel verschlossen…\\n\\n<i>Die Reise wird fortgesetzt. (Kommt im nächsten Patch!)</i>','You leave the abyss behind. Shadow Keep and the Ruins of Rauh lie on the horizon — still sealed in mist…\\n\\n<i>The journey continues. (Coming in the next patch!)</i>'))">${L("Dem Pfad weiter folgen", "Follow the path onward")}</button>
     <p style="color:#666; font-size:0.72rem; font-family:sans-serif; margin-top:10px;">${L("Warnung: Im Abgrundwald siehst du fast nichts — und jeder Fehltritt nährt den Todesfluch.", "Warning: in the Abyssal Woods you can barely see — and every misstep feeds the deathblight.")}</p>
@@ -3959,6 +3965,31 @@ function bestaetigeStufe(naechsteEbene) { document.getElementById("popup-overlay
     try { var m = ladeMeta(); m.seelen = Math.max(0, parseInt(n,10)||0); speichereMeta(m); } catch(e){ alert("Fehler: "+e); return; }
     devRefresh();
   }
+  // DLC-Test: Mohg-Erstsieg in die Stats schreiben (falls nötig) und direkt VOR den Mohg-Kampf springen —
+  // nach dem Sieg erscheint dann die Hand-Wahl (Zugang ins Land des Schattens).
+  function devMohgFight(){
+    devEnsureRun();
+    try { if (window.ER && (ER.getStats().bossKills["Mohg, Fürst des Blutes"] || 0) < 1) ER.bossKilled("Mohg, Fürst des Blutes"); } catch(e){}
+    activeChallenge = "";
+    hatGodrickRune = hatRadahnRune = hatMorgottRune = true;
+    aktuelleRegion = "Mohgwyn"; geloesieKnotenIds = []; aktuellerKnotenId = null;
+    try { netzKarte = generiereRautenNetz("Mohgwyn"); } catch(e){ console.warn(e); }
+    var bossReihe = netzKarte.length;                       // letzte Ebene = Boss
+    var vorletzte = netzKarte[bossReihe - 2];
+    var start = vorletzte.knoten.find(function(k){ return k.wege && k.wege.includes(0); }) || vorletzte.knoten[0];
+    geloesieKnotenIds = [start.id]; aktuellerKnotenId = start.id; aktuelleEbene = bossReihe;
+    devClosePopups(); devApply();
+  }
+  function devGotoDLC(region){
+    devEnsureRun();
+    activeChallenge = "";
+    hatGodrickRune = hatRadahnRune = hatMorgottRune = true;
+    aktuelleRegion = region; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null;
+    torbogenSpruenge = 0; wolfsgeheulGehoert = false; deathblight = 0; hatAbyssFluestern = false;
+    try { netzKarte = generiereRautenNetz(region); } catch(e){ console.warn(e); }
+    devClosePopups(); devApply(); aktualisiereDeathblightAnzeige();
+  }
+
   function devTowerFloor(){
     var n = prompt("Battle-Tower-Etage (1-"+TOWER_MAX+"):", "1"); if (n === null) return;
     n = Math.max(1, Math.min(TOWER_MAX, parseInt(n,10)||1));
@@ -4009,6 +4040,10 @@ function bestaetigeStufe(naechsteEbene) { document.getElementById("popup-overlay
     geheim2.appendChild(bSmall("Haligtree frei", function(){ devEnsureRun(); try { ER.gameCompleted("schwertkaempfer","normal",true,false); } catch(e){} devRefresh(); alert("Pfad des Haligtree freigeschaltet — ab jetzt spawnen Festungen (Medaillons) auf dem Weg zu Malenia."); }));
     geheim2.appendChild(bSmall("Festung hier", function(){ devEnsureRun(); fortressPlacedRegions = []; try { if(window.ER&&ER.gameCompleted) ER.gameCompleted("schwertkaempfer","normal",true,false); } catch(e){} var k=netzKarte; for(var zi=1; zi<k.length-1; zi++){ var frei=k[zi].knoten.find(function(n){ return ![4,5,10,15].includes(n.typ); }); if(frei){ frei.typ=15; break; } } fortressPlacedRegions.push(aktuelleRegion); baueKarteHTML(); }));
     panel.appendChild(geheim2);
+    panel.appendChild(b("🩸 Mohg-Kampf (DLC-Zugang testen)", devMohgFight, "#c0392b"));
+    var dlcRow = row();
+    [["Grave","Gravesite"],["Ensis","CastleEnsis"],["Abyss","AbyssalWoods"]].forEach(function(p){ dlcRow.appendChild(bSmall(p[0], function(){ devGotoDLC(p[1]); })); });
+    panel.appendChild(dlcRow);
     panel.appendChild(b("🗼 Battle-Tower Etage…", devTowerFloor, "#9b8cff"));
     panel.appendChild(b("🔄 Run neu starten", function(){ try{ direktNeustarten(); }catch(e){} devRefresh(); }, "#e67e22"));
     panel.appendChild(b("🧹 Lokalen Spielstand LÖSCHEN", function(){ window.location.href = "game.html?wipe=1"; }, "#e74c3c"));
