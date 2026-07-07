@@ -44,11 +44,13 @@ npx wrangler secret put DISCORD_BOT_TOKEN
 → den **(neuen) Bot-Token** einfügen.
 
 Für die **mehrzeilige** Service-Account-JSON nicht einfügen (würde abgeschnitten),
-sondern die Datei direkt einlesen — ersetze den Pfad durch den echten Speicherort:
+sondern die Datei direkt einlesen. **In PowerShell** (kein `<`-Operator!) per Pipe —
+ersetze den Pfad durch den echten Speicherort:
 ```
-npx wrangler secret put GCP_SERVICE_ACCOUNT < "C:\Users\levin\Downloads\elden-rogue-XXXX.json"
+Get-Content "C:\Users\...\elden-rogue-firebase-adminsdk-XXXX.json" -Raw | npx wrangler secret put GCP_SERVICE_ACCOUNT
 ```
-(So landet die komplette Datei sicher als Secret — egal wie viele Zeilen.)
+(In bash/cmd stattdessen: `npx wrangler secret put GCP_SERVICE_ACCOUNT < datei.json`.)
+So landet die komplette Datei sicher als Secret — egal wie viele Zeilen.
 
 ## Schritt 4 — Deployen (~2 Min)
 
