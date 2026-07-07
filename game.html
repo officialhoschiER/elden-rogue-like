@@ -388,6 +388,7 @@ h1, h2, h3, .btn-menu, .btn-combat, .btn-social, .game-author-tag, #region-displ
     .ach-toast .ach-name { font-family: 'Mantinia', serif; color: #f4eddb; font-size: 1.05rem; letter-spacing: 1px; }
     .ach-toast .ach-desc { font-size: 0.74rem; color: #9a8f78; font-family: sans-serif; margin-top: 2px; }
     #challenge-badge { position: absolute; top: 16px; left: 16px; z-index: 50; background: rgba(8,8,8,0.82); border: 1px solid #e74c3c; border-radius: 4px; padding: 5px 16px; font-size: 0.72rem; font-family: sans-serif; color: #e74c3c; font-weight: bold; letter-spacing: 1.5px; text-transform: uppercase; backdrop-filter: blur(2px); }
+    #seed-badge { position: absolute; top: 52px; left: 16px; z-index: 50; background: rgba(8,8,8,0.82); border: 1px solid var(--gold); border-radius: 4px; padding: 5px 16px; font-size: 0.72rem; font-family: sans-serif; color: var(--gold); font-weight: bold; letter-spacing: 1.5px; text-transform: uppercase; backdrop-filter: blur(2px); }
     #tower-phase-box { position: absolute; top: 48px; left: 16px; z-index: 50; background: rgba(8,8,8,0.82); border: 1px solid #3a5f3a; border-radius: 4px; padding: 4px 12px; font-size: 0.62rem; font-family: sans-serif; color: #84b184; font-weight: bold; letter-spacing: 0.8px; text-transform: uppercase; backdrop-filter: blur(2px); max-width: 300px; line-height: 1.3; }
     .armor-removable { cursor: grab; }
     .armor-removable:active { cursor: grabbing; }
@@ -470,6 +471,7 @@ h1, h2, h3, .btn-menu, .btn-combat, .btn-social, .game-author-tag, #region-displ
     <div class="death-souls" id="death-souls-line" style="color:#cda34f; font-family:sans-serif; margin:6px 0 14px; font-size:1rem; font-weight:bold;"></div>
     <div class="death-actions">
       <button class="death-btn" id="ui-btn-new-run-death" onclick="direktNeustarten()">Neuen Run starten</button>
+      <button class="death-btn" id="ui-btn-share-death" onclick="teileErgebnis(false, this)">Ergebnis kopieren</button>
       <a href="index.html" class="death-btn" id="ui-btn-main-menu-death">Hauptmenü</a>
     </div>
   </div>
@@ -479,6 +481,7 @@ h1, h2, h3, .btn-menu, .btn-combat, .btn-social, .game-author-tag, #region-displ
   <div class="side-panel left-panel">
     <div style="font-size:0.85rem; color:var(--gold); text-transform:uppercase; letter-spacing:3px; text-align:center; font-family:'Mantinia',serif; margin-bottom:4px; border-bottom:1px solid var(--border-color); padding-bottom:4px;" id="ui-status-heading">STATUS</div>
     <div id="run-timer" style="text-align:center; font-family:'Mantinia',serif; color:#cdbfa3; font-size:0.92rem; letter-spacing:2px; margin-bottom:6px;"><img src="images/icons/carian_inverted_statue_elden_ring_wiki_guide_200px.png" class="btn-ico" style="margin-right:5px;" onerror="this.style.display='none'">0:00</div>
+    <div id="seed-display" onclick="kopiereSeed()" title="Seed-Link kopieren / Copy seed link" style="text-align:center; font-family:sans-serif; color:#8a7f68; font-size:0.68rem; letter-spacing:1px; margin:-2px 0 6px; cursor:pointer; text-transform:none;"></div>
     <div class="player-card">
       <div class="vitals-row">
         <div style="flex:1; min-width:0;">
@@ -593,6 +596,7 @@ h1, h2, h3, .btn-menu, .btn-combat, .btn-social, .game-author-tag, #region-displ
     <div class="game-author-tag" id="ui-author-tag">by Hoschi</div>
 
     <div id="challenge-badge" style="display:none;"></div>
+    <div id="seed-badge" style="display:none;"></div>
     <div id="tower-phase-box" style="display:none;"></div>
     <div id="region-badge">
       <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
@@ -707,6 +711,61 @@ const CONFIG = {
 function diffVal(o){ return o[hardMode ? "hard" : "normal"]; }
 
 let activeChallenge = urlParams.get("challenge") || "";
+
+/* ============================================================
+   🎲 SEED-SYSTEM — deterministische Karte & Loot pro Run
+   Jeder Run hat einen Seed (teilbar als Link). Wird ein fremder
+   Seed eingegeben (?seed=XXX oder Eingabefeld), ist es ein
+   "Seed-Run": Achievements, Stats, Bestenlisten & Seelen sind aus.
+   Kampf-Würfe (Rolle, Schadensvarianz) bleiben bewusst echter Zufall.
+   ============================================================ */
+let seedRngCalls = 0; let __seedRngFn = null;
+function xmur3(str) { let h = 1779033703 ^ str.length; for (let i = 0; i < str.length; i++) { h = Math.imul(h ^ str.charCodeAt(i), 3432918353); h = (h << 13) | (h >>> 19); } return function () { h = Math.imul(h ^ (h >>> 16), 2246822507); h = Math.imul(h ^ (h >>> 13), 3266489909); return (h ^= h >>> 16) >>> 0; }; }
+function mulberry32(a) { return function () { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+function normalisiereSeed(s) { return String(s || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12); }
+function zufallsSeed() { const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; let s = ""; for (let i = 0; i < 6; i++) s += chars[Math.floor(Math.random() * chars.length)]; return s; }
+let __urlSeed = normalisiereSeed(urlParams.get("seed"));
+let runSeed = __urlSeed || zufallsSeed();
+let seedIsCustom = !!__urlSeed;
+function initSeedRng(skip) { __seedRngFn = mulberry32(xmur3(String(runSeed))()); seedRngCalls = 0; let n = skip || 0; for (let i = 0; i < n; i++) __seedRngFn(); seedRngCalls = n; }
+function srand() { if (!__seedRngFn) initSeedRng(0); seedRngCalls++; return __seedRngFn(); }
+function setzeSeed(s, custom) { runSeed = normalisiereSeed(s) || zufallsSeed(); seedIsCustom = !!custom; initSeedRng(0); if (window.ER && ER.setSeedRun) ER.setSeedRun(seedIsCustom); aktualisiereSeedAnzeige(); }
+initSeedRng(0);
+if (window.ER && ER.setSeedRun) ER.setSeedRun(seedIsCustom);
+function aktualisiereSeedAnzeige() {
+  let el = document.getElementById("seed-display");
+  if (el) el.innerHTML = 'SEED: <b style="color:var(--gold); letter-spacing:1px;">' + runSeed + '</b> ⧉';
+  let badge = document.getElementById("seed-badge");
+  if (badge) { badge.style.display = seedIsCustom ? "block" : "none"; badge.innerHTML = "🎲 " + t("seed_badge"); }
+}
+function kopiereSeed() {
+  let link = window.location.origin + window.location.pathname + "?seed=" + runSeed + (hardMode ? "&mode=hard" : "");
+  try { navigator.clipboard.writeText(link); } catch (e) {}
+  let el = document.getElementById("seed-display");
+  if (el) { el.innerHTML = "✓ " + t("seed_copied"); setTimeout(aktualisiereSeedAnzeige, 1500); }
+}
+function uebernehmeSeedEingabe() {
+  let inp = document.getElementById("seed-input");
+  let val = normalisiereSeed(inp ? inp.value : "");
+  if (!val) return;
+  setzeSeed(val, true);
+  oeffneKlassenAuswahl();   // Karte & Klassenbildschirm mit dem neuen Seed neu würfeln
+}
+/* Ergebnis teilen (Wordle-Stil): Lauf-Fazit + Seed-Link in die Zwischenablage */
+function teileErgebnis(sieg, btn) {
+  let kl = ({ schwertkaempfer: t('class_vagabond'), samurai: t('class_samurai'), nackt: t('class_wretch') })[gewaehlteKlasse] || gewaehlteKlasse;
+  let modus = hardMode ? "Hard" : "Normal"; if (activeChallenge) modus += " · " + activeChallenge;
+  let ort = inSubDungeon ? t("region_catacombs") : aktuelleRegion;
+  let link = window.location.origin + window.location.pathname.replace(/[^\/]*$/, "game.html") + "?seed=" + runSeed + (hardMode ? "&mode=hard" : "");
+  let zeilen = [
+    "ELDEN ROGUE — " + (sieg ? ("👑 " + t('share_victory')) : ("☠ " + t('share_fallen') + " " + ort)),
+    kl + " · " + modus + " · Stage " + gibStageNummer() + " · ⏱ " + fmtRunTime(runPlayMs),
+    "🎲 Seed: " + runSeed,
+    link
+  ];
+  try { navigator.clipboard.writeText(zeilen.join("\n")); } catch (e) {}
+  if (btn) { let alt = btn.innerText; btn.innerText = t('share_copied'); setTimeout(function () { btn.innerText = alt; }, 1600); }
+}
 let spielerHp = 100; let spielerMaxHp = 100; let spielerFlasks = 3; let maxKlassenFlasks = 3; let estusHeilProzent = diffVal(CONFIG.estusHeilProzent); let gewaehlteKlasse = ""; let basisAusweichChance = 0.0;
 let waffenName = ""; let waffenSchaden = 0; let waffenUpgrade = 0;
 let waffenRaritaet = "common"; let waffenSchadensarten = ["Normal"];
@@ -749,6 +808,7 @@ function speichereRun() {
   try { tickTimer(); } catch(e) {}
   let save = {
     v: 1, hardMode: hardMode, challenge: activeChallenge, ts: Date.now(), runPlayMs: runPlayMs,
+    runSeed, seedIsCustom, seedRngCalls,
     spielerHp, spielerMaxHp, spielerFlasks, maxKlassenFlasks, estusHeilProzent,
     gewaehlteKlasse, basisAusweichChance, playerImageStr,
     waffenName, waffenSchaden, waffenUpgrade, waffenRaritaet, waffenSchadensarten,
@@ -787,6 +847,9 @@ function ladeGespeichertenRun() {
     aktuelleRegion=d.aktuelleRegion; aktuelleEbene=d.aktuelleEbene; geloesieKnotenIds=d.geloesieKnotenIds||[]; aktuellerKnotenId=d.aktuellerKnotenId;
     netzKarte=d.netzKarte||[]; inSubDungeon=d.inSubDungeon; inSewers=d.inSewers||false; mainMapState=d.mainMapState;
     activeChallenge=d.challenge||"";
+    runSeed = d.runSeed || zufallsSeed(); seedIsCustom = !!d.seedIsCustom; initSeedRng(d.seedRngCalls || 0);
+    if (window.ER && ER.setSeedRun) ER.setSeedRun(seedIsCustom);
+    setTimeout(aktualisiereSeedAnzeige, 0);
     towerEtage=d.towerEtage||0;
     runPlayMs = d.runPlayMs || 0; startRunTimer();
     window.__attr = (ladeMeta().attr) || {};   // Attribut-Schadensbonus auch nach Fortsetzen aktiv
@@ -859,6 +922,7 @@ function L(de, en) { return (window.i18n && window.i18n.getLang && window.i18n.g
 
 const SEELEN_REGION_TIEFE = { Limgrave:0, Caelid:1, Leyndell:2, Mountaintops:3, FarumAzula:4, AshenCapital:5, EldenThrone:6, Haligtree:6 };
 function belohneSeelen(gewonnen) {
+  if (seedIsCustom) { letzteRunSeelen = 0; return 0; }   // Seed-Run: keine Seelen (sonst Lucky-Seed-Farming)
   if (seelenVergeben) return letzteRunSeelen;
   seelenVergeben = true;
   let tiefe = SEELEN_REGION_TIEFE[aktuelleRegion] || 0;
@@ -1045,14 +1109,14 @@ function poolUnlockedRuestung(rarity){ let m=ladeMeta(); let pool=ruestungDatenb
 function rolleZufallsWaffe() {
   let shift = Math.min(besiegteWaechter * CONFIG.waffenRarityShift.proWaechter, CONFIG.waffenRarityShift.max);
   let pCommon = 0.50 - shift, pRare = 0.30 + shift * 0.60, pEpic = 0.15 + shift * 0.30;
-  let r = Math.random(); let rarity;
+  let r = srand(); let rarity;
   if (r < pCommon) rarity = "common"; else if (r < pCommon + pRare) rarity = "rare";
   else if (r < pCommon + pRare + pEpic) rarity = "epic"; else rarity = "legendary";
 
-  let pool = poolUnlockedWaffe(rarity); let base = pool[Math.floor(Math.random() * pool.length)];
+  let pool = poolUnlockedWaffe(rarity); let base = pool[Math.floor(srand() * pool.length)];
   let waffe = { name: base.name, basisDmg: base.basisDmg, rarity: rarity };
   if (rarity === "legendary") waffe.schadensarten = [...base.schadensarten];
-  else waffe.schadensarten = [ schadensArten[Math.floor(Math.random() * schadensArten.length)] ];
+  else waffe.schadensarten = [ schadensArten[Math.floor(srand() * schadensArten.length)] ];
   return waffe;
 }
 
@@ -1221,7 +1285,7 @@ function erzeugeGutenTalisman(typId, tier){
 }
 
 function erzeugeSchlechtenTalisman(tier){
-  if (Math.random() < 0.5) {
+  if (srand() < 0.5) {
     let dmgArr=[0.20,0.28,0.36,0.44], takenArr=[0.25,0.30,0.35,0.40];
     return leererTalisman({ id:"dungeater", tier, rarity:"cursed", forced:true, bild:gibTalismanBild("dungeater"), dmg:dmgArr[tier], dmgTaken:takenArr[tier],
       name:"Dungeater Medallion"+tierSuffix(tier),
@@ -1247,9 +1311,9 @@ const startRuestungen = {
   samurai:         { name:"Land of Reeds Set",  bild:"images/armor/samurai-set.png",         rarity:"common", reduktion:0.04 }
 };
 function rolleZufallsRuestung(){
-  let r = Math.random(); let rarity;
+  let r = srand(); let rarity;
   if (r < 0.50) rarity="common"; else if (r < 0.80) rarity="rare"; else if (r < 0.95) rarity="epic"; else rarity="legendary";
-  let pool = poolUnlockedRuestung(rarity); let base = pool[Math.floor(Math.random()*pool.length)];
+  let pool = poolUnlockedRuestung(rarity); let base = pool[Math.floor(srand()*pool.length)];
   return { name: base.name, bild: base.bild, rarity: rarity, reduktion: ruestungRaritaetReduktion[rarity] };
 }
 function setzeAusgeruesteteRuestung(r){ ruestungName=r.name; ruestungRaritaet=r.rarity; ruestungReduktion=r.reduktion; ruestungBild=r.bild; if (window.ER) try { ER.discover("a:" + r.name); } catch(e){} }
@@ -1360,7 +1424,7 @@ function platziereKanalisation(karte, regionName) {
     karte.forEach((zeile, zi) => { zeile.knoten.forEach((k) => { if (![4,5,10,15].includes(k.typ) && zi > 0 && zi < karte.length-1) candidates.push(k); }); });
   }
   if (candidates.length === 0) return karte;
-  candidates[Math.floor(Math.random() * candidates.length)].typ = 16;
+  candidates[Math.floor(srand() * candidates.length)].typ = 16;
   return karte;
 }
 
@@ -1383,8 +1447,8 @@ function platziereRyaQuest(karte, regionName) {
     if (zi === karte.length - 3 || zi === karte.length - 2) ryaKandidaten.push(k);
   }); });
   if (!ketteKandidaten.length || !ryaKandidaten.length) return karte;
-  ketteKandidaten[Math.floor(Math.random() * ketteKandidaten.length)].typ = 17;
-  ryaKandidaten[Math.floor(Math.random() * ryaKandidaten.length)].typ = 18;
+  ketteKandidaten[Math.floor(srand() * ketteKandidaten.length)].typ = 17;
+  ryaKandidaten[Math.floor(srand() * ryaKandidaten.length)].typ = 18;
   return karte;
 }
 
@@ -1403,12 +1467,12 @@ function platziereFestungen(karte, regionName) {
   if (!slot) return karte;
   let remaining = 2 - fortressPlacedRegions.length;
   let slotsLeft = 5 - slot;                 // inkl. aktueller Ebene (Slot 4 -> 1)
-  if (Math.random() > (remaining / slotsLeft)) return karte;
+  if (srand() > (remaining / slotsLeft)) return karte;
   // Einen passenden Knoten finden (nicht Boss, Gnade, Dungeon, Runen-Altar, Erdbaum)
   let candidates = [];
   karte.forEach((zeile, zi) => { zeile.knoten.forEach((k) => { if (![4,5,7,8,10].includes(k.typ) && zi > 0 && zi < karte.length-1) candidates.push(k); }); });
   if (candidates.length === 0) return karte;
-  candidates[Math.floor(Math.random() * candidates.length)].typ = 15;
+  candidates[Math.floor(srand() * candidates.length)].typ = 15;
   fortressPlacedRegions.push(regionName);
   return karte;
 }
@@ -1422,15 +1486,15 @@ function generiereRautenNetz(regionName) {
   let layout = [2, 3, 4, 3, 4, 3, 2, 1]; 
   if (regionName === "EldenThrone") { layout = [1, 1, 1]; }
   let temporaereKarte = [];
-  let heilungEbene = Math.floor(Math.random() * 2) + 3; 
+  let heilungEbene = Math.floor(srand() * 2) + 3; 
   let heilungKnotenIdx = -1;
   let dungeonPlatziert = false;
 
   for (let e = 0; e < layout.length; e++) {
     let anzahlKnoten = layout[e]; let ebeneNummer = e + 1; let knotenArray = [];
-    let reihenPool = [...gewichteterPfadePool].sort(() => Math.random() - 0.5);
+    let reihenPool = [...gewichteterPfadePool].sort(() => srand() - 0.5);
 
-    if (ebeneNummer === heilungEbene && regionName !== "EldenThrone") heilungKnotenIdx = Math.floor(Math.random() * anzahlKnoten);
+    if (ebeneNummer === heilungEbene && regionName !== "EldenThrone") heilungKnotenIdx = Math.floor(srand() * anzahlKnoten);
 
     for (let k = 0; k < anzahlKnoten; k++) {
       let typ = reihenPool.pop() || 2;
@@ -1481,7 +1545,7 @@ function generiereRautenNetz(regionName) {
       if (cur.typ === links.typ && !spezialTypen.includes(cur.typ)) {
         let rechtsTyp = zeile.knoten[i + 1] ? zeile.knoten[i + 1].typ : null;
         let optionen = ersatzPool.filter(typ => typ !== links.typ && typ !== rechtsTyp);
-        if (optionen.length) cur.typ = optionen[Math.floor(Math.random() * optionen.length)];
+        if (optionen.length) cur.typ = optionen[Math.floor(srand() * optionen.length)];
       }
     }
   });
@@ -1494,14 +1558,14 @@ function generiereRautenNetz(regionName) {
 function generiereSubDungeonNetz(art) {
   let subLayout = [2, 3, 4, 3, 2, 1];
   let temporaereKarte = [];
-  let gnadenReihe = 1 + Math.floor(Math.random() * 3);   // eine Gnade in Reihe 2-4
+  let gnadenReihe = 1 + Math.floor(srand() * 3);   // eine Gnade in Reihe 2-4
   for (let e = 0; e < subLayout.length; e++) {
     let anzahl = subLayout[e]; let ebeneNummer = e + 1; let knotenArray = []; let istBoss = (e === subLayout.length - 1);
     for (let k = 0; k < anzahl; k++) {
       let typ;
       if (istBoss) typ = 5;
-      else if (art === "sewers") { let r = Math.random(); if (r < 0.35) typ = 11; else if (r < 0.70) typ = 12; else typ = 13; }
-      else typ = (Math.random() < 0.5) ? 11 : 12;   // Dungeons: NUR Gegner + Kisten (keine Gnade/Falle)
+      else if (art === "sewers") { let r = srand(); if (r < 0.35) typ = 11; else if (r < 0.70) typ = 12; else typ = 13; }
+      else typ = (srand() < 0.5) ? 11 : 12;   // Dungeons: NUR Gegner + Kisten (keine Gnade/Falle)
       if (art === "sewers" && !istBoss && e === gnadenReihe && k === 0) typ = 4;   // garantierte Gnade nur in der Kanalisation
       let wege = []; let naechste = subLayout[e + 1] || 0;
       if (naechste > 0) {
@@ -1519,7 +1583,7 @@ function generiereSubDungeonNetz(art) {
   if (art === "sewers") {
     let kandidaten = [];
     temporaereKarte.forEach((zeile, zi) => { if (zi >= 2 && zi <= 4) zeile.knoten.forEach(k => { if (k.typ !== 4) kandidaten.push(k); }); });
-    if (kandidaten.length) kandidaten[Math.floor(Math.random() * kandidaten.length)].typ = 19;
+    if (kandidaten.length) kandidaten[Math.floor(srand() * kandidaten.length)].typ = 19;
   }
   return temporaereKarte;
 }
@@ -1590,7 +1654,13 @@ function oeffneKlassenAuswahl() {
         <div class="class-card-stats">${hardMode ? t('class_wretch_stats_hard') : t('class_wretch_stats')}</div>
         <div class="class-card-start">${t('class_wretch_gear')}</div>
       </div>
-    </div>`;
+    </div>
+    <div style="margin-top:16px; font-family:sans-serif; font-size:0.8rem; color:#888; text-transform:none; display:flex; gap:8px; justify-content:center; align-items:center; flex-wrap:wrap;">
+      <span>${t('seed_label')}: <b style="color:var(--gold); letter-spacing:1px;">${runSeed}</b></span>
+      <input id="seed-input" maxlength="12" placeholder="${t('seed_placeholder')}" style="background:#0a0a0a; border:1px solid var(--border-color); color:#ede6d4; padding:6px 8px; border-radius:3px; font-family:sans-serif; font-size:0.8rem; width:130px; text-transform:uppercase;">
+      <button onclick="uebernehmeSeedEingabe()" style="background:#1c1710; border:1px solid var(--gold-dark); color:var(--gold); padding:6px 10px; border-radius:3px; cursor:pointer; font-family:sans-serif; font-size:0.78rem;">${t('seed_apply')}</button>
+    </div>
+    ${seedIsCustom ? '<div style="margin-top:8px; color:#e0a34f; font-size:0.75rem; font-family:sans-serif; text-transform:none;">🎲 ' + t('seed_run_warn') + '</div>' : ''}`;
 }
 
 function zeigeTodesBildschirm(endgueltig) {
@@ -1613,6 +1683,7 @@ function zeigeTodesBildschirm(endgueltig) {
   let __sl = document.getElementById("death-souls-line");
   if (__sl) __sl.innerHTML = ICO("lords-rune-tools-elden-ring-wiki-guide.png", "margin-right:5px;") + "+" + __s + " " + L("Seelen erbeutet","Souls earned");
   if (window.ER) ER.death();
+  let __sb = document.getElementById("ui-btn-share-death"); if (__sb) __sb.innerText = t('share_result');
   let ds = document.getElementById("death-screen");
   if (ds) ds.classList.add("show");
 }
@@ -1631,6 +1702,7 @@ function stopRunTimer() { tickTimer(); if (_timerInterval) { clearInterval(_time
 
 /* ===== Hall of Fame: abgeschlossenen Run mit Ausrüstung + Zeit sichern ===== */
 function recordHallOfFame() {
+  if (seedIsCustom) return;   // Seed-Runs landen nicht in der Hall of Fame
   try {
     tickTimer();
     let run = {}; try { run = JSON.parse(localStorage.getItem("eldenRogueRun")) || {}; } catch (e) {}
@@ -1678,6 +1750,8 @@ function direktNeustarten() {
   playerHitsOnEnemy = 0; enemyIsStaggered = false; staggerVisualActive = false; nextHitBonusDamage = false;
   currentAffinity = "Keine"; affinityHits = 0; completedDungeonsCount = 0;
   backpackItems = [null, null, null]; activeBuffs = []; inSubDungeon = false; inSewers = false; mainMapState = null; towerEtage = 0;
+  // Seed-Run (geteilter Seed): derselbe Seed bleibt für den Retry — normaler Run: frisch würfeln
+  setzeSeed(seedIsCustom ? runSeed : zufallsSeed(), seedIsCustom);
   oeffneKlassenAuswahl();
 }
 
@@ -1705,6 +1779,7 @@ function waehleKlasseEngine(klasse) {
   // Kategorie mitgeben, damit Challenge-Runs (tower/noarmor/noblaidd/autobattle/haligtree)
   // in ihrer eigenen Bestenliste landen. Leeres activeChallenge -> normCat fällt auf normal/hard zurück.
   if (window.ER) ER.startRun(hardMode ? "hard" : "normal", activeChallenge);
+  aktualisiereSeedAnzeige();
   runPlayMs = 0; startRunTimer();
   speichereRun();
   if (activeChallenge === "tower") { starteTowerModus(); return; }   // Tower: direkt in den Aufstieg statt Regionskarte
@@ -2263,7 +2338,7 @@ function sturzTod() {
 
 function looteDungeonChest(naechsteEbene) {
   let overlay = document.getElementById("popup-overlay"); let content = document.getElementById("popup-content");
-  let gewinnChance = Math.random() < 0.30;
+  let gewinnChance = srand() < 0.30;
   
   if (gewinnChance) {
     let itemTypes = [
@@ -2271,7 +2346,7 @@ function looteDungeonChest(naechsteEbene) {
       { type: "dodge", name: t("item_neck"), desc: t("item_neck_desc"), icon: "💨", bild: "images/pickled_turtle_neck.png" },
       { type: "dmg", name: t("item_flesh"), desc: t("item_flesh_desc"), icon: "⚔️", bild: "images/exalted_flesh.png" }
     ];
-    let gefundenesItem = itemTypes[Math.floor(Math.random() * itemTypes.length)];
+    let gefundenesItem = itemTypes[Math.floor(srand() * itemTypes.length)];
     let emptySlotIdx = backpackItems.indexOf(null);
     if (emptySlotIdx !== -1) {
       backpackItems[emptySlotIdx] = gefundenesItem;
@@ -2299,7 +2374,7 @@ function looteDungeonChest(naechsteEbene) {
 
 function triggerDungeonRun(naechsteEbene) {
   let overlay = document.getElementById("popup-overlay"); let content = document.getElementById("popup-content");
-  let erfolg = Math.random() < 0.75;
+  let erfolg = srand() < 0.75;
   if (erfolg) {
     content.innerHTML = `
       <h3 style="color: #2ecc71; font-size:1.5rem; margin-top:0; font-family: 'Mantinia', serif;">${t("trap_win")}</h3>
@@ -3239,9 +3314,9 @@ function berechneFinalMaxHp() {
 function oeffneTalismanPopup(naechsteEbene) {
   if (window.ER) ER.talismanFound();
   let overlay = document.getElementById("popup-overlay"); let content = document.getElementById("popup-content");
-  let tier = gibTalismanTier(); let istVerflucht = Math.random() < (hardMode ? 0.30 : 0.15); let neuerTalisman;
+  let tier = gibTalismanTier(); let istVerflucht = srand() < (hardMode ? 0.30 : 0.15); let neuerTalisman;
   if (istVerflucht) neuerTalisman = erzeugeSchlechtenTalisman(tier);
-  else { let typId = guteTalismanIds[Math.floor(Math.random() * guteTalismanIds.length)]; neuerTalisman = erzeugeGutenTalisman(typId, tier); }
+  else { let typId = guteTalismanIds[Math.floor(srand() * guteTalismanIds.length)]; neuerTalisman = erzeugeGutenTalisman(typId, tier); }
   if (window.ER && neuerTalisman && neuerTalisman.id) try { ER.discover("t:" + neuerTalisman.id); } catch(e){}   // Eldendex: Talisman gesehen
 
   let rarFarbe = neuerTalisman.rarity === "cursed" ? "#c0392b" : (raritaetFarben[neuerTalisman.rarity] || "#9aa0a6");
@@ -3470,6 +3545,7 @@ function oeffneAbschlussPopup(titel, text) {
     <h3 style="color: var(--gold); font-size:1.6rem; margin-top:0; letter-spacing:2px; font-family: 'Mantinia', serif;">${titel}</h3>
     <p style="color:#ddd; font-size:0.95rem; font-family: sans-serif; white-space: pre-line; line-height:1.5;">${text}</p>
     <div style="color:#cda34f;font-weight:bold;font-family:sans-serif;margin:14px 0;font-size:1.05rem;">✨ +${__s} ${L("Seelen erbeutet","Souls earned")}</div>
+    <button class="btn-modal-action" onclick="teileErgebnis(true, this)">${t("share_result")}</button>
     <a href="index.html" class="btn-modal-action" style="display:inline-block; text-decoration:none;" onclick="loescheRunSave()">${t("btn_main_menu")}</a>
   `;
   overlay.style.display = "flex";

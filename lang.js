@@ -214,6 +214,18 @@
       no_armor: "Keine Rüstung",
       status_heading: "STATUS",
 
+      // Seed-System & Ergebnis teilen
+      seed_label: "Seed",
+      seed_placeholder: "Seed eingeben…",
+      seed_apply: "Übernehmen",
+      seed_run_warn: "Seed-Run: Achievements, Fortschritt, Bestenlisten & Seelen sind deaktiviert.",
+      seed_badge: "Seed-Run — zählt nicht",
+      seed_copied: "Seed-Link kopiert!",
+      share_result: "Ergebnis kopieren",
+      share_copied: "✓ Kopiert!",
+      share_fallen: "Gefallen in",
+      share_victory: "ELDEN LORD",
+
       // Hard Mode & Challenge Achievements
       ach_complete_10_nm: "Veteran", ach_complete_10_ds: "Schließe 10 Runs ab.",
       ach_complete_25_nm: "Legende", ach_complete_25_ds: "Schließe 25 Runs ab.",
@@ -644,6 +656,18 @@
       challenge_autobattle_desc: "No manual control. You attack automatically without healing.",
       no_armor: "No Armor",
       status_heading: "STATUS",
+
+      // Seed system & sharing
+      seed_label: "Seed",
+      seed_placeholder: "Enter seed…",
+      seed_apply: "Apply",
+      seed_run_warn: "Seed run: achievements, progress, leaderboards & souls are disabled.",
+      seed_badge: "Seed run — doesn't count",
+      seed_copied: "Seed link copied!",
+      share_result: "Copy result",
+      share_copied: "✓ Copied!",
+      share_fallen: "Fallen in",
+      share_victory: "ELDEN LORD",
 
       // Hard Mode & Challenge Achievements
       ach_complete_10_nm: "Veteran", ach_complete_10_ds: "Complete 10 runs.",

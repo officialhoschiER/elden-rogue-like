@@ -728,6 +728,27 @@
     }
   };
 
+  /* ====== 5b) SEED-RUNS: Fortschritt zählt nicht ======
+     Bei einem manuell eingegebenen Seed (geteilter Run) werden alle Fortschritts-
+     Mutationen zentral abgeschaltet: keine Achievements, keine Stats, keine
+     Bestenlisten, kein Eldendex. Lese-Funktionen bleiben unberührt. */
+  var seedRunAktiv = false;
+  ER.setSeedRun = function (v) { seedRunAktiv = !!v; };
+  ER.isSeedRun = function () { return seedRunAktiv; };
+  [
+    "startRun", "endRun", "fightWon", "bossKilled", "eliteKilled", "minibossKilled",
+    "invaderKilled", "death", "dungeonCleared", "talismanFound", "weaponFound",
+    "armorFound", "blaiddDefeat", "blaiddQuestComplete", "gameCompleted",
+    "recordCompletionTime", "maleniaKilled", "ryaInvite", "mohgwynVisited",
+    "gelmirVisited", "fallDeath", "maleniaRunCompleted", "legendaryRunCompleted",
+    "flaskDrunk", "reachStage", "towerReached", "hardCompleted", "challengeCompleted",
+    "discover"
+  ].forEach(function (name) {
+    var orig = ER[name];
+    if (typeof orig !== "function") return;
+    ER[name] = function () { if (seedRunAktiv) return; return orig.apply(ER, arguments); };
+  });
+
   /* ====== 6) LOKALE BESTENLISTE ====== */
   function eintragKategorie(x) { return x.category || normDiff(x.difficulty); }   // Legacy-Einträge -> Schwierigkeit
   function localBoard(limit, category, patch) {
