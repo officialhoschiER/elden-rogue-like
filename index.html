@@ -595,6 +595,7 @@
 
     <div class="stat-grid" id="stat-grid"></div>
     <div class="ach-progress" id="ach-progress"></div>
+    <div id="class-feats"></div>
     <div class="ach-grid" id="ach-grid"></div>
   </div>
 </div>
@@ -1734,6 +1735,25 @@
     var list = ER.getAchievements();
     var done = list.filter(function (a) { return a.unlocked; }).length;
     document.getElementById("ach-progress").textContent = (isDe ? "Freigeschaltet: " : "Unlocked: ") + done + " / " + list.length;
+
+    // Klassen-Tafel (Completion-Marks pro Klasse — v1: einfache Liste)
+    var cfWrap = document.getElementById("class-feats");
+    if (cfWrap && ER.getClassFeats) {
+      var feats = ER.getClassFeats();
+      var klassen = [["schwertkaempfer", isDe ? "Vagabund" : "Vagabond"], ["samurai", "Samurai"], ["nackt", isDe ? "Bettler" : "Wretch"]];
+      var marks = [["normal", "Normal"], ["hard", "Hard"], ["malenia", "Malenia"], ["mohgwyn", "Mohgwyn"], ["speed5", isDe ? "Unter 5 Min" : "Sub 5 min"]];
+      cfWrap.innerHTML =
+        '<div style="font-family:Cinzel,serif; color:var(--gold); font-size:0.95rem; letter-spacing:1px; margin:14px 0 8px;">' + (isDe ? "Klassen-Tafel" : "Class Deeds") + '</div>' +
+        klassen.map(function (k) {
+          var f = feats[k[0]] || {};
+          return '<div style="display:flex; align-items:center; gap:8px; background:#0f0f0f; border:1px solid var(--border-color); border-radius:6px; padding:8px 12px; margin-bottom:6px; flex-wrap:wrap;">' +
+            '<b style="font-family:sans-serif; font-size:0.82rem; color:#ede6d4; min-width:86px;">' + k[1] + '</b>' +
+            marks.map(function (m) {
+              var on = !!f[m[0]];
+              return '<span style="font-family:sans-serif; font-size:0.74rem; padding:3px 8px; border-radius:10px; border:1px solid ' + (on ? "var(--gold)" : "#333") + '; color:' + (on ? "var(--gold)" : "#555") + ';">' + (on ? "✓ " : "· ") + m[1] + '</span>';
+            }).join("") + '</div>';
+        }).join("");
+    }
     document.getElementById("ach-grid").innerHTML = list.map(function (a) {
       return '<div class="ach-card ' + (a.unlocked ? "" : "locked") + '">' +
         '<div class="ic">' + (a.unlocked ? a.icon : "🔒") + '</div>' +

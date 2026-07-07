@@ -697,6 +697,8 @@ const CONFIG = {
   affinityBurst: { basis: 0.05, ab2Dungeons: 0.075, ab3Dungeons: 0.10 },
   // --- Beute ---
   waffenRarityShift: { proWaechter: 0.05, max: 0.40 }, // bessere Waffen-Chance je besiegtem Wächter
+  // --- Completion-Marks ---
+  speedrunMarkMs: 5 * 60 * 1000,   // "Blitz"-Mark auf der Klassen-Tafel: Run schneller als diese Zeit abschließen
   // --- Tower-Modus (endloser Aufstieg, Score = höchste Etage) ---
   tower: {
     hpBasis: 85,  hpProEtage: 0.32,  hpExpo: 1.07,    // Gegner-HP = hpBasis * (1 + hpProEtage*(etage-1)) * hpExpo^(etage-1)
@@ -3143,6 +3145,11 @@ function kampfGewonnen() {
   if (window.ER) {
     ER.fightWon();
     if (gegnerName === "Eldenbiest" || gegnerName === "Mohg, Fürst des Blutes") { if (!__schonGezaehlt) { ER.bossKilled(gegnerName); recordHallOfFame(); ER.gameCompleted(gewaehlteKlasse, hardMode ? "hard" : "normal", !blaiddEncounteredRun, (armorRemovedByPlayer && !hatRuestungAusgeruestet())); stopRunTimer();
+      // Completion-Marks für die Klassen-Tafel (Hard schließt Normal mit ein)
+      ER.classFeat(gewaehlteKlasse, "normal");
+      if (hardMode) ER.classFeat(gewaehlteKlasse, "hard");
+      if (gegnerName === "Mohg, Fürst des Blutes") ER.classFeat(gewaehlteKlasse, "mohgwyn");
+      if (runPlayMs > 0 && runPlayMs <= CONFIG.speedrunMarkMs) ER.classFeat(gewaehlteKlasse, "speed5");
       if (activeChallenge === "" && window.ER && ER.recordCompletionTime) try { ER.recordCompletionTime(runPlayMs, { klasse: gewaehlteKlasse, diff: hardMode ? "hard" : "normal" }); } catch(e){}   // Speedrun-Bestenliste (nur echte Story-Runs)
       if (hardMode) ER.hardCompleted();
       if (activeChallenge) ER.challengeCompleted(activeChallenge);
@@ -3251,7 +3258,7 @@ function kampfGewonnen() {
   // Malenia Phase 1 -> Phase 2 wird oben (vor dem ER-Block) behandelt.
   // Malenia Phase 2 besiegt -> weiter zum Eldenthron (zählt hier oben im ER-Block als EIN Boss)
   if (gegnerName === "Malenia, Goddess of Rot") {
-    maleniaBesiegtRun = true; if (window.ER) ER.maleniaKilled();   // Achievement "Klinge Miquellas"
+    maleniaBesiegtRun = true; if (window.ER) { ER.maleniaKilled(); ER.classFeat(gewaehlteKlasse, "malenia"); }   // Achievement "Klinge Miquellas" + Klassen-Tafel
     if (hatMohgMedaille) { oeffneHaligtreeWahl(true); return; }    // Reinblutrittermedaille -> nach Malenia auch Mohgwyn möglich
     aktuelleRegion = "EldenThrone"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null; netzKarte = generiereRautenNetz("EldenThrone");
     oeffneStatPopup(L("Malenia bezwungen", "Malenia Defeated"), L("Die Klinge Miquellas ist gefallen. Nun führt dein Weg zum Eldenthron.", "Miquella's blade has fallen. Now your path leads on to the Elden Throne."), 1);

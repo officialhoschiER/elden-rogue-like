@@ -102,6 +102,8 @@
     bestTimeMs: 0, bestTimeMeta: null, allAchDate: 0, allAchCount: 0,
     // --- Eldendex: entdeckte Katalog-IDs ---
     discovered: {},
+    // --- Completion-Marks: { schwertkaempfer: { normal:true, hard:true, malenia:true, mohgwyn:true, speed5:true }, ... } ---
+    classFeats: {},
     // --- Bestwerte pro Patch: { "1_3": { normal:{score,stage,bosses}, hard:{...} }, "1_4": {...} } ---
     patchBest: {},
     bossKills: {}
@@ -561,6 +563,27 @@
     },
     bestTower: function () { return getStats().towerBestFloor || 0; },
 
+    /* --- Completion-Marks: was wurde mit welcher Klasse geschafft? ---
+       Feats: normal, hard, malenia, mohgwyn, speed5 (Run unter 5 Minuten) */
+    classFeat: function (klasse, feat) {
+      if (!klasse || !feat) return;
+      var s = getStats();
+      s.classFeats = s.classFeats || {};
+      s.classFeats[klasse] = s.classFeats[klasse] || {};
+      if (s.classFeats[klasse][feat]) return;   // idempotent, kein Cloud-Spam
+      s.classFeats[klasse][feat] = true;
+      saveStats(s);
+      cloudPush();
+    },
+    getClassFeats: function () {
+      var s = getStats();
+      var feats = JSON.parse(JSON.stringify(s.classFeats || {}));
+      // Retro-Kompatibilität: bisherige Normal-Clears (classesNormalDone) zählen als Normal-Mark
+      var done = s.classesNormalDone || {};
+      for (var k in done) { if (done[k]) { feats[k] = feats[k] || {}; if (!feats[k].normal) feats[k].normal = true; } }
+      return feats;
+    },
+
     /* --- Freischaltungen (Progression) --- */
     getUnlocks: function () { return unlockInfo(); },
     isUnlocked: function (id) { return isUnlockedId(id); },
@@ -742,7 +765,7 @@
     "recordCompletionTime", "maleniaKilled", "ryaInvite", "mohgwynVisited",
     "gelmirVisited", "fallDeath", "maleniaRunCompleted", "legendaryRunCompleted",
     "flaskDrunk", "reachStage", "towerReached", "hardCompleted", "challengeCompleted",
-    "discover"
+    "discover", "classFeat"
   ].forEach(function (name) {
     var orig = ER[name];
     if (typeof orig !== "function") return;
@@ -926,6 +949,14 @@
               else if (!(kk in localObj)) mergedObj[kk] = cloudObj[kk];
             });
             merged[k] = mergedObj;
+          } else if (k === "classFeats") {
+            // verschachtelt: pro Klasse vereinen (Cloud ∪ Lokal), true gewinnt
+            var lf = local.classFeats || {}, cf = cs.classFeats || {};
+            var outFeats = {};
+            Object.keys(cf).concat(Object.keys(lf)).forEach(function (kk) {
+              outFeats[kk] = Object.assign({}, cf[kk] || {}, lf[kk] || {});
+            });
+            merged.classFeats = outFeats;
           } else if (k === "patchBest") {
             merged.patchBest = mergePatchBest(local.patchBest || {}, cs.patchBest || {});
           } else if (k === "hardNoDeath") {
