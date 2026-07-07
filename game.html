@@ -2,6 +2,7 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Elden Rogue - Spielbereich</title>
   <link rel="icon" href="favicon.ico">
   <link rel="icon" type="image/png" href="images/icons/favicon.png?v=18">
@@ -395,12 +396,71 @@ h1, h2, h3, .btn-menu, .btn-combat, .btn-social, .game-author-tag, #region-displ
     .region-info-icon:hover { border-color: var(--gold); background: rgba(205,163,79,0.18); box-shadow: 0 0 10px rgba(205,163,79,0.3); }
     @keyframes achIn { to { transform: translateX(0); } }
     @keyframes achOut { to { transform: translateX(120%); opacity: 0; } }
+    /* ===== MOBILE: Status-Button & ausklappbare Seitenleiste ===== */
+    #mobile-status-toggle { display: none; position: fixed; top: 8px; left: 8px; z-index: 710;
+      background: rgba(8,8,8,0.92); border: 1px solid var(--gold-dark); color: var(--gold);
+      border-radius: 5px; padding: 9px 14px; font-family: 'Mantinia', serif; font-size: 0.8rem;
+      letter-spacing: 1px; cursor: pointer; align-items: center; gap: 6px; text-transform: uppercase; }
+    #mobile-panel-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 690; }
+    #game-container.pre-run #mobile-status-toggle { display: none !important; }
+
+    @media (max-width: 860px) {
+      .side-panel {
+        position: fixed; top: 0; left: 0; height: 100dvh; width: min(84vw, 340px);
+        z-index: 700; transform: translateX(-105%); transition: transform 0.25s ease;
+        border-right: 1px solid var(--gold-dark); box-shadow: 8px 0 30px rgba(0,0,0,0.8);
+      }
+      .side-panel.mobile-open { transform: translateX(0); }
+      /* Desktop-Sonderregel (Popup + Seitenleiste nebeneinander) auf Mobile neutralisieren */
+      #popup-overlay[style*="flex"] ~ .side-panel.left-panel { position: fixed; }
+      #mobile-status-toggle { display: flex; }
+
+      .main-panel { width: 100%; padding: 8px; padding-top: 48px; }
+      .main-panel h1 { font-size: 1.05rem; letter-spacing: 3px; }
+      .game-author-tag { display: none; }
+      #region-badge { top: 8px; right: 8px; padding: 4px 9px; }
+      #challenge-badge { top: 8px; left: auto; right: 8px; margin-top: 42px; padding: 4px 9px; font-size: 0.6rem; }
+
+      .map-node { width: 54px; height: 54px; }
+      .map-node.boss-node { width: 64px; height: 64px; }
+      .map-node.completed::before { font-size: 1.2rem; }
+      .map-node::after { display: none; } /* Hover-Tooltips gibt es auf Touch nicht — nur Überdeckung */
+
+      .battle-arena { padding: 10px; height: auto; }
+      .fighters-container { padding: 0 2px; margin-bottom: 10px; }
+      .fighter-wrapper { width: 47%; padding: 8px 6px; box-sizing: border-box; }
+      .combat-sprite-frame { height: 130px; margin-bottom: 6px; }
+      .battle-arena progress { height: 18px; }
+      #battle-controls { padding: 10px; }
+      #battle-log { font-size: 0.82rem; min-height: 40px; margin-bottom: 8px; }
+      .btn-combat { padding: 12px 8px; font-size: 0.85rem; letter-spacing: 1px; }
+      .stagger-badge { font-size: 0.7rem; padding: 5px 10px; top: -14px; }
+
+      .modal-content { width: 92%; padding: 20px 14px; max-height: 88dvh; overflow-y: auto; box-sizing: border-box; }
+      .modal-content.klassen-modal { width: 92%; }
+      .class-selection { flex-direction: column; gap: 12px; margin-top: 14px; }
+      .class-card:hover { transform: none; }
+      .class-card-art { height: 150px; }
+    }
   </style>
 </head>
 <body>
 
 <div id="game-container" class="pre-run">
-  
+
+  <button id="mobile-status-toggle" onclick="toggleMobilePanel()">☰ <span id="ui-mobile-status">Status</span></button>
+  <div id="mobile-panel-backdrop" onclick="toggleMobilePanel(false)"></div>
+  <script>
+    function toggleMobilePanel(force) {
+      var p = document.querySelector('.side-panel.left-panel');
+      var b = document.getElementById('mobile-panel-backdrop');
+      if (!p) return;
+      var open = (typeof force === 'boolean') ? force : !p.classList.contains('mobile-open');
+      p.classList.toggle('mobile-open', open);
+      if (b) b.style.display = open ? 'block' : 'none';
+    }
+  </script>
+
   <div id="popup-overlay" class="modal-overlay">
     <div class="modal-content" id="popup-content"></div>
   </div>
