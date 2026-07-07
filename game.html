@@ -388,7 +388,61 @@ h1, h2, h3, .btn-menu, .btn-combat, .btn-social, .game-author-tag, #region-displ
     .ach-toast .ach-name { font-family: 'Mantinia', serif; color: #f4eddb; font-size: 1.05rem; letter-spacing: 1px; }
     .ach-toast .ach-desc { font-size: 0.74rem; color: #9a8f78; font-family: sans-serif; margin-top: 2px; }
     #challenge-badge { position: absolute; top: 16px; left: 16px; z-index: 50; background: rgba(8,8,8,0.82); border: 1px solid #e74c3c; border-radius: 4px; padding: 5px 16px; font-size: 0.72rem; font-family: sans-serif; color: #e74c3c; font-weight: bold; letter-spacing: 1.5px; text-transform: uppercase; backdrop-filter: blur(2px); }
-    #seed-badge { position: absolute; top: 52px; left: 16px; z-index: 50; background: rgba(8,8,8,0.82); border: 1px solid var(--gold); border-radius: 4px; padding: 5px 16px; font-size: 0.72rem; font-family: sans-serif; color: var(--gold); font-weight: bold; letter-spacing: 1.5px; text-transform: uppercase; backdrop-filter: blur(2px); }
+    /* Seed-Anzeige als Badge links oben über der Karte (Klick = Seed-Link kopieren) */
+    #seed-display { position: absolute; top: 16px; left: 16px; z-index: 50; background: rgba(8,8,8,0.72); border: 1px solid var(--border-color); border-radius: 5px; padding: 6px 12px; font-size: 0.68rem; font-family: sans-serif; color: #8a7f68; letter-spacing: 1px; cursor: pointer; text-transform: none; backdrop-filter: blur(2px); transition: border-color 0.2s ease; }
+    #seed-display:hover { border-color: var(--gold-dark); color: #b3a888; }
+    #game-container.pre-run #seed-display { display: none; }
+    #challenge-badge { top: 58px; }   /* rutscht unter das Seed-Badge */
+    #seed-badge { position: absolute; top: 100px; left: 16px; z-index: 50; background: rgba(8,8,8,0.82); border: 1px solid var(--gold); border-radius: 4px; padding: 5px 16px; font-size: 0.72rem; font-family: sans-serif; color: var(--gold); font-weight: bold; letter-spacing: 1.5px; text-transform: uppercase; backdrop-filter: blur(2px); }
+
+    /* Seitenleiste ohne Scrollen: bei niedrigeren Fenstern wird der Inhalt stufenweise kompakter */
+    @media (max-height: 1020px) {
+      .side-panel { gap: 4px; padding: 8px 10px; }
+      .side-panel .player-card { padding: 6px 8px; }
+      #run-timer { margin-bottom: 2px; font-size: 0.85rem; }
+      .weapon-img-box { width: 62px; height: 62px; }
+      .weapon-name-line { font-size: 0.85rem; }
+      .estus-display { width: 36px; height: 42px; }
+      .talisman-img-slot { width: 38px; height: 38px; }
+      .mini-rune-slot { width: 38px; height: 38px; }
+      .mini-rune-preview-box { width: 29px; height: 29px; }
+      .talisman-img-row { gap: 9px; margin-top: 4px; }
+      .mini-runen-container { gap: 10px; }
+      .backpack-slot { padding: 7px 5px; font-size: 0.72rem; }
+      #medal-left, #medal-right, #medal-mohg { width: 34px !important; height: 34px !important; }
+      .btn-reset, .btn-back-menu { padding: 5px; font-size: 0.78rem; }
+      .btn-social { padding: 5px; font-size: 0.72rem; }
+    }
+    @media (max-height: 870px) {
+      .side-panel { gap: 3px; padding: 6px 8px; }
+      .weapon-img-box { width: 48px; height: 48px; }
+      .weapon-dmg-line { font-size: 0.7rem; }
+      .talisman-img-slot, .mini-rune-slot { width: 31px; height: 31px; }
+      .mini-rune-preview-box { width: 23px; height: 23px; }
+      #medal-left, #medal-right, #medal-mohg { width: 28px !important; height: 28px !important; }
+      .backpack-slot { padding: 5px 4px; font-size: 0.66rem; }
+      .weapon-storage-slot { padding: 5px; font-size: 0.72rem; }
+      .side-panel progress { height: 9px; margin: 4px 0; }
+      #ui-status-heading { font-size: 0.72rem !important; margin-bottom: 2px !important; padding-bottom: 2px !important; }
+      /* Twitch & Discord teilen sich eine Zeile */
+      .btn-social { display: inline-block; width: calc(50% - 3px); font-size: 0.62rem; padding: 5px 2px; }
+    }
+    @media (max-height: 740px) {
+      #ui-status-heading { display: none !important; }
+      #run-timer { font-size: 0.75rem; margin-bottom: 0; }
+      .vitals-row { margin-top: 4px; gap: 8px; }
+      .gear-row { margin-top: 4px; gap: 8px; }
+      .weapon-img-box { width: 40px; height: 40px; }
+      .weapon-name-line { font-size: 0.75rem; }
+      .dmg-type-icon { width: 20px; height: 20px; }
+      .dmg-type-icon img { width: 14px; height: 14px; }
+      .talisman-img-slot, .mini-rune-slot { width: 27px; height: 27px; }
+      .mini-rune-preview-box { width: 20px; height: 20px; }
+      #medal-left, #medal-right, #medal-mohg { width: 24px !important; height: 24px !important; }
+      .backpack-slot { padding: 4px 3px; font-size: 0.6rem; }
+      #quest-progress-text { font-size: 0.62rem !important; }
+      .btn-reset, .btn-back-menu { padding: 4px; font-size: 0.7rem; margin-top: 3px; }
+    }
     #tower-phase-box { position: absolute; top: 48px; left: 16px; z-index: 50; background: rgba(8,8,8,0.82); border: 1px solid #3a5f3a; border-radius: 4px; padding: 4px 12px; font-size: 0.62rem; font-family: sans-serif; color: #84b184; font-weight: bold; letter-spacing: 0.8px; text-transform: uppercase; backdrop-filter: blur(2px); max-width: 300px; line-height: 1.3; }
     .armor-removable { cursor: grab; }
     .armor-removable:active { cursor: grabbing; }
@@ -442,6 +496,8 @@ h1, h2, h3, .btn-menu, .btn-combat, .btn-social, .game-author-tag, #region-displ
       .game-author-tag { display: none; }
       #region-badge { top: 8px; right: 8px; padding: 4px 9px; }
       #challenge-badge { top: 8px; left: auto; right: 8px; margin-top: 42px; padding: 4px 9px; font-size: 0.6rem; }
+      #seed-display { top: 52px; left: 8px; padding: 4px 9px; font-size: 0.6rem; }
+      #seed-badge { top: 84px; left: 8px; padding: 4px 9px; font-size: 0.6rem; }
 
       .map-node { width: 54px; height: 54px; }
       .map-node.boss-node { width: 64px; height: 64px; }
@@ -502,7 +558,6 @@ h1, h2, h3, .btn-menu, .btn-combat, .btn-social, .game-author-tag, #region-displ
   <div class="side-panel left-panel">
     <div style="font-size:0.85rem; color:var(--gold); text-transform:uppercase; letter-spacing:3px; text-align:center; font-family:'Mantinia',serif; margin-bottom:4px; border-bottom:1px solid var(--border-color); padding-bottom:4px;" id="ui-status-heading">STATUS</div>
     <div id="run-timer" style="text-align:center; font-family:'Mantinia',serif; color:#cdbfa3; font-size:0.92rem; letter-spacing:2px; margin-bottom:6px;"><img src="images/icons/carian_inverted_statue_elden_ring_wiki_guide_200px.png" class="btn-ico" style="margin-right:5px;" onerror="this.style.display='none'">0:00</div>
-    <div id="seed-display" onclick="kopiereSeed()" title="Seed-Link kopieren / Copy seed link" style="text-align:center; font-family:sans-serif; color:#8a7f68; font-size:0.68rem; letter-spacing:1px; margin:-2px 0 6px; cursor:pointer; text-transform:none;"></div>
     <div id="deathblight-wrap" style="display:none; margin:0 0 8px;">
       <div style="font-size:0.62rem; color:#b06ad4; text-transform:uppercase; letter-spacing:1.5px; text-align:center; font-family:sans-serif; margin-bottom:3px;">☠ Todesfluch <span id="deathblight-pct">0%</span></div>
       <div style="height:9px; background:#141018; border:1px solid #4a2a5a; border-radius:3px; overflow:hidden;"><div id="deathblight-bar" style="height:100%; width:0%; background:linear-gradient(90deg,#4a2358,#b06ad4); transition:width 0.4s ease;"></div></div>
@@ -620,6 +675,7 @@ h1, h2, h3, .btn-menu, .btn-combat, .btn-social, .game-author-tag, #region-displ
     <h1>ELDEN ROGUE</h1>
     <div class="game-author-tag" id="ui-author-tag">by Hoschi</div>
 
+    <div id="seed-display" onclick="kopiereSeed()" title="Seed-Link kopieren / Copy seed link"></div>
     <div id="challenge-badge" style="display:none;"></div>
     <div id="seed-badge" style="display:none;"></div>
     <div id="tower-phase-box" style="display:none;"></div>
