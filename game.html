@@ -327,7 +327,7 @@ h1, h2, h3, .btn-menu, .btn-combat, .btn-social, .game-author-tag, #region-displ
     .enemy-progress::-webkit-progress-bar { background-color: #1a1a1a; }
     .enemy-progress::-webkit-progress-value { background-color: #922b21; }
 
-    .btn-combat { padding: 14px 32px; font-family: 'Mantinia', serif; font-size: 1rem; font-weight: bold; cursor: pointer; border-radius: 3px; margin: 6px; transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1); text-transform: uppercase; letter-spacing: 2px; }
+    .btn-combat { padding: 14px 32px; font-family: 'Mantinia', serif; font-size: 1rem; font-weight: bold; cursor: pointer; border-radius: 3px; margin: 6px; transition: transform 0.15s ease, box-shadow 0.15s ease; text-transform: uppercase; letter-spacing: 2px; }
     #atk-btn.btn-combat { background-color: #2c2214; color: var(--gold); border: 1px solid var(--gold); }
     #atk-btn.btn-combat:hover { background-color: var(--gold); color: #0b0b0b; box-shadow: 0 0 20px rgba(205, 163, 79, 0.5); transform: translateY(-2px); }
     .btn-heal { background-color: #141f19; color: #2ecc71; border: 1px solid #27ae60; }
@@ -389,7 +389,7 @@ h1, h2, h3, .btn-menu, .btn-combat, .btn-social, .game-author-tag, #region-displ
     .ach-toast .ach-desc { font-size: 0.74rem; color: #9a8f78; font-family: sans-serif; margin-top: 2px; }
     #challenge-badge { position: absolute; top: 16px; left: 16px; z-index: 50; background: rgba(8,8,8,0.82); border: 1px solid #e74c3c; border-radius: 4px; padding: 5px 16px; font-size: 0.72rem; font-family: sans-serif; color: #e74c3c; font-weight: bold; letter-spacing: 1.5px; text-transform: uppercase; backdrop-filter: blur(2px); }
     /* Seed-Anzeige als Badge links oben über der Karte (Klick = Seed-Link kopieren) */
-    #seed-display { position: absolute; top: 16px; left: 16px; z-index: 50; background: rgba(8,8,8,0.72); border: 1px solid var(--border-color); border-radius: 5px; padding: 6px 12px; font-size: 0.68rem; font-family: sans-serif; color: #8a7f68; letter-spacing: 1px; cursor: pointer; text-transform: none; backdrop-filter: blur(2px); transition: border-color 0.2s ease; }
+    #seed-display { position: absolute; top: 16px; left: 16px; z-index: 50; background: rgba(8,8,8,0.72); border: 1px solid var(--border-color); border-radius: 6px; padding: 8px 16px; font-size: 0.82rem; font-family: sans-serif; color: #8a7f68; letter-spacing: 1px; cursor: pointer; text-transform: none; backdrop-filter: blur(2px); transition: border-color 0.2s ease; }
     #seed-display:hover { border-color: var(--gold-dark); color: #b3a888; }
     #game-container.pre-run #seed-display { display: none; }
     #challenge-badge { top: 58px; }   /* rutscht unter das Seed-Badge */
@@ -523,7 +523,7 @@ h1, h2, h3, .btn-menu, .btn-combat, .btn-social, .game-author-tag, #region-displ
       .game-author-tag { display: none; }
       #region-badge { top: 8px; right: 8px; padding: 4px 9px; }
       #challenge-badge { top: 8px; left: auto; right: 8px; margin-top: 42px; padding: 4px 9px; font-size: 0.6rem; }
-      #seed-display { top: 52px; left: 8px; padding: 4px 9px; font-size: 0.6rem; }
+      #seed-display { top: 52px; left: 8px; padding: 6px 12px; font-size: 0.72rem; }
       #seed-badge { top: 84px; left: 8px; padding: 4px 9px; font-size: 0.6rem; }
 
       .map-node { width: 54px; height: 54px; }
