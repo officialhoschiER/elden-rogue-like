@@ -232,15 +232,26 @@ async function importPrivateKey(pem) {
 async function verifySignature(request, rawBody, publicKeyHex) {
   const sig = request.headers.get("X-Signature-Ed25519");
   const ts = request.headers.get("X-Signature-Timestamp");
-  if (!sig || !ts || !publicKeyHex) return false;
-  try {
-    const key = await crypto.subtle.importKey("raw", hexToBytes(publicKeyHex), { name: "Ed25519" }, false, ["verify"]);
-    const data = new TextEncoder().encode(ts + rawBody);
-    return await crypto.subtle.verify({ name: "Ed25519" }, key, hexToBytes(sig), data);
-  } catch (e) {
-    console.error("[verify]", e);
+  if (!sig || !ts || !publicKeyHex) {
+    console.error("[verify] fehlende Header/Key", { sig: !!sig, ts: !!ts, key: !!publicKeyHex });
     return false;
   }
+  const keyBytes = hexToBytes(publicKeyHex.trim());
+  const sigBytes = hexToBytes(sig.trim());
+  const data = new TextEncoder().encode(ts + rawBody);
+  // Cloudflare akzeptiert je nach Laufzeit "Ed25519" ODER "NODE-ED25519" — beide probieren.
+  for (const algo of [{ name: "Ed25519" }, { name: "NODE-ED25519", namedCurve: "NODE-ED25519" }]) {
+    try {
+      const key = await crypto.subtle.importKey("raw", keyBytes, algo, false, ["verify"]);
+      const ok = await crypto.subtle.verify(algo, key, sigBytes, data);
+      if (!ok) console.error("[verify] Signatur passt nicht (Algo " + algo.name + ") — evtl. falscher Public Key?");
+      return ok;   // importKey hat geklappt -> dieser Algo ist der richtige; Ergebnis zählt
+    } catch (e) {
+      console.error("[verify] Algo " + algo.name + " nicht nutzbar:", e && e.message);
+      // nächsten Algo-Namen probieren
+    }
+  }
+  return false;
 }
 
 function hexToBytes(hex) {
