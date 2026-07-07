@@ -8,9 +8,9 @@
    Guild-Commands sind sofort verfügbar (globale bräuchten ~1 Std).
    ============================================================ */
 
-const APP_ID = "HIER_APPLICATION_ID";   // Discord Developer Portal > General Information
-const GUILD_ID = "HIER_SERVER_ID";      // Rechtsklick auf deinen Server > "ID kopieren"
-const BOT_TOKEN = "HIER_BOT_TOKEN";     // Developer Portal > Bot > Token (GEHEIM halten!)
+const APP_ID = "1524143492815781898";   // Discord Developer Portal > General Information
+const GUILD_ID = "861966344786673664";  // Rechtsklick auf deinen Server > "ID kopieren"
+const BOT_TOKEN = "HIER_BOT_TOKEN";     // Developer Portal > Bot > Token (GEHEIM halten!) — NEUEN Token einsetzen, ausführen, danach wieder löschen
 
 const commands = [
   {
