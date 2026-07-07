@@ -387,6 +387,7 @@
   <button class="sb-item" onclick="openModal('settings')"><span class="sb-ic">⚙️</span><span class="sb-label" id="sb-settings-label">Einstellungen</span></button>
   <button class="sb-item" onclick="openModal('halloffame')"><span class="sb-ic">👑</span><span class="sb-label" id="sb-hof-label">Hall of Fame</span></button>
   <button class="sb-item" onclick="openModal('achievements')"><span class="sb-ic">⭐</span><span class="sb-label" id="btn-ach-text">Achievements</span></button>
+  <button class="sb-item" onclick="openModal('stats')"><span class="sb-ic">📊</span><span class="sb-label" id="sb-stats-label">Statistik</span></button>
   <button class="sb-item" onclick="openModal('eldendex')"><span class="sb-ic">📖</span><span class="sb-label" id="btn-dex-text">Eldendex</span></button>
   <button class="sb-item" onclick="openModal('unlocks')"><span class="sb-ic">🔓</span><span class="sb-label" id="sb-unlocks-label">Freischaltungen</span></button>
   <button class="sb-item" onclick="openModal('patchnotes')"><span class="sb-ic">📜</span><span class="sb-label" id="sb-patch-label">Patch Notes</span></button>
@@ -461,7 +462,8 @@
       <li id="info-l4"><b>Roundtable:</b> Gib gesammelte Seelen für dauerhafte Upgrades aus.</li>
       <li id="info-l5"><b>Sammeln &amp; Steigern:</b> Achievements und den Eldendex findest du links im Menü.</li>
     </ul>
-    <button class="btn-mini" onclick="closeModals()" style="display:block; margin:14px auto 0;">Verstanden</button>
+    <button class="btn-mini" id="info-tutorial-btn" onclick="openModal('onboarding')" style="display:block; margin:14px auto 0;">🎓 Tutorial ansehen</button>
+    <button class="btn-mini" onclick="closeModals()" style="display:block; margin:8px auto 0;">Verstanden</button>
   </div>
 </div>
 
@@ -660,6 +662,30 @@
   </div>
 </div>
 
+<div class="modal-bg" id="modal-stats">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModals()">&times;</button>
+    <div class="modal-title" id="stats-title">📊 Statistik</div>
+    <div id="stats-body"></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modal-onboarding">
+  <div class="modal-box" style="max-width:560px;">
+    <div id="onb-icon" style="font-size:2.6rem;text-align:center;margin-bottom:6px;">🔥</div>
+    <div class="modal-title" id="onb-title" style="margin-bottom:12px;"></div>
+    <div id="onb-body"></div>
+    <div id="onb-dots" style="display:flex;justify-content:center;gap:7px;margin:20px 0 16px;"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+      <button class="btn-mini" id="onb-skip" onclick="closeOnboarding()" style="opacity:0.7;">Überspringen</button>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-mini" id="onb-prev" onclick="onbGo(-1)">Zurück</button>
+        <button class="btn-mini" id="onb-next" onclick="onbGo(1)">Weiter</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
   // ?wipe=1 — lokalen Spielstand komplett zurücksetzen (zum Testen; Cloud bleibt unberührt).
   // Loggt zusätzlich aus, sonst holt der Login-Merge den alten Stand sofort zurück.
@@ -702,6 +728,11 @@
 
     document.getElementById("btn-dex-text").innerText = t("dex_title");
     document.getElementById("dex-title").innerText = t("dex_title");
+    // Statistik + Onboarding (eigene Labels, im i18n noch nicht als Keys hinterlegt)
+    var _en = lang === 'en';
+    var elStats = document.getElementById("sb-stats-label"); if (elStats) elStats.innerText = _en ? "Stats" : "Statistik";
+    var elStatsT = document.getElementById("stats-title"); if (elStatsT) elStatsT.innerText = _en ? "📊 Statistics" : "📊 Statistik";
+    var elTut = document.getElementById("info-tutorial-btn"); if (elTut) elTut.innerText = _en ? "🎓 View tutorial" : "🎓 Tutorial ansehen";
     // Battle Tower button + guide
     document.getElementById("btn-tower-label").innerText = t("tower_btn").replace("🏯 ", "");
     document.getElementById("tg-title").innerHTML = '<img src="images/icons/Godfrey Icon.webp" class="btn-ico" onerror="this.style.display=\'none\'">' + t("tower_guide_title").replace("🗼 ", "").replace("🏯 ", "");
@@ -801,6 +832,8 @@
     if (m) m.classList.add("open");
     if (name === "bestenliste") { fuelleLbKategorien(); ladeBestenliste(); }
     if (name === "achievements") ladeAchievements();
+    if (name === "stats") ladeStats();
+    if (name === "onboarding") renderOnboarding(0);
     if (name === "eldendex") ladeEldendex();
     if (name === "patchnotes") ladePatchNotes();
     if (name === "unlocks") ladeUnlocks();
@@ -1875,10 +1908,181 @@
     closeModals(); m.classList.add("open");
   }
   
+  /* ===================== STATISTIK-PANEL ===================== */
+  // Nutzt die bereits im Hintergrund geführten ER-Stats (eldenrogue-online.js) und macht sie sichtbar.
+  function ladeStats() {
+    var body = document.getElementById("stats-body"); if (!body) return;
+    var en = (typeof _menuIsEn === "function") ? _menuIsEn() : false;
+    if (!window.ER || !ER.getStats) {
+      body.innerHTML = '<div style="color:#888;text-align:center;padding:20px;font-family:sans-serif;">'
+        + (en ? "Stats unavailable. Please reload the page." : "Statistik konnte nicht geladen werden. Bitte Seite neu laden.") + '</div>';
+      return;
+    }
+    var s = ER.getStats();
+    function n(x) { return (x || 0).toLocaleString(en ? "en-US" : "de-DE"); }
+    function box(v, l) { return '<div class="stat-box"><div class="v">' + v + '</div><div class="l">' + l + '</div></div>'; }
+    function grp(title) { return '<div style="font-family:Cinzel,serif;color:var(--gold);font-size:0.9rem;letter-spacing:1px;margin:18px 0 8px;border-bottom:1px solid var(--border-color);padding-bottom:5px;">' + title + '</div>'; }
+    function grid(inner) { return '<div class="stat-grid">' + inner + '</div>'; }
+    var winRate  = s.runsStarted ? Math.round((s.gamesCompleted / s.runsStarted) * 100) : 0;
+    var avgBoss  = s.runsStarted ? (s.bossesKilled / s.runsStarted).toFixed(1) : "0";
+    var bestTime = s.bestTimeMs ? fmtRunTimeMenu(s.bestTimeMs) : "—";
+    body.innerHTML =
+      grp(en ? "Combat" : "Kampf") +
+      grid(
+        box(n(s.fightsWon),        en ? "Battles Won"      : "Kämpfe gewonnen") +
+        box(n(s.bossesKilled),     en ? "Bosses Slain"     : "Bosse besiegt") +
+        box(n(s.elitesKilled),     en ? "Elites Slain"     : "Eliten besiegt") +
+        box(n(s.minibossesKilled), en ? "Minibosses"       : "Minibosse") +
+        box(n(s.invadersKilled),   en ? "Invaders Repelled": "Invasoren besiegt") +
+        box(n(s.flasksDrunk),      en ? "Estus Drunk"      : "Estus getrunken")
+      ) +
+      grp(en ? "Runs & Progress" : "Runs & Fortschritt") +
+      grid(
+        box(n(s.runsStarted),    en ? "Runs Started"    : "Runs gestartet") +
+        box(n(s.gamesCompleted), en ? "Runs Completed"  : "Runs abgeschlossen") +
+        box(n(s.deaths),         en ? "Deaths"          : "Tode") +
+        box(winRate + "%",       en ? "Completion Rate" : "Abschlussquote") +
+        box(n(s.furthestStage),  en ? "Furthest Stage"  : "Weiteste Ebene") +
+        box(avgBoss,             en ? "Avg. Bosses / Run": "Ø Bosse / Run")
+      ) +
+      grp(en ? "Loot" : "Beute") +
+      grid(
+        box(n(s.weaponsFound),    en ? "Weapons Found"   : "Waffen gefunden") +
+        box(n(s.armorsFound),     en ? "Armor Found"     : "Rüstungen gefunden") +
+        box(n(s.talismansFound),  en ? "Talismans Found" : "Talismane gefunden") +
+        box(n(s.dungeonsCleared), en ? "Dungeons Cleared": "Dungeons geklärt")
+      ) +
+      grp(en ? "Records & Deeds" : "Rekorde & Taten") +
+      grid(
+        box(n(s.bestScoreNormal),      en ? "Best Score (Normal)" : "Bester Score (Normal)") +
+        box(n(s.bestScoreHard),        en ? "Best Score (Hard)"   : "Bester Score (Hard)") +
+        box(bestTime,                  en ? "Fastest Clear"       : "Schnellster Run") +
+        box(n(s.hardModeCompletions),  en ? "Hard Clears"         : "Hard-Abschlüsse") +
+        box(n(s.maleniaKills),         en ? "Malenia Kills"       : "Malenia-Siege") +
+        box(n(s.mohgwynVisits),        en ? "Mohgwyn Visits"      : "Mohgwyn-Besuche")
+      );
+  }
+  window.ladeStats = ladeStats;
+
+  /* ===================== ONBOARDING / TUTORIAL ===================== */
+  var ONB_KEY = "eldenRogueOnboardingSeen";
+  var _onbStep = 0;
+  var ONB_STEPS = [
+    {
+      icon: "🔥",
+      t: ["Willkommen in Elden Rogue", "Welcome to Elden Rogue"],
+      lead: [
+        "Elden Rogue ist ein Roguelike im Elden-Ring-Universum. Jeder Run wird neu gewürfelt — Karte, Gegner und Beute sind jedes Mal anders.",
+        "Elden Rogue is a roguelike set in the Elden Ring universe. Every run is freshly generated — the map, enemies and loot differ every time."
+      ],
+      list: [
+        ["Sterben gehört dazu. Aus den gesammelten Seelen schaltest du dauerhafte Upgrades frei und kommst beim nächsten Versuch weiter.",
+         "Dying is part of it. Spend the souls you gather on permanent upgrades and push further on your next attempt."]
+      ]
+    },
+    {
+      icon: "🗺️",
+      t: ["Die Karte", "The Map"],
+      lead: [
+        "Du bahnst dir deinen Weg durch ein verzweigtes Netz aus Knoten. Welchen Pfad du nimmst, entscheidest du selbst.",
+        "You carve your way through a branching web of nodes. Which path you take is up to you."
+      ],
+      list: [
+        ["<b>⚔️ Kampf &amp; Elite</b> — normale Gegner und stärkere Elite-Feinde.", "<b>⚔️ Fight &amp; Elite</b> — regular enemies and tougher elites."],
+        ["<b>🕯️ Ort der Gnade</b> — heilen, speichern und beim Händler einkaufen.", "<b>🕯️ Site of Grace</b> — heal, save and shop with the merchant."],
+        ["<b>👹 Boss</b> — am Ende jedes Gebiets wartet ein Halbgott.", "<b>👹 Boss</b> — a demigod waits at the end of every region."],
+        ["<b>🎁 Beute &amp; Talismane</b> — Waffen, Rüstung und Talismane für deinen Build.", "<b>🎁 Loot &amp; Talismans</b> — weapons, armor and talismans for your build."],
+        ["<b>🗡️ Invasoren</b> — andere Befleckte fallen in deinen Run ein.", "<b>🗡️ Invaders</b> — other Tarnished invade your run."]
+      ]
+    },
+    {
+      icon: "⚔️",
+      t: ["Der Kampf", "Combat"],
+      lead: [
+        "Kämpfe laufen rundenweise. Du greifst an, weichst aus oder trinkst Estus, um dich zu heilen.",
+        "Fights are turn-based. You attack, dodge, or drink Estus to heal."
+      ],
+      list: [
+        ["Achte auf Affinitäten: Manche Gegner sind gegen bestimmte Schadensarten resistent oder anfällig — die richtige Waffe macht den Unterschied.",
+         "Mind affinities: some enemies resist or are weak to certain damage types — the right weapon makes all the difference."],
+        ["Deine Ausweichchance entscheidet, ob ein Treffer dich verfehlt. Talismane und Große Runen verbessern sie.",
+         "Your dodge chance decides whether a hit misses you. Talismans and Great Runes improve it."]
+      ]
+    },
+    {
+      icon: "⚜️",
+      t: ["Stärker werden", "Getting Stronger"],
+      lead: [
+        "Zwischen den Runs wirst du dauerhaft mächtiger — hier läuft dein langfristiger Fortschritt zusammen.",
+        "Between runs you grow permanently stronger — this is where your long-term progress lives."
+      ],
+      list: [
+        ["<b>⚜️ Roundtable</b> — gib Seelen für dauerhafte Upgrades aus.", "<b>⚜️ Roundtable</b> — spend souls on permanent upgrades."],
+        ["<b>⭐ Achievements &amp; 📖 Eldendex</b> — halten fest, was du geschafft und welche Bosse du entdeckt hast.", "<b>⭐ Achievements &amp; 📖 Eldendex</b> — track your deeds and every boss you've discovered."],
+        ["<b>🔓 Freischaltungen</b> — neue Modi, Klassen und Bosse öffnen sich, je öfter du durchspielst.", "<b>🔓 Unlocks</b> — new modes, classes and bosses open up the more you clear the game."]
+      ]
+    },
+    {
+      icon: "🌑",
+      t: ["Geheimnisse & DLC", "Secrets & DLC"],
+      lead: [
+        "Elden Rogue steckt voller Geheimnisse — versteckte Wege, optionale Bosse und ein komplettes DLC warten auf alle, die tief genug graben.",
+        "Elden Rogue is full of secrets — hidden paths, optional bosses and a whole DLC await those who dig deep enough."
+      ],
+      list: [
+        ["Aber pass auf: Das DLC ist bewusst brutal schwer. Sei bereit.", "But beware: the DLC is deliberately brutal. Be ready."],
+        ["Viel Erfolg, Befleckter.", "Good luck, Tarnished."]
+      ]
+    }
+  ];
+
+  function renderOnboarding(step) {
+    _onbStep = Math.max(0, Math.min(ONB_STEPS.length - 1, step || 0));
+    var en = (typeof _menuIsEn === "function") ? _menuIsEn() : false;
+    var st = ONB_STEPS[_onbStep];
+    document.getElementById("onb-icon").textContent = st.icon;
+    document.getElementById("onb-title").textContent = en ? st.t[1] : st.t[0];
+    var html = '<p class="info-lead" style="text-align:left;margin:0 0 8px;">' + (en ? st.lead[1] : st.lead[0]) + '</p>';
+    if (st.list && st.list.length) {
+      html += '<ul class="tower-guide-list" style="margin:6px 0 0;">'
+        + st.list.map(function (li) { return '<li>' + (en ? li[1] : li[0]) + '</li>'; }).join("")
+        + '</ul>';
+    }
+    document.getElementById("onb-body").innerHTML = html;
+    document.getElementById("onb-dots").innerHTML = ONB_STEPS.map(function (_, i) {
+      return '<span style="width:8px;height:8px;border-radius:50%;background:' + (i === _onbStep ? "var(--gold)" : "#3a3a3a") + ';"></span>';
+    }).join("");
+    var prev = document.getElementById("onb-prev");
+    prev.style.visibility = (_onbStep === 0) ? "hidden" : "visible";
+    prev.textContent = en ? "Back" : "Zurück";
+    var last = (_onbStep === ONB_STEPS.length - 1);
+    document.getElementById("onb-next").textContent = last ? (en ? "Let's go!" : "Los geht's!") : (en ? "Next" : "Weiter");
+    document.getElementById("onb-skip").textContent = en ? "Skip" : "Überspringen";
+  }
+  function onbGo(dir) {
+    if (_onbStep === ONB_STEPS.length - 1 && dir > 0) { closeOnboarding(); return; }
+    renderOnboarding(_onbStep + dir);
+  }
+  function closeOnboarding() {
+    try { localStorage.setItem(ONB_KEY, "1"); } catch (e) {}
+    closeModals();
+  }
+  window.renderOnboarding = renderOnboarding;
+  window.onbGo = onbGo;
+  window.closeOnboarding = closeOnboarding;
+
   // Call initialization logic for translations once
   renderStaticText();
   updateLangSwitcherButtons();
   try { updateShopButtonSouls(); } catch(e) {}
+
+  // Erstbesuch: Tutorial automatisch zeigen (nur wenn noch nie gesehen UND kein laufender Run)
+  (function () {
+    var seen = null, hasSave = null;
+    try { seen = localStorage.getItem(ONB_KEY); } catch (e) {}
+    try { hasSave = localStorage.getItem("eldenRogueSave"); } catch (e) {}
+    if (!seen && !hasSave) { setTimeout(function () { try { openModal("onboarding"); } catch (e) {} }, 450); }
+  })();
 </script>
 
 <script>
