@@ -24,6 +24,8 @@ const ROLLEN_MAPPING = {
 };
 /* Rolle, die JEDER Verknüpfte bekommt (Patch-Pings). "" = aus. */
 const ROLLE_VERIFIZIERT = "1515004004504043563";
+/* Server-ID — für Echtzeit-Rollen (der Spiel-Trigger kennt keine guild_id) */
+const GUILD_ID = "861966344786673664";
 
 const CODE_GUELTIG_MS = 15 * 60 * 1000;
 
@@ -34,6 +36,14 @@ const FLAG_EPHEMERAL = 64;
 
 export default {
   async fetch(request, env) {
+    const url = new URL(request.url);
+    // Echtzeit-Rollen: Trigger aus dem Spiel (eigener Pfad + CORS, keine Discord-Signatur)
+    if (url.pathname === "/api/roles") {
+      if (request.method === "OPTIONS") return corsResponse(new Response(null, { status: 204 }));
+      if (request.method === "POST") return corsResponse(await handleGameRefresh(request, env));
+      return corsResponse(new Response("Method not allowed", { status: 405 }));
+    }
+
     if (request.method !== "POST") return new Response("Elden Rogue Discord Bot", { status: 200 });
 
     const rawBody = await request.text();
@@ -174,6 +184,46 @@ async function verarbeiteLeaderboard(env) {
 function fmtZeit(ms) {
   const s = Math.floor(ms / 1000), m = Math.floor(s / 60), ss = s % 60;
   return m + ":" + String(ss).padStart(2, "0");
+}
+
+/* ============================================================
+   Echtzeit-Rollen: Trigger aus dem Spiel (POST /api/roles {uid})
+   Ungefährlich: vergibt NUR verdiente Rollen an den im Konto
+   hinterlegten Discord-Nutzer — keine Rechteausweitung möglich.
+   ============================================================ */
+async function handleGameRefresh(request, env) {
+  let uid;
+  try { const b = await request.json(); uid = b && b.uid; } catch (e) {}
+  if (!uid || typeof uid !== "string") return jsonPlain({ ok: false, error: "no uid" }, 400);
+
+  const token = await getAccessToken(env);
+  const doc = await firestoreGet("users/" + encodeURIComponent(uid), token);
+  if (!doc || !doc.fields || !doc.fields.discordUserId) return jsonPlain({ ok: false, error: "not linked" });
+
+  const discordUserId = doc.fields.discordUserId.stringValue;
+  const rollen = await vergebeRollen(feldWerte(doc.fields), discordUserId, GUILD_ID, env);
+  return jsonPlain({ ok: true, rollen: rollen.length });
+}
+
+/* Einzelnes Firestore-Dokument per Pfad holen (z. B. "users/UID") */
+async function firestoreGet(path, token) {
+  const r = await fetch("https://firestore.googleapis.com/v1/projects/" + PROJECT_ID + "/databases/(default)/documents/" + path, {
+    headers: { Authorization: "Bearer " + token }
+  });
+  if (r.status === 404) return null;
+  if (!r.ok) throw new Error("Firestore get " + r.status + ": " + (await r.text()));
+  return r.json();
+}
+
+function jsonPlain(obj, status) {
+  return new Response(JSON.stringify(obj), { status: status || 200, headers: { "Content-Type": "application/json" } });
+}
+function corsResponse(res) {
+  const h = new Headers(res.headers);
+  h.set("Access-Control-Allow-Origin", "*");
+  h.set("Access-Control-Allow-Methods", "POST, OPTIONS");
+  h.set("Access-Control-Allow-Headers", "Content-Type");
+  return new Response(res.body, { status: res.status, headers: h });
 }
 
 /* Vergibt alle verdienten Rollen (PUT ist idempotent) */

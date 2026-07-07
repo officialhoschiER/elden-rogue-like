@@ -425,6 +425,19 @@
     return { id: a.id, icon: a.icon, name: nm, desc: ds };
   }
 
+  const WORKER_URL = "https://elden-rogue-discord.hoschi.workers.dev";
+  // Pingt den Discord-Bot-Worker, damit die Rollen des eingeloggten Spielers SOFORT neu geprüft werden.
+  function pingDiscordRoles() {
+    if (!ONLINE || !currentUser) return;
+    try {
+      fetch(WORKER_URL + "/api/roles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ uid: currentUser.uid })
+      }).catch(function () {});
+    } catch (e) {}
+  }
+
   function checkAchievements() {
     var s = getStats();
     var unlocked = getUnlocked();
@@ -452,6 +465,8 @@
       s.allAchDate = 0; s.allAchCount = 0; saveStats(s); pushCloud = true;
     }
     if (pushCloud) cloudPush();
+    // Echtzeit-Rollen: nach neuen Erfolgen kurz warten (bis der Cloud-Push landet) und dann den Bot pingen
+    if (neu.length && ONLINE && currentUser) setTimeout(pingDiscordRoles, 2500);
     return neu;
   }
 
