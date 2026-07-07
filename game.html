@@ -397,6 +397,17 @@ h1, h2, h3, .btn-menu, .btn-combat, .btn-social, .game-author-tag, #region-displ
     .region-info-icon:hover { border-color: var(--gold); background: rgba(205,163,79,0.18); box-shadow: 0 0 10px rgba(205,163,79,0.3); }
     @keyframes achIn { to { transform: translateX(0); } }
     @keyframes achOut { to { transform: translateX(120%); opacity: 0; } }
+    /* ===== DLC Abgrundwald: Nebel-Karte & Todesfluch ===== */
+    .abyss-fog .map-node { opacity: 0.14; border-color: #2a2a33; box-shadow: none; }
+    .abyss-fog .map-node .map-node-img, .abyss-fog .map-node .map-node-boss-img { filter: grayscale(1) brightness(0.45); }
+    .abyss-fog .map-node.selectable { opacity: 0.34; border-color: #4a4a58; box-shadow: none; }
+    .abyss-fog .map-node.current-pos { opacity: 0.6; }
+    .abyss-fog .map-node.completed { opacity: 0.3; }
+    .abyss-fog .map-node::after { display: none; }              /* keine Tooltips — man erkennt die Knoten kaum */
+    .abyss-fog #map-lines { opacity: 0.22; }
+    .abyss-fog .map-node.abyss-sicher.selectable { animation: abyssGlimmer 3.2s ease-in-out infinite; }
+    @keyframes abyssGlimmer { 0%, 100% { opacity: 0.34; } 50% { opacity: 0.46; box-shadow: 0 0 14px rgba(150, 110, 190, 0.18); } }
+
     /* ===== MOBILE: Status-Button & ausklappbare Seitenleiste ===== */
     #mobile-status-toggle { display: none; position: fixed; top: 8px; left: 8px; z-index: 710;
       background: rgba(8,8,8,0.92); border: 1px solid var(--gold-dark); color: var(--gold);
@@ -482,6 +493,10 @@ h1, h2, h3, .btn-menu, .btn-combat, .btn-social, .game-author-tag, #region-displ
     <div style="font-size:0.85rem; color:var(--gold); text-transform:uppercase; letter-spacing:3px; text-align:center; font-family:'Mantinia',serif; margin-bottom:4px; border-bottom:1px solid var(--border-color); padding-bottom:4px;" id="ui-status-heading">STATUS</div>
     <div id="run-timer" style="text-align:center; font-family:'Mantinia',serif; color:#cdbfa3; font-size:0.92rem; letter-spacing:2px; margin-bottom:6px;"><img src="images/icons/carian_inverted_statue_elden_ring_wiki_guide_200px.png" class="btn-ico" style="margin-right:5px;" onerror="this.style.display='none'">0:00</div>
     <div id="seed-display" onclick="kopiereSeed()" title="Seed-Link kopieren / Copy seed link" style="text-align:center; font-family:sans-serif; color:#8a7f68; font-size:0.68rem; letter-spacing:1px; margin:-2px 0 6px; cursor:pointer; text-transform:none;"></div>
+    <div id="deathblight-wrap" style="display:none; margin:0 0 8px;">
+      <div style="font-size:0.62rem; color:#b06ad4; text-transform:uppercase; letter-spacing:1.5px; text-align:center; font-family:sans-serif; margin-bottom:3px;">☠ Todesfluch <span id="deathblight-pct">0%</span></div>
+      <div style="height:9px; background:#141018; border:1px solid #4a2a5a; border-radius:3px; overflow:hidden;"><div id="deathblight-bar" style="height:100%; width:0%; background:linear-gradient(90deg,#4a2358,#b06ad4); transition:width 0.4s ease;"></div></div>
+    </div>
     <div class="player-card">
       <div class="vitals-row">
         <div style="flex:1; min-width:0;">
@@ -785,6 +800,12 @@ let hatMohgMedaille = false;      // Reinblutrittermedaille (Sieg über Mohg, da
 let hatRyaKette = false;          // Ryas Halskette (Samurai-Geheimnis in Liurnia) — bei Rya abgeben schaltet den Pfad nach Gelmir frei
 let inSewers = false;             // in der Kanalisation der Hauptstadt (Mini-Ebene unter Leyndell)
 let gezaehlteBossKnoten = [];     // bereits für die Rangliste gezählte Boss-Knoten-IDs (verhindert Quit-Reload-Farmen)
+// --- DLC: Land des Schattens ---
+let torbogenSpruenge = 0;         // Gräberebene: Sprünge durch Torbögen (3 = Wolfsgeheul — Check für späteren Secret Boss)
+let wolfsgeheulGehoert = false;   // der Wolf hat geantwortet (Flag für den kommenden Secret Boss)
+let deathblight = 0;              // Abgrundwald: Todesfluch in % — jeder Fehltritt +25, bei 100 ist der Run vorbei
+let hatAbyssFluestern = false;    // Castle Ensis: dem Flüstern an der Gnade gefolgt -> Abgrundwald öffnet sich nach Rellana
+let dlcWahlOffen = false;         // Mohg (2. Sieg) liegt: Wahl "Run vollenden" vs. "Miquellas Hand berühren" steht an
 
 let playerHitsOnEnemy = 0;
 let enemyIsStaggered = false; let staggerVisualActive = false;
@@ -811,6 +832,7 @@ function speichereRun() {
   let save = {
     v: 1, hardMode: hardMode, challenge: activeChallenge, ts: Date.now(), runPlayMs: runPlayMs,
     runSeed, seedIsCustom, seedRngCalls,
+    torbogenSpruenge, wolfsgeheulGehoert, deathblight, hatAbyssFluestern, dlcWahlOffen,
     spielerHp, spielerMaxHp, spielerFlasks, maxKlassenFlasks, estusHeilProzent,
     gewaehlteKlasse, basisAusweichChance, playerImageStr,
     waffenName, waffenSchaden, waffenUpgrade, waffenRaritaet, waffenSchadensarten,
@@ -852,6 +874,9 @@ function ladeGespeichertenRun() {
     runSeed = d.runSeed || zufallsSeed(); seedIsCustom = !!d.seedIsCustom; initSeedRng(d.seedRngCalls || 0);
     if (window.ER && ER.setSeedRun) ER.setSeedRun(seedIsCustom);
     setTimeout(aktualisiereSeedAnzeige, 0);
+    torbogenSpruenge = d.torbogenSpruenge || 0; wolfsgeheulGehoert = !!d.wolfsgeheulGehoert; deathblight = d.deathblight || 0; hatAbyssFluestern = !!d.hatAbyssFluestern; dlcWahlOffen = !!d.dlcWahlOffen;
+    setTimeout(aktualisiereDeathblightAnzeige, 0);
+    if (dlcWahlOffen) setTimeout(oeffneMohgDlcWahl, 100);   // Wahl-Popup übersteht einen Reload
     towerEtage=d.towerEtage||0;
     runPlayMs = d.runPlayMs || 0; startRunTimer();
     window.__attr = (ladeMeta().attr) || {};   // Attribut-Schadensbonus auch nach Fortsetzen aktiv
@@ -922,7 +947,7 @@ function ladeMeta() {
 function speichereMeta(m) { try { localStorage.setItem(META_KEY, JSON.stringify(m)); } catch(e) {} if (window.ER && ER.syncNow) try { ER.syncNow(); } catch(e) {} }
 function L(de, en) { return (window.i18n && window.i18n.getLang && window.i18n.getLang() === "en") ? en : de; }
 
-const SEELEN_REGION_TIEFE = { Limgrave:0, Caelid:1, Leyndell:2, Mountaintops:3, FarumAzula:4, AshenCapital:5, EldenThrone:6, Haligtree:6 };
+const SEELEN_REGION_TIEFE = { Limgrave:0, Caelid:1, Leyndell:2, Mountaintops:3, FarumAzula:4, AshenCapital:5, EldenThrone:6, Haligtree:6, Gravesite:7, CastleEnsis:8, AbyssalWoods:9 };
 function belohneSeelen(gewonnen) {
   if (seedIsCustom) { letzteRunSeelen = 0; return 0; }   // Seed-Run: keine Seelen (sonst Lucky-Seed-Farming)
   if (seelenVergeben) return letzteRunSeelen;
@@ -1169,7 +1194,10 @@ const gebietsResistenzen = {
   Mountaintops: { Magie: 0.20, Heilig: 0.15, Feuer: -0.25 },
   FarumAzula:   { Heilig: 0.20, Normal: -0.15, Magie: -0.10 },
   AshenCapital: { Magie: 0.20, Feuer: -0.30, Normal: -0.10 },
-  Haligtree:    { Feuer: 0.25, Heilig: -0.25, Magie: -0.15 }
+  Haligtree:    { Feuer: 0.25, Heilig: -0.25, Magie: -0.15 },
+  // --- DLC: Land des Schattens ---
+  CastleEnsis:  { Normal: 0.15, Magie: -0.25 },              // Karianische Magier trotzen der Magie — roher Stahl wirkt
+  AbyssalWoods: { Heilig: 0.25, Feuer: -0.25 }               // die Wahnsinnige Flamme fürchtet das Heilige
 };
 // Aktuelles Schadensprofil des Gegners: namentlicher Boss/Festung > Gebiets-Profil. Dungeons: keins.
 function gibSchadensProfilTabelle() {
@@ -1226,6 +1254,9 @@ function regionBossName(region, ebene) {
   if (region === "EldenThrone") return ebene === 3 ? "Radagon von der Goldenen Ordnung" : "Godfrey, der Erste Eldenlord";
   if (region === "Haligtree") return "Malenia, Blade of Miquella";
   if (region === "Mohgwyn") return "Mohg, Fürst des Blutes";
+  if (region === "Gravesite") return "Göttliches Tanzlöwenbiest";
+  if (region === "CastleEnsis") return "Rellana, Ritterin der Zwillingsmonde";
+  if (region === "AbyssalWoods") return "Midra, Herr der Wahnsinnigen Flamme";
   return "";
 }
 // Kurzer Schwäche/Resistenz-Text für einen Boss (für den Hover-Tooltip)
@@ -1240,7 +1271,7 @@ function bossSchwaecheText(bossName) {
   return lines.join("\n");
 }
 
-const regionStufe = { Limgrave:1, Liurnia:2, Caelid:2, Leyndell:3, Gelmir:3, Mountaintops:4, FarumAzula:5, AshenCapital:6, EldenThrone:7, Haligtree:8, Mohgwyn:8 };
+const regionStufe = { Limgrave:1, Liurnia:2, Caelid:2, Leyndell:3, Gelmir:3, Mountaintops:4, FarumAzula:5, AshenCapital:6, EldenThrone:7, Haligtree:8, Mohgwyn:8, Gravesite:9, CastleEnsis:10, AbyssalWoods:11 };
 function gibStageNummer(){ return inSubDungeon ? 1 : (regionStufe[aktuelleRegion] || 1); }
 function gibTalismanTier(){ return Math.min(Math.max(gibStageNummer() - 1, 0), 3); }
 function tierSuffix(tier){ return tier > 0 ? " +" + tier : ""; }
@@ -1362,12 +1393,20 @@ const gebietsGegnerKonfig = {
   Leyndell: { elite: "images/LEYNDELL_ELITE.jpg", waechter: "images/LEYNDELL_WAECHTER.jpg", invader: "images/LEYNDELL_INVADER.jpg", eliteName: "Leyndell Ritter", waechterName: "Omen", invaderName: "Eleonora" },
   Gelmir: { elite: "images/Gegner/abductor-virgins.jpg", waechter: "images/Gegner/full-grown-fallingstar.jpg", invader: "images/Gegner/ER_Inquisitor_Ghiza.png", eliteName: "Eiserne Jungfrauen", waechterName: "Ausgewachsene Sternenbestie", invaderName: "Inquisitor Ghiza" },
   Mohgwyn: { elite: "images/Gegner/ER_Red_Albinauric_w_Shamshir.webp", waechter: "images/Gegner/monstrous-crow-2-hq-elden-ring-wiki-guide.jpg", invader: "images/Gegner/nameless-white-mask-in-elden-ring.avif", eliteName: "Roter Albinauriker", waechterName: "Monströse Krähe", invaderName: "Namenlose Weißmaske" },
+  // --- DLC: Land des Schattens (Bilder in images/Gegner/ nachlegen — Fallback greift bis dahin) ---
+  Gravesite: { elite: "images/Gegner/GRAVESITE_ELITE.jpg", waechter: "images/Gegner/GRAVESITE_WAECHTER.jpg", invader: "images/Gegner/GRAVESITE_INVADER.jpg", eliteName: "Messmer-Soldat", waechterName: "Schwarzkerker-Ritter", invaderName: "Feuerritter Queelign" },
+  CastleEnsis: { elite: "images/Gegner/ENSIS_ELITE.jpg", waechter: "images/Gegner/ENSIS_WAECHTER.jpg", invader: "images/Gegner/ENSIS_INVADER.jpg", eliteName: "Karianischer Ritter", waechterName: "Kampfmagier von Ensis", invaderName: "Zwillingsmond-Adept" },
+  AbyssalWoods: { elite: "images/Gegner/ABYSS_ELITE.jpg", waechter: "images/Gegner/ABYSS_WAECHTER.jpg", invader: "images/Gegner/ABYSS_INVADER.jpg", eliteName: "Erblindeter Wahnsinniger", waechterName: "Winterlaterne", invaderName: "Anhänger der Wahnsinnigen Flamme" },
   Mountaintops: { elite: "images/MOUNTAINTOPS_ELITE.jpg", waechter: "images/MOUNTAINTOPS_WAECHTER.jpg", invader: "images/MOUNTAINTOPS_INVADER.jpg", eliteName: "Feuermönch", waechterName: "Troll", invaderName: "Okina" },
   FarumAzula: { elite: "images/FARUMAZULA_ELITE.jpg", waechter: "images/FARUMAZULA_WAECHTER.jpg", invader: "images/FARUMAZULA_INVADER.jpg", eliteName: "Bestienmensch of Farum Azula", waechterName: "Farum Azula Drache", invaderName: "Anastasia" },
   AshenCapital: { elite: "images/ASHENCAPITAL_ELITE.jpg", waechter: "images/ASHENCAPITAL_WAECHTER.jpg", invader: "images/ASHENCAPITAL_INVADER.jpg", eliteName: "Page", waechterName: "Königlicher Revenant", invaderName: "Varre" }
 };
 
 const bilderDatenbankBosse = {
+  // --- DLC: Land des Schattens (Bilder in images/bosse/ nachlegen) ---
+  "Göttliches Tanzlöwenbiest": "images/bosse/tanzloewe.jpg",
+  "Rellana, Ritterin der Zwillingsmonde": "images/bosse/rellana.jpg",
+  "Midra, Herr der Wahnsinnigen Flamme": "images/bosse/midra.jpg",
   "Loretta, Knight of the Haligtree": "images/loretta-knight-of-haligtree.jpg",
   "Commander Niall": "images/commander-niall-elden-ring-wiki.jpg",
   "Malenia, Blade of Miquella": "images/maleniap1.webp",
@@ -1399,7 +1438,8 @@ const bDatenbankHTML = {
   16: "images/icons/sewersicon.webp",
   17: "images/icons/ryas_necklace.png",
   18: "images/icons/rya.webp",
-  19: "images/icons/Elden_Ring_Torrent_concept_art.png"
+  19: "images/icons/Elden_Ring_Torrent_concept_art.png",
+  20: "images/icons/torbogen.png"   // DLC: Torbogen (Gräberebene) — Icon nachlegen, Fallback greift
 };
 
 const gewichteterPfadePool = [1, 1, 2, 2, 2, 3, 6, 9, 10, 14, 14];
@@ -1552,7 +1592,31 @@ function generiereRautenNetz(regionName) {
     }
   });
 
-  return platziereRyaQuest(platziereKanalisation(platziereFestungen(entferneBlaidd(temporaereKarte), regionName), regionName), regionName);
+  let fertigeKarte = platziereRyaQuest(platziereKanalisation(platziereFestungen(entferneBlaidd(temporaereKarte), regionName), regionName), regionName);
+
+  // DLC Gräberebene: 3 Torbögen (typ 20) auf drei verschiedenen Ebenen — wer alle drei durchspringt, weckt etwas…
+  if (regionName === "Gravesite") {
+    [1, 3, 5].forEach(zi => {   // Ebenen 2, 4 und 6 (nie Start, Gnade oder Boss)
+      let zeile = fertigeKarte[zi]; if (!zeile) return;
+      let kandidaten = zeile.knoten.filter(k => k.typ !== 4 && k.typ !== 5 && k.typ !== 7 && k.typ !== 8 && k.typ !== 10);
+      if (zeile.knoten.length > 1 && kandidaten.length) kandidaten[Math.floor(srand() * kandidaten.length)].typ = 20;
+    });
+  }
+
+  // DLC Abgrundwald: EINEN sicheren Pfad durchs Netz markieren (entlang der echten Wege-Verknüpfungen).
+  // Alles abseits davon nährt den Todesfluch. Seed-deterministisch — geteilte Seeds haben denselben Pfad.
+  if (regionName === "AbyssalWoods") {
+    let pfadIdx = Math.floor(srand() * fertigeKarte[0].knoten.length);
+    fertigeKarte[0].knoten[pfadIdx].sicher = true;
+    for (let e = 0; e < fertigeKarte.length - 1; e++) {
+      let cur = fertigeKarte[e].knoten[pfadIdx];
+      let ziele = (cur.wege && cur.wege.length) ? cur.wege : [0];
+      pfadIdx = ziele[Math.floor(srand() * ziele.length)];
+      if (fertigeKarte[e + 1].knoten[pfadIdx]) fertigeKarte[e + 1].knoten[pfadIdx].sicher = true;
+    }
+  }
+
+  return fertigeKarte;
 }
 
 // Mini-Ebenen (Dungeon & Kanalisation) im Battle-Tower-Layout: 2-3-4-3-2-Boss, immer mind. 2 Wahlmöglichkeiten.
@@ -1752,6 +1816,7 @@ function direktNeustarten() {
   playerHitsOnEnemy = 0; enemyIsStaggered = false; staggerVisualActive = false; nextHitBonusDamage = false;
   currentAffinity = "Keine"; affinityHits = 0; completedDungeonsCount = 0;
   backpackItems = [null, null, null]; activeBuffs = []; inSubDungeon = false; inSewers = false; mainMapState = null; towerEtage = 0;
+  torbogenSpruenge = 0; wolfsgeheulGehoert = false; deathblight = 0; hatAbyssFluestern = false; dlcWahlOffen = false; aktualisiereDeathblightAnzeige();
   // Seed-Run (geteilter Seed): derselbe Seed bleibt für den Retry — normaler Run: frisch würfeln
   setzeSeed(seedIsCustom ? runSeed : zufallsSeed(), seedIsCustom);
   oeffneKlassenAuswahl();
@@ -1810,7 +1875,11 @@ function baueKarteHTML() {
     if (aktuelleRegion === "EldenThrone") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(20,15,5,0.8), rgba(5,5,5,0.95)), url('images/background/eldenthrone.jpg')";
     if (aktuelleRegion === "Haligtree") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(15,25,10,0.75), rgba(5,5,5,0.95)), url('images/background/elden_ring_elphael_hero_2.avif')";
     if (aktuelleRegion === "Mohgwyn") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(35,5,8,0.75), rgba(10,2,3,0.95)), url('images/background/mohgwyn.avif')";
+    if (aktuelleRegion === "Gravesite") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(20,18,10,0.78), rgba(8,8,5,0.92)), url('images/background/gravesite.jpg')";
+    if (aktuelleRegion === "CastleEnsis") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(10,12,28,0.78), rgba(4,5,14,0.92)), url('images/background/castleensis.jpg')";
+    if (aktuelleRegion === "AbyssalWoods") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(4,4,6,0.92), rgba(2,2,3,0.985)), url('images/background/abyssalwoods.jpg')";
   }
+  mapScrollArea.classList.toggle("abyss-fog", aktuelleRegion === "AbyssalWoods" && !inSubDungeon);
 
   netzKarte.forEach(zeile => {
     let rowDiv = document.createElement("div"); rowDiv.classList.add("map-row");
@@ -1834,7 +1903,11 @@ function baueKarteHTML() {
           else if (aktuelleRegion === "EldenThrone" && zeile.ebene === 3) imgTag.src = "images/radagon.jpg";
           else if (aktuelleRegion === "Haligtree") imgTag.src = "images/maleniap1.webp";
           else if (aktuelleRegion === "Mohgwyn") imgTag.src = "images/bosse/Titel-8-fc80008000ffff_1920x1080.avif";
+          else if (aktuelleRegion === "Gravesite") imgTag.src = "images/bosse/tanzloewe.jpg";
+          else if (aktuelleRegion === "CastleEnsis") imgTag.src = "images/bosse/rellana.jpg";
+          else if (aktuelleRegion === "AbyssalWoods") imgTag.src = "images/bosse/midra.jpg";
         }
+        imgTag.onerror = function(){ this.style.display = "none"; };   // fehlendes Bossbild -> leerer Knoten statt Broken-Image
         // Schwäche/Resistenz des Bosses beim Hovern anzeigen (kurz: Weak/Resist)
         let __bn = (activeChallenge === "tower") ? knoten.towerBoss : ((inSubDungeon || inSewers) ? "" : regionBossName(aktuelleRegion, zeile.ebene));
         let __wk = __bn ? bossSchwaecheText(__bn) : "";
@@ -1854,8 +1927,9 @@ function baueKarteHTML() {
           if (vorherigeEbeneKnoten) { let alterKnoten = vorherigeEbeneKnoten.find(k => k.id === aktuellerKnotenId); if (alterKnoten && alterKnoten.wege.includes(knoten.index)) istWaehlbar = true; }
         }
       }
-      if (istGeloest) { nodeDiv.classList.add("completed"); } 
-      else if (knoten.id === aktuellerKnotenId) nodeDiv.classList.add("current-pos"); 
+      if (knoten.sicher) nodeDiv.classList.add("abyss-sicher");   // Abgrundwald: der sichere Pfad glimmt kaum merklich
+      if (istGeloest) { nodeDiv.classList.add("completed"); }
+      else if (knoten.id === aktuellerKnotenId) nodeDiv.classList.add("current-pos");
       else if (istWaehlbar) { nodeDiv.classList.add("selectable"); nodeDiv.onclick = () => klickeKnoten(zeile.ebene, knoten); }
       rowDiv.appendChild(nodeDiv);
     });
@@ -2065,6 +2139,7 @@ function updateUI() {
   let areaText = inSubDungeon ? t("region_catacombs") : aktuelleRegion; 
   if (!inSubDungeon) {
     if (areaText === "FarumAzula") areaText = "Farum Azula"; if (areaText === "Haligtree") areaText = "Haligtree"; if (areaText === "AshenCapital") areaText = "Aschehauptstadt"; if (areaText === "EldenThrone") areaText = "Eldenthron";
+    if (areaText === "Gravesite") areaText = L("Gräberebene", "Gravesite Plain"); if (areaText === "CastleEnsis") areaText = "Castle Ensis"; if (areaText === "AbyssalWoods") areaText = L("Abgrundwald", "Abyssal Woods");
   }
   document.getElementById("region-display-name").innerText = areaText;
   { let __ri = document.getElementById("region-info-icon"); if (__ri) { let __tip = gibGebietsResistenzTooltip(); if (__tip) { __ri.setAttribute("data-tooltip", __tip); __ri.style.display = "inline-flex"; } else { __ri.style.display = "none"; } } }
@@ -2113,6 +2188,9 @@ function updateUI() {
       else if (aktuelleRegion === "AshenCapital") arenaView.style.backgroundImage = "linear-gradient(to bottom, rgba(20,5,5,0.6), rgba(5,5,5,0.9)), url('images/background/ashencapital.avif')";
       else if (aktuelleRegion === "EldenThrone") arenaView.style.backgroundImage = "linear-gradient(to bottom, rgba(40,30,10,0.5), rgba(5,5,5,0.9)), url('images/background/eldenthrone.jpg')";
       else if (aktuelleRegion === "Gelmir") arenaView.style.backgroundImage = "linear-gradient(to bottom, rgba(30,8,4,0.5), rgba(12,4,2,0.85)), url('images/background/gelmir.webp')";
+      else if (aktuelleRegion === "Gravesite") arenaView.style.backgroundImage = "linear-gradient(to bottom, rgba(20,18,10,0.6), rgba(8,8,5,0.9)), url('images/background/gravesite.jpg')";
+      else if (aktuelleRegion === "CastleEnsis") arenaView.style.backgroundImage = "linear-gradient(to bottom, rgba(10,12,28,0.6), rgba(4,5,14,0.9)), url('images/background/castleensis.jpg')";
+      else if (aktuelleRegion === "AbyssalWoods") arenaView.style.backgroundImage = "linear-gradient(to bottom, rgba(4,4,6,0.8), rgba(2,2,3,0.95)), url('images/background/abyssalwoods.jpg')";
       else arenaView.style.backgroundImage = `linear-gradient(to bottom, rgba(11,11,11,0.3), rgba(11,11,11,0.6)), url('images/background/${aktuelleRegion.toLowerCase()}.jpg')`;
     }
 
@@ -2144,10 +2222,39 @@ function klickeKnoten(ebene, knoten) {
   if (imKampf || spielerHp <= 0 || aktionsSperre) return;
   if (window.ER && !inSubDungeon) ER.reachStage(gibStageNummer());
   geloesieKnotenIds.push(knoten.id); aktuellerKnotenId = knoten.id; aktuellerKnotenTyp = knoten.typ;
-       
+
   playerHitsOnEnemy = 0; enemyIsStaggered = false; staggerVisualActive = false; nextHitBonusDamage = false; affinityHits = 0;
 
+  // DLC Abgrundwald: abseits des (kaum sichtbaren) sicheren Pfads wächst der Todesfluch — +25% pro Fehltritt, 100% = Tod
+  if (aktuelleRegion === "AbyssalWoods" && !inSubDungeon && !knoten.sicher) {
+    deathblight = Math.min(100, deathblight + 25);
+    aktualisiereDeathblightAnzeige();
+    if (deathblight >= 100) {
+      spielerHp = 0; speichereRun(); updateUI();
+      let overlayDb = document.getElementById("popup-overlay"); if (overlayDb) overlayDb.style.display = "none";
+      let logDb = document.getElementById("battle-log"); if (logDb) logDb.innerText = L("☠ Der Todesfluch verschlingt dich. Dornen brechen aus deinem Leib.", "☠ Deathblight consumes you. Thorns burst from your body.");
+      zeigeTodesBildschirm(true);   // endgültig — gegen den Todesfluch hilft kein Vollmond
+      return;
+    }
+    zeigeBlightToast();
+  }
+
+  if (knoten.typ === 20) {   // DLC Gräberebene: der Torbogen — hindurchspringen kostet den Knoten, aber…
+    torbogenSpruenge++;
+    if (torbogenSpruenge >= 3 && !wolfsgeheulGehoert) {
+      wolfsgeheulGehoert = true; speichereRun();
+      oeffneStatPopup(L("Ein Wolfsgeheul!", "A Wolf's Howl!"),
+        L("Du springst durch den dritten Torbogen — und diesmal antwortet etwas.\n\nAus weiter Ferne rollt ein markerschütterndes <b>Wolfsgeheul</b> über die Gräberebene. Irgendetwas hat dich bemerkt…", "You leap through the third archway — and this time, something answers.\n\nFrom far away, a bone-chilling <b>wolf's howl</b> rolls across the Gravesite Plain. Something has taken notice of you…"), ebene + 1);
+    } else {
+      speichereRun();
+      oeffneStatPopup(L("Der Torbogen", "The Archway"),
+        L("Ein uralter steinerner Torbogen, von Gräbern gesäumt. Du nimmst Anlauf und springst hindurch.\n\nDer Wind pfeift durch den alten Stein. Nichts geschieht… noch nicht.", "An ancient stone archway, lined with graves. You take a running start and leap through.\n\nThe wind whistles through the old stone. Nothing happens… yet."), ebene + 1);
+    }
+    return;
+  }
+
   if (knoten.typ === 4) {
+    if (aktuelleRegion === "CastleEnsis" && !hatAbyssFluestern) { oeffneEnsisGnade(ebene + 1); return; }   // DLC: hier flüstert etwas im Nebel…
     spielerHp = berechneFinalMaxHp(); spielerFlasks = maxKlassenFlasks;
     oeffneStatPopup(t("grace_title"), t("grace_desc"), ebene + 1); return;
   }
@@ -2186,6 +2293,10 @@ function klickeKnoten(ebene, knoten) {
   if (aktuelleRegion === "Mountaintops") rMult = (hardMode ? 3.2*1.3 : 3.2) * 1.05; if (aktuelleRegion === "FarumAzula") rMult = (hardMode ? 4.0*1.3 : 4.0) * 1.05;
   if (aktuelleRegion === "AshenCapital") rMult = (hardMode ? 4.8*1.3 : 4.8) * 1.05; if (aktuelleRegion === "EldenThrone") rMult = (hardMode ? 5.5*1.3 : 5.5) * 1.05;
   if (aktuelleRegion === "Haligtree" || aktuelleRegion === "Mohgwyn") rMult = (hardMode ? 6.5*1.3 : 6.5) * 1.05;
+  // DLC: Land des Schattens — deutlich über allem im Basegame (soll eine echte Herausforderung sein)
+  if (aktuelleRegion === "Gravesite") rMult = (hardMode ? 7.2*1.3 : 7.2) * 1.05;
+  if (aktuelleRegion === "CastleEnsis") rMult = (hardMode ? 8.0*1.3 : 8.0) * 1.05;
+  if (aktuelleRegion === "AbyssalWoods") rMult = (hardMode ? 9.0*1.3 : 9.0) * 1.05;
 
   if (gebietsGegnerKonfig[aktuelleRegion]) {
     let cfg = gebietsGegnerKonfig[aktuelleRegion];
@@ -2236,6 +2347,10 @@ function klickeKnoten(ebene, knoten) {
         // Feste Werte wie Malenia/Radagon — NICHT via rMult skalieren (Mohgwyn-rMult wäre ~6.8x).
         gegnerName = "Mohg, Fürst des Blutes"; gegnerMaxHp = 2000; gegnerSchaden = 135;
       }
+      // --- DLC: Land des Schattens — feste Werte, bewusst über allem im Basegame ---
+      else if (aktuelleRegion === "Gravesite") { gegnerName = "Göttliches Tanzlöwenbiest"; gegnerMaxHp = 2400; gegnerSchaden = 150; }
+      else if (aktuelleRegion === "CastleEnsis") { gegnerName = "Rellana, Ritterin der Zwillingsmonde"; gegnerMaxHp = 2700; gegnerSchaden = 160; }
+      else if (aktuelleRegion === "AbyssalWoods") { gegnerName = "Midra, Herr der Wahnsinnigen Flamme"; gegnerMaxHp = 3200; gegnerSchaden = 175; }
       else if (aktuelleRegion === "EldenThrone") {
         if (ebene === 1) { gegnerName = "Godfrey, der Erste Eldenlord"; gegnerMaxHp = 1800; gegnerSchaden = 100; }
         if (ebene === 3) { gegnerName = "Radagon von der Goldenen Ordnung"; gegnerMaxHp = 2000; gegnerSchaden = 110; }
@@ -3137,6 +3252,11 @@ function kampfGewonnen() {
 
   activeBuffs.forEach(b => { if (b.remaining > 0) b.remaining--; }); activeBuffs = activeBuffs.filter(b => b.remaining > 0);
 
+  // DLC-Zugang: Wer Mohg schon in einem FRÜHEREN Run besiegt hat (Miquella erwacht), bekommt beim
+  // erneuten Sieg die Wahl, Miquellas Hand zu berühren — der Run endet dann NICHT, sondern geht ins DLC.
+  let mohgZweiterKill = gegnerName === "Mohg, Fürst des Blutes" && window.ER &&
+    ((ER.getStats().bossKills["Mohg, Fürst des Blutes"] || 0) >= 1);
+
   // Anti-Farm: jeden Boss-/Festungs-/Abgrund-Knoten pro Run nur EINMAL für die Rangliste zählen (schützt vor Quit-Reload-Farmen, auch bei 2-Phasen-Bossen)
   let __bossNode = ((aktuellerKnotenTyp === 5 && !inSewers) || aktuellerKnotenTyp === 15 || aktuellerKnotenTyp === 19) && !inSubDungeon;
   let __schonGezaehlt = __bossNode && aktuellerKnotenId && gezaehlteBossKnoten.indexOf(aktuellerKnotenId) >= 0;
@@ -3144,7 +3264,7 @@ function kampfGewonnen() {
 
   if (window.ER) {
     ER.fightWon();
-    if (gegnerName === "Eldenbiest" || gegnerName === "Mohg, Fürst des Blutes") { if (!__schonGezaehlt) { ER.bossKilled(gegnerName); recordHallOfFame(); ER.gameCompleted(gewaehlteKlasse, hardMode ? "hard" : "normal", !blaiddEncounteredRun, (armorRemovedByPlayer && !hatRuestungAusgeruestet())); stopRunTimer();
+    if (gegnerName === "Eldenbiest" || (gegnerName === "Mohg, Fürst des Blutes" && !mohgZweiterKill)) { if (!__schonGezaehlt) { ER.bossKilled(gegnerName); recordHallOfFame(); ER.gameCompleted(gewaehlteKlasse, hardMode ? "hard" : "normal", !blaiddEncounteredRun, (armorRemovedByPlayer && !hatRuestungAusgeruestet())); stopRunTimer();
       // Completion-Marks für die Klassen-Tafel (Hard schließt Normal mit ein)
       ER.classFeat(gewaehlteKlasse, "normal");
       if (hardMode) ER.classFeat(gewaehlteKlasse, "hard");
@@ -3156,6 +3276,7 @@ function kampfGewonnen() {
       if (maleniaBesiegtRun) ER.maleniaRunCompleted();   // Achievement "Pfad des Haligtree"
       if (waffenRaritaet === "legendary" && ruestungRaritaet === "legendary" && Array.isArray(ausgeruesteteTalismane) && ausgeruesteteTalismane.some(function(tt){ return tt && tt.rarity === "legendary"; })) ER.legendaryRunCompleted();  // "Legendär ausgestattet"
     } }
+    else if (mohgZweiterKill) { if (!__schonGezaehlt) { ER.bossKilled(gegnerName); ER.classFeat(gewaehlteKlasse, "mohgwyn"); } }   // Zweitsieg: Kill zählt, Run-Abschluss erst nach der Hand-Wahl
     else if (aktuellerKnotenTyp === 5 && !inSubDungeon && !inSewers) { if (!__schonGezaehlt) ER.bossKilled(gegnerName); }
     else if (aktuellerKnotenTyp === 15 || aktuellerKnotenTyp === 19) { if (!__schonGezaehlt) ER.bossKilled(gegnerName); }
     else if (aktuellerKnotenTyp === 5 && inSewers) ER.eliteKilled();   // Esgar zählt als Gegner, nicht als Boss
@@ -3172,7 +3293,9 @@ function kampfGewonnen() {
   imKampf = false; aktionsSperre = false; let naechsteEbene = aktuelleEbene + 1;
 
   // Mohg, Fürst des Blutes besiegt -> Miquella erwacht, der Run ist vollendet (alternatives Ende)
+  // Beim ZWEITEN Sieg (Meta): die verwelkte Hand wartet — Wahl zwischen Ende und Land des Schattens
   if (gegnerName === "Mohg, Fürst des Blutes") {
+    if (mohgZweiterKill) { oeffneMohgDlcWahl(); return; }
     oeffneAbschlussPopup(
       L("MIQUELLA ERWACHT", "MIQUELLA AWAKENS"),
       L("Mohg, Fürst des Blutes, ist gefallen. Im Herzen der Dynastie regt sich der Kokon — Miquella erwacht aus seinem langen Schlummer.\n\nDein Weg endet hier... vorerst.", "Mohg, Lord of Blood, has fallen. Within the heart of the dynasty the cocoon stirs — Miquella awakens from his long slumber.\n\nYour path ends here... for now.")
@@ -3226,6 +3349,27 @@ function kampfGewonnen() {
     else { oeffneStatPopup(t("blaidd_progress_title"), t("blaidd_progress_desc", { n: questProgress, z: hardMode ? 5 : 4 }), naechsteEbene); return; }
   }
   
+  // === DLC: Land des Schattens — Boss-Übergänge ===
+  if (gegnerName === "Göttliches Tanzlöwenbiest") {
+    aktuelleRegion = "CastleEnsis"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null; netzKarte = generiereRautenNetz("CastleEnsis");
+    oeffneStatPopup(L("Das Tanzlöwenbiest ist gefallen", "The Dancing Lion Has Fallen"),
+      L("Das göttliche Biest zerfällt zu Sturmwind und Staub. Hinter Belurat öffnet sich der Weg zur Mondlichtfestung der Karianer: <b>Castle Ensis</b>.\n\nDort drüben, im Nebel… flüstert etwas.", "The divine beast dissolves into storm and dust. Beyond Belurat, the path opens to the Carian moonlight fortress: <b>Castle Ensis</b>.\n\nOver there, in the mist… something whispers."), 1);
+    return;
+  }
+  if (gegnerName === "Rellana, Ritterin der Zwillingsmonde") {
+    if (hatAbyssFluestern) { oeffneWegwahlEnsis(); return; }
+    vollendeRunMitAbschluss(
+      L("DAS SCHATTENLAND RUFT", "THE SHADOW LANDS CALL"),
+      L("Rellana ist gefallen — die Zwillingsmonde erlöschen.\n\nVor dir teilt sich der Weg: die <b>Schattenfeste</b> Messmers und die <b>Ruinen von Rauh</b> liegen am Horizont. Doch beide Pfade sind noch von Nebel verschlossen…\n\n<i>Die Reise ins Land des Schattens wird fortgesetzt. (Kommt im nächsten Patch!)</i>", "Rellana has fallen — the twin moons go dark.\n\nAhead, the road divides: Messmer's <b>Shadow Keep</b> and the <b>Ruins of Rauh</b> lie on the horizon. But both paths are still sealed in mist…\n\n<i>The journey into the Land of Shadow continues. (Coming in the next patch!)</i>"));
+    return;
+  }
+  if (gegnerName === "Midra, Herr der Wahnsinnigen Flamme") {
+    vollendeRunMitAbschluss(
+      L("DER WAHNSINN ERLISCHT", "THE FRENZY GUTTERS OUT"),
+      L("Midras Haupt sinkt herab, und die Wahnsinnige Flamme verglimmt im Dunkel des Abgrundwalds.\n\nDu hast das finsterste Geheimnis des Schattenlands bezwungen — als einer der ganz wenigen.", "Midra's head sinks low, and the Frenzied Flame gutters out in the dark of the Abyssal Woods.\n\nYou have conquered the Shadow Lands' darkest secret — one of the very few."));
+    return;
+  }
+
   if (gegnerName === "Godrick, der Verpflanzte") {
     hatGodrickRune = true;
     // Nach Limgrave: wenn Liurnia freigeschaltet ist (und kein Challenge-Run), Wegwahl Caelid/Liurnia anbieten
@@ -3544,6 +3688,129 @@ function speedrunModusAktiv(){ try { return localStorage.getItem("eldenRogueSpee
 
 // Run ist ABGESCHLOSSEN (Sieg) – kein Weiterspielen, kein Speichern.
 // Zeigt nur einen Button zurück ins Hauptmenü.
+/* ============================================================
+   DLC: LAND DES SCHATTENS — Zugang, Regionen & Todesfluch
+   ============================================================ */
+
+// Mohg (2. Sieg) liegt: Wahl zwischen bisherigem Ende und dem Übertritt ins DLC
+function oeffneMohgDlcWahl() {
+  dlcWahlOffen = true; speichereRun();
+  let overlay = document.getElementById("popup-overlay"); let content = document.getElementById("popup-content");
+  content.innerHTML = `
+    <div style="color:#888; font-size:0.72rem; letter-spacing:3px; text-transform:uppercase; font-family:sans-serif; margin-bottom:6px;">${L("Mohg ist erneut gefallen", "Mohg has fallen once more")}</div>
+    <h3 style="color: var(--gold); font-size:1.7rem; margin-top:0; letter-spacing:2px; font-family: 'Mantinia', serif;">${L("DIE VERWELKTE HAND", "THE WITHERED HAND")}</h3>
+    <p style="color:#ddd; font-size:0.95rem; font-family: sans-serif; white-space:pre-line; line-height:1.55;">${L("Der Kokon ist geborsten — Miquella ist fort. Zurück blieb nur eine <b>verwelkte Hand</b>, die aus dem Herzen der Dynastie ragt.\n\nSie scheint auf dich zu warten.", "The cocoon has burst — Miquella is gone. All that remains is a <b>withered hand</b>, reaching out from the heart of the dynasty.\n\nIt seems to be waiting for you.")}</p>
+    <button class="btn-modal-action" style="border-color:#b06ad4; color:#c99ae0;" onclick="starteDLC()">🖐 ${L("Die Hand berühren", "Touch the hand")}</button>
+    <button class="btn-modal-action" onclick="vollendeMohgwynEnde()">${L("Den Run vollenden", "Complete the run")}</button>
+    <p style="color:#666; font-size:0.72rem; font-family:sans-serif; margin-top:10px;">${L("Die Hand führt ins Land des Schattens — es gibt kein Zurück, und was dort wartet, ist gnadenlos.", "The hand leads into the Land of Shadow — there is no way back, and what waits there is merciless.")}</p>
+  `;
+  overlay.style.display = "flex";
+}
+
+// Gemeinsames Run-Abschluss-Paket (Statistiken, Bestenlisten, Marks) + Abschluss-Popup
+function vollendeRunMitAbschluss(titel, text) {
+  dlcWahlOffen = false;
+  if (window.ER) {
+    recordHallOfFame();
+    ER.gameCompleted(gewaehlteKlasse, hardMode ? "hard" : "normal", !blaiddEncounteredRun, (armorRemovedByPlayer && !hatRuestungAusgeruestet()));
+    stopRunTimer();
+    ER.classFeat(gewaehlteKlasse, "normal");
+    if (hardMode) ER.classFeat(gewaehlteKlasse, "hard");
+    if (runPlayMs > 0 && runPlayMs <= CONFIG.speedrunMarkMs) ER.classFeat(gewaehlteKlasse, "speed5");
+    if (activeChallenge === "" && ER.recordCompletionTime) try { ER.recordCompletionTime(runPlayMs, { klasse: gewaehlteKlasse, diff: hardMode ? "hard" : "normal" }); } catch(e){}
+    if (hardMode) ER.hardCompleted();
+    if (activeChallenge) ER.challengeCompleted(activeChallenge);
+    if (maleniaBesiegtRun) ER.maleniaRunCompleted();
+    if (waffenRaritaet === "legendary" && ruestungRaritaet === "legendary" && Array.isArray(ausgeruesteteTalismane) && ausgeruesteteTalismane.some(function(tt){ return tt && tt.rarity === "legendary"; })) ER.legendaryRunCompleted();
+  }
+  oeffneAbschlussPopup(titel, text);
+}
+
+function vollendeMohgwynEnde() {
+  vollendeRunMitAbschluss(
+    L("MIQUELLA ERWACHT", "MIQUELLA AWAKENS"),
+    L("Mohg, Fürst des Blutes, ist gefallen. Die verwelkte Hand sinkt zurück in den Kokon.\n\nDein Weg endet hier... vorerst.", "Mohg, Lord of Blood, has fallen. The withered hand sinks back into the cocoon.\n\nYour path ends here... for now.")
+  );
+}
+
+// Übertritt ins Land des Schattens: der Run läuft weiter — auf der Gräberebene
+function starteDLC() {
+  dlcWahlOffen = false;
+  document.getElementById("popup-overlay").style.display = "none";
+  aktuelleRegion = "Gravesite"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null;
+  inSubDungeon = false; inSewers = false; mainMapState = null;
+  torbogenSpruenge = 0; wolfsgeheulGehoert = false; deathblight = 0; hatAbyssFluestern = false;
+  netzKarte = generiereRautenNetz("Gravesite");
+  heileUndRegeneriereVoll(hardMode);
+  speichereRun(); baueKarteHTML(); updateUI(); aktualisiereDeathblightAnzeige();
+  oeffneStatPopup(L("Das Land des Schattens", "The Land of Shadow"),
+    L("Du berührst die verwelkte Hand — und die Welt zerfließt zu goldener Asche.\n\nAls du erwachst, liegt ein fremdes Land unter einem verhangenen Himmel vor dir: die <b>Gräberebene</b>. Steinerne Torbögen säumen die Gräber, und die Gegner hier sind von ganz anderer Härte.\n\n<b>Es gibt kein Zurück.</b>", "You touch the withered hand — and the world dissolves into golden ash.\n\nWhen you wake, a strange land lies before you beneath a veiled sky: the <b>Gravesite Plain</b>. Stone archways line the graves, and the enemies here are of a different caliber entirely.\n\n<b>There is no way back.</b>"), 1);
+}
+
+// Castle Ensis: Gnade mit Geheim-Option — rasten ODER dem Flüstern folgen (keine Heilung!)
+function oeffneEnsisGnade(naechsteEbene) {
+  let overlay = document.getElementById("popup-overlay"); let content = document.getElementById("popup-content");
+  content.innerHTML = `
+    <h3 style="color: var(--gold); font-size:1.5rem; margin-top:0; letter-spacing:2px; font-family: 'Mantinia', serif;">${t("grace_title")}</h3>
+    <p style="color:#ddd; font-size:0.95rem; font-family: sans-serif; line-height:1.5;">${L("Das goldene Licht der Gnade flackert unruhig. Und dort, jenseits der Festungsmauer, wabert ein Nebel — als würde er <i>flüstern</i>.", "The golden light of grace flickers uneasily. And there, beyond the fortress wall, a mist churns — as if it were <i>whispering</i>.")}</p>
+    <button class="btn-modal-action" onclick="ensisRasten(${naechsteEbene})">${L("An der Gnade rasten", "Rest at the grace")}</button>
+    <div style="margin-top:14px;"><a href="#" onclick="ensisFluesternFolgen(${naechsteEbene}); return false;" style="color:#5a5a6a; font-size:0.78rem; font-family:sans-serif; text-decoration:none; letter-spacing:0.5px;">${L("… dem Flüstern im Nebel folgen", "… follow the whispering in the mist")}</a></div>
+  `;
+  overlay.style.display = "flex";
+}
+function ensisRasten(naechsteEbene) {
+  spielerHp = berechneFinalMaxHp(); spielerFlasks = maxKlassenFlasks;
+  oeffneStatPopup(t("grace_title"), t("grace_desc"), naechsteEbene);
+}
+function ensisFluesternFolgen(naechsteEbene) {
+  hatAbyssFluestern = true; speichereRun();   // KEINE Heilung — der Preis des Geheimnisses
+  oeffneStatPopup(L("Das Flüstern", "The Whispering"),
+    L("Du wendest dich vom Licht ab und folgst dem Nebel bis an den Rand eines bodenlosen Schachts. Von tief unten weht dir ein Raunen entgegen — Stimmen, die keine sein sollten.\n\nDu kehrst zur Karte zurück. <b>Ungeheilt.</b> Aber du weißt jetzt: Unter Castle Ensis liegt ein Abgrund.", "You turn away from the light and follow the mist to the edge of a bottomless shaft. From far below, a murmur drifts up to meet you — voices that should not be.\n\nYou return to the map. <b>Unhealed.</b> But now you know: beneath Castle Ensis lies an abyss."), naechsteEbene);
+}
+
+// Nach Rellana (mit gehörtem Flüstern): Wahl zwischen Abgrundwald und dem normalen Weiterweg
+function oeffneWegwahlEnsis() {
+  let overlay = document.getElementById("popup-overlay"); let content = document.getElementById("popup-content");
+  content.innerHTML = `
+    <div style="color:#888; font-size:0.72rem; letter-spacing:3px; text-transform:uppercase; font-family:sans-serif; margin-bottom:6px;">${L("Rellana ist gefallen", "Rellana has fallen")}</div>
+    <h3 style="color: var(--gold); font-size:1.6rem; margin-top:0; letter-spacing:2px; font-family: 'Mantinia', serif;">${L("DER SCHACHT RUFT", "THE SHAFT CALLS")}</h3>
+    <p style="color:#ddd; font-size:0.92rem; font-family: sans-serif; line-height:1.55;">${L("Das Flüstern ist jetzt lauter. Der Schacht unter der Festung steht offen — und aus der Tiefe dringt fahles, gelbes Glimmen.\n\nSteigst du hinab?", "The whispering is louder now. The shaft beneath the fortress stands open — and a pale yellow glow seeps up from the depths.\n\nWill you descend?")}</p>
+    <button class="btn-modal-action" style="border-color:#8a7a2a; color:#c9b84a;" onclick="starteAbyssalWoods()">🕯 ${L("In den Abgrundwald hinabsteigen", "Descend into the Abyssal Woods")}</button>
+    <button class="btn-modal-action" onclick="vollendeRunMitAbschluss(L('DAS SCHATTENLAND RUFT','THE SHADOW LANDS CALL'), L('Du lässt den Abgrund hinter dir. Schattenfeste und Ruinen von Rauh liegen am Horizont — noch von Nebel verschlossen…\\n\\n<i>Die Reise wird fortgesetzt. (Kommt im nächsten Patch!)</i>','You leave the abyss behind. Shadow Keep and the Ruins of Rauh lie on the horizon — still sealed in mist…\\n\\n<i>The journey continues. (Coming in the next patch!)</i>'))">${L("Dem Pfad weiter folgen", "Follow the path onward")}</button>
+    <p style="color:#666; font-size:0.72rem; font-family:sans-serif; margin-top:10px;">${L("Warnung: Im Abgrundwald siehst du fast nichts — und jeder Fehltritt nährt den Todesfluch.", "Warning: in the Abyssal Woods you can barely see — and every misstep feeds the deathblight.")}</p>
+  `;
+  overlay.style.display = "flex";
+}
+
+function starteAbyssalWoods() {
+  document.getElementById("popup-overlay").style.display = "none";
+  aktuelleRegion = "AbyssalWoods"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null;
+  deathblight = 0;
+  netzKarte = generiereRautenNetz("AbyssalWoods");
+  speichereRun(); baueKarteHTML(); updateUI(); aktualisiereDeathblightAnzeige();
+  oeffneStatPopup(L("Der Abgrundwald", "The Abyssal Woods"),
+    L("Kein Licht. Kein Laut. Nur ein Wald aus schwarzen Stämmen unter einem Himmel, der keiner ist.\n\nDie Karte ist hier kaum zu erkennen — doch es gibt <b>einen sicheren Pfad</b>. Wer ihn verlässt, nährt den <b>Todesfluch: +25% pro Fehltritt</b>. Bei 100% gehörst du dem Wald.\n\nSieh genau hin. Und geh leise.", "No light. No sound. Only a forest of black trunks beneath a sky that is no sky.\n\nThe map is barely visible here — but there is <b>one safe path</b>. Stray from it and the <b>deathblight grows: +25% per misstep</b>. At 100%, you belong to the woods.\n\nLook closely. And tread quietly."), 1);
+}
+
+// Todesfluch-Anzeige (Seitenleiste) + Kurz-Toast beim Fehltritt
+function aktualisiereDeathblightAnzeige() {
+  let wrap = document.getElementById("deathblight-wrap"); if (!wrap) return;
+  let aktiv = aktuelleRegion === "AbyssalWoods" && !inSubDungeon;
+  wrap.style.display = aktiv ? "block" : "none";
+  if (!aktiv) return;
+  let bar = document.getElementById("deathblight-bar"); if (bar) bar.style.width = deathblight + "%";
+  let pct = document.getElementById("deathblight-pct"); if (pct) pct.textContent = deathblight + "%";
+}
+function zeigeBlightToast() {
+  let wrap = document.getElementById("ach-toast-wrap"); if (!wrap) return;
+  let el = document.createElement("div");
+  el.className = "ach-toast";
+  el.style.borderColor = "#b06ad4";
+  el.innerHTML = '<div class="ach-ic">☠</div><div><div class="ach-label" style="color:#b06ad4;">' + L("TODESFLUCH", "DEATHBLIGHT") + " " + deathblight + '%</div><div class="ach-desc">' + L("Du hast den sicheren Pfad verlassen.", "You strayed from the hidden path.") + '</div></div>';
+  wrap.appendChild(el);
+  setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 4200);
+}
+
 function oeffneAbschlussPopup(titel, text) {
   loescheRunSave(); // abgeschlossener Run wird nicht mehr gespeichert/fortgesetzt
   let __s = belohneSeelen(true);
