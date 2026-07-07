@@ -203,7 +203,9 @@
     .btn-google:hover { box-shadow: 0 0 14px rgba(255,255,255,0.25); }
     .btn-google img { width: 16px; height: 16px; }
     /* ===== To-Do / "Erste Schritte" ===== */
-    .todo-card { max-width: 520px; margin: 16px auto 0; background: linear-gradient(160deg, rgba(30,24,14,0.92), rgba(15,13,9,0.92)); border: 1px solid var(--gold-dark); border-radius: 10px; padding: 12px 14px; text-align: left; }
+    .todo-card { position: fixed; top: 70px; left: 86px; width: 250px; z-index: 35; margin: 0; background: linear-gradient(160deg, rgba(30,24,14,0.94), rgba(15,13,9,0.94)); border: 1px solid var(--gold-dark); border-radius: 10px; padding: 11px 13px; text-align: left; box-shadow: 0 6px 26px rgba(0,0,0,0.55); }
+    .sidebar.open ~ #souls-badge + #todo-card, .sidebar.open ~ #todo-card { left: 240px; }
+    @media (max-width: 900px) { .todo-card { display: none; } }
     .todo-top { display: flex; justify-content: space-between; align-items: center; font-family: 'Cinzel', serif; color: var(--gold); font-size: 0.95rem; letter-spacing: 1px; margin-bottom: 8px; }
     .todo-x { background: none; border: none; color: #6a6250; font-size: 0.85rem; cursor: pointer; padding: 2px 6px; line-height: 1; }
     .todo-x:hover { color: var(--gold); }
@@ -2112,7 +2114,7 @@
     if (!(window.ER && ER.generateDiscordCode)) { out.textContent = en ? "Not available offline." : "Offline nicht verfügbar."; return; }
     out.textContent = en ? "Generating…" : "Erzeuge…";
     ER.generateDiscordCode(function (r) {
-      if (r && r.ok) out.innerHTML = (en ? "Your code: " : "Dein Code: ") + '<b style="color:var(--gold);letter-spacing:2px;font-size:1.05rem;">' + r.code + '</b> — ' + (en ? "type " : "tippe ") + '<b>/verify ' + r.code + '</b>';
+      if (r && r.ok) out.innerHTML = (en ? "Your code: " : "Dein Code: ") + '<b style="color:var(--gold);letter-spacing:2px;font-size:1.05rem;">' + r.code + '</b> <span style="color:#8a7f68;">(' + (en ? "valid 15 min" : "15 Min gültig") + ')</span>';
       else out.innerHTML = '<span style="color:#e74c3c;">' + (en ? "Failed — online & signed in?" : "Fehlgeschlagen — online & angemeldet?") + '</span>';
     });
   }
