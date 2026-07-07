@@ -27,13 +27,12 @@ admin.initializeApp();
    du kannst also klein anfangen und später Rollen ergänzen.
    ------------------------------------------------------------ */
 const ROLLEN_MAPPING = {
-  elden_lord:   "HIER_ROLLEN_ID",   // Eldenbiest besiegt (Run abgeschlossen)
-  hard_lord:    "HIER_ROLLEN_ID",   // Hard-Mode-Run abgeschlossen
-  malenia:      "HIER_ROLLEN_ID",   // Malenia besiegt
-  mohg:         "HIER_ROLLEN_ID",   // Mohg besiegt — Miquellas Erwachen
-  tower_master: "HIER_ROLLEN_ID",   // Battle Tower Etage 20
+  elden_lord:   "HIER_ROLLEN_ID",   // Eldenbestie besiegt (Run abgeschlossen = Elden Lord)
+  dlc_consort:  "HIER_ROLLEN_ID",   // Verheißener Gemahl Radahn im DLC besiegt — NICHT der Turm-"Baby PCR"!
+  // Hinweis: Die "Patch-Benachrichtigung"-Rolle läuft NICHT über diesen Bot,
+  // sondern als selbst-vergebene Rolle (Reaction-Role / Discord-Onboarding) — siehe Anleitung.
 };
-const ROLLE_100_PROZENT = "HIER_ROLLEN_ID";   // 100%-Club (alle Achievements)
+const ROLLE_100_PROZENT = "HIER_ROLLEN_ID";   // (optional, aus) 100%-Club — leer lassen = wird übersprungen
 
 const CODE_GUELTIG_MS = 15 * 60 * 1000;   // Codes aus dem Spiel gelten 15 Minuten
 

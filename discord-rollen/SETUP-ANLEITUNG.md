@@ -25,16 +25,23 @@ Einmaliges Setup für dich: ca. 30–45 Minuten. Schritt für Schritt:
 
 ## Schritt 2 — Rollen im Discord anlegen (~5 Min)
 
-1. Discord → Servereinstellungen → Rollen → Rollen anlegen, z. B.:
-   „👑 Elden Lord", „🔥 Wahrer Elden Lord", „🌸 Klinge Miquellas",
-   „🩸 Miquellas Erwecker", „🗼 Meister des Turms", „💯 100%-Club"
+Aktuell nur **zwei** bot-vergebene Rollen (klein anfangen, später erweiterbar):
+
+1. Discord → Servereinstellungen → Rollen → Rollen anlegen:
+   - „👑 Eldenbestie-Bezwinger" → gehört zu `elden_lord` (Run abgeschlossen)
+   - „🌘 Gemahl des Gestirns" → gehört zu `dlc_consort` (DLC-PCR besiegt)
 2. **Wichtig:** Die Rolle des Bots (heißt wie deine App) muss in der Rollen-Liste
    ÜBER den Rollen stehen, die er vergeben soll (einfach hochziehen).
 3. Entwicklermodus aktivieren (Einstellungen → Erweitert), dann pro Rolle:
    Rechtsklick → **ID kopieren**
 4. In `functions/index.js` das `ROLLEN_MAPPING` ausfüllen (die kopierten IDs
-   anstelle von `HIER_ROLLEN_ID` einsetzen). Nicht gebrauchte Zeilen einfach
-   stehen lassen — sie werden übersprungen.
+   anstelle von `HIER_ROLLEN_ID` einsetzen).
+
+> **Patch-Benachrichtigungs-Rolle** (z. B. „🔔 Patch-News") läuft NICHT über
+> diesen Bot — das ist eine **selbst-vergebene Rolle**. Am einfachsten über
+> Discords eigenes **Onboarding** (Servereinstellungen → Onboarding) oder eine
+> Reaction-Role (z. B. per MEE6/Carl-bot). In deinem Ankündigungs-Kanal dann
+> beim Patch einfach `@Patch-News` pingen.
 
 ## Schritt 3 — Slash-Commands registrieren (~5 Min)
 
