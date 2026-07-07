@@ -41,7 +41,13 @@ const BOT_TOKEN = defineSecret("DISCORD_BOT_TOKEN");
 const PUBLIC_KEY = defineSecret("DISCORD_PUBLIC_KEY");
 
 exports.discordInteractions = onRequest(
-  { secrets: [BOT_TOKEN, PUBLIC_KEY], region: "europe-west1" },
+  {
+    secrets: [BOT_TOKEN, PUBLIC_KEY],
+    region: "europe-west1",
+    maxInstances: 5,        // HARTE Kosten-Obergrenze: die Funktion skaliert nie über 5 Instanzen — selbst unter Last kann keine "Überraschungsrechnung" entstehen
+    memory: "256MiB",       // kleinste (günstigste) Stufe reicht völlig
+    timeoutSeconds: 15      // jede Anfrage ist nach 15 s vorbei — keine hängenden, teuren Läufe
+  },
   async (req, res) => {
     // 1) Signatur prüfen (Pflicht — sonst akzeptiert Discord den Endpoint nicht)
     const signature = req.get("X-Signature-Ed25519");
