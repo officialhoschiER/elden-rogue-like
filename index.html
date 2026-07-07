@@ -512,6 +512,17 @@
     </div>
     <div class="set-row">
       <div>
+        <div class="set-label" id="set-theme-label">Design</div>
+        <div class="set-sub" id="set-theme-sub">Menü-Thema (Skin-Vorschau)</div>
+      </div>
+      <div class="set-lang" id="theme-picker" style="flex-wrap:wrap; justify-content:flex-end; gap:6px;">
+        <button class="btn-lang" data-theme="elden" onclick="setTheme('elden')">Elden Ring</button>
+        <button class="btn-lang" data-theme="bloodborne" onclick="setTheme('bloodborne')">Bloodborne</button>
+        <button class="btn-lang" data-theme="darksouls" onclick="setTheme('darksouls')">Dark Souls</button>
+      </div>
+    </div>
+    <div class="set-row">
+      <div>
         <div class="set-label" id="set-sound-label">Sound</div>
         <div class="set-sub" id="set-sound-sub">UI-Klänge an/aus</div>
       </div>
@@ -2140,6 +2151,24 @@
   if (window.ER && ER.onUserChange) ER.onUserChange(function () { renderTodo(); });
   document.addEventListener("languageChanged", function () { renderTodo(); });
   renderTodo();
+
+  /* ===== Theme-Engine (Skin-Vorschau: tauscht die Design-Variablen des ganzen Menüs) ===== */
+  var THEMES = {
+    elden:      { gold: "#cda34f", goldDark: "#8c6d2d", bg: "#0b0b0b", border: "#3a3224", panel: "#161616" },
+    bloodborne: { gold: "#b8433c", goldDark: "#6e2725", bg: "#0a0708", border: "#3d2727", panel: "#150f10" },
+    darksouls:  { gold: "#d98a2b", goldDark: "#7a4e18", bg: "#0c0a07", border: "#4a3820", panel: "#17130d" }
+  };
+  function setTheme(id) {
+    var t = THEMES[id] || THEMES.elden;
+    var r = document.documentElement.style;
+    r.setProperty("--gold", t.gold); r.setProperty("--gold-dark", t.goldDark);
+    r.setProperty("--bg-dark", t.bg); r.setProperty("--border-color", t.border); r.setProperty("--panel", t.panel);
+    try { localStorage.setItem("eldenRogueTheme", id); } catch (e) {}
+    var pk = document.getElementById("theme-picker");
+    if (pk) Array.prototype.forEach.call(pk.children, function (b) { b.classList.toggle("active", b.getAttribute("data-theme") === id); });
+  }
+  window.setTheme = setTheme;
+  (function () { var saved = "elden"; try { saved = localStorage.getItem("eldenRogueTheme") || "elden"; } catch (e) {} setTheme(saved); })();
 </script>
 
 <script>
@@ -2403,6 +2432,8 @@ function localizeMenuExtras(){
   set("set-discord-label", "Discord verknüpfen", "Link Discord");
   set("set-discord-sub", "Rollen für deine Erfolge — automatisch", "Roles for your feats — automatic");
   set("set-discord-btn", "Code erzeugen", "Generate code");
+  set("set-theme-label", "Design", "Theme");
+  set("set-theme-sub", "Menü-Thema (Skin-Vorschau)", "Menu theme (skin preview)");
   set("set-todo-label", "Erste-Schritte-Liste", "First-steps list");
   set("set-todo-sub", "Die To-Do-Karte im Hauptmenü wieder einblenden", "Show the to-do card in the main menu again");
   set("set-todo-btn", "Wieder anzeigen", "Show again");
