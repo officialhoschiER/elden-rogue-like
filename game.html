@@ -457,6 +457,27 @@ h1, h2, h3, .btn-menu, .btn-combat, .btn-social, .game-author-tag, #region-displ
     .abyss-fog .map-node { opacity: 0.16; border-color: #1c1c22; box-shadow: none; }
     .abyss-fog .map-node .map-node-img, .abyss-fog .map-node .map-node-boss-img { filter: brightness(0); }   /* alle Icons pechschwarz */
     .abyss-fog .map-node.selectable { opacity: 0.32; border-color: #3a3a46; box-shadow: none; }
+    /* Rauh-Geheimpfad: golden pulsierendes, bereits betretenes Feld */
+    .map-node.gold-pfad { border-color: var(--gold) !important; box-shadow: 0 0 14px 3px rgba(205,163,79,0.85), inset 0 0 10px rgba(205,163,79,0.5) !important; animation: goldPuls 1.8s ease-in-out infinite; }
+    @keyframes goldPuls { 0%,100% { box-shadow: 0 0 10px 2px rgba(205,163,79,0.65), inset 0 0 8px rgba(205,163,79,0.4); } 50% { box-shadow: 0 0 20px 5px rgba(230,190,90,1), inset 0 0 14px rgba(230,190,90,0.6); } }
+    /* ===== DLC Fingerruinen: 10×10-Gitter ===== */
+    .fr-wrap { max-width: 560px; margin: 0 auto; padding: 6px; }
+    .fr-head { text-align: center; font-family: 'Mantinia', serif; color: #cdbfa3; letter-spacing: 1px; font-size: 0.95rem; margin-bottom: 12px; }
+    .fr-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; }
+    .fr-cell { aspect-ratio: 1/1; border: 1px solid #2b2740; border-radius: 4px; background: rgba(20,18,34,0.55); display: flex; align-items: center; justify-content: center; font-size: 0.9rem; cursor: default; transition: all 0.15s; }
+    .fr-cell.fr-reach { border-color: #6b6486; background: rgba(80,74,120,0.35); cursor: pointer; box-shadow: 0 0 8px rgba(120,110,180,0.4); }
+    .fr-cell.fr-reach:hover { background: rgba(120,110,180,0.55); border-color: #a99fd0; }
+    .fr-cell.fr-here { border-color: var(--gold); background: rgba(205,163,79,0.25); box-shadow: 0 0 12px rgba(205,163,79,0.7); }
+    .fr-cell .fr-me { width: 78%; height: 78%; object-fit: contain; }
+    .fr-cell.fr-finger { font-size: 1.15rem; border-color: #8a6a2a; background: rgba(90,66,20,0.4); box-shadow: 0 0 10px rgba(200,150,60,0.5); }
+    .fr-cell.fr-finger.blown { filter: grayscale(1) brightness(0.6); box-shadow: none; border-color: #3a3a46; }
+    .fr-cell.fr-metyr { border-color: #4a3a6a; background: rgba(40,28,66,0.6); overflow: hidden; }
+    .fr-cell.fr-metyr .fr-metyr-img { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.25) grayscale(0.6); }
+    .fr-cell.fr-metyr.lit { border-color: #d16aff; box-shadow: 0 0 16px 4px rgba(180,90,240,0.85); animation: goldPuls 1.6s ease-in-out infinite; }
+    .fr-cell.fr-metyr.lit .fr-metyr-img { filter: brightness(1); }
+    .fr-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 16px; }
+    .fr-actions .fr-blow { border-color: #b8912f; color: var(--gold); }
+    .fr-actions .fr-reset { border-color: #555; color: #bbb; }
     .abyss-fog .map-node.current-pos { opacity: 0.6; }
     .abyss-fog .map-node.completed { opacity: 0.3; }
     .abyss-fog .map-node::after { display: none; }              /* keine Tooltips — man erkennt die Knoten kaum */
@@ -881,6 +902,14 @@ let untouchableRunden = 0;        // Runden im laufenden Untouchable-"Kampf"
 let rellanaGetroffen = false;     // Castle Ensis: wurde man im Rellana-Kampf getroffen? (hitless = Zugang zum Abgrundwald)
 let scharlachRot = false;         // Ruinen von Rauh: Scharlachfäule aktiv — jeder Knoten kostet 10% Max-HP
 let dlcWahlOffen = false;         // Mohg (2. Sieg) liegt: Wahl "Run vollenden" vs. "Miquellas Hand berühren" steht an
+// --- DLC: Fingerruinen & Metyr (Secret-Boss) ---
+let rauhGeheimIntakt = true;       // Rauh: läuft man EXAKT den geheimen Gold-Pfad (= Abgrundwald-Pfad)?
+let inFingerruinen = false;        // Fingerruinen-Modus (eigenes 10×10-Gitter statt Rautennetz)
+let fingerPos = 90;                // aktuelle Position im 10×10-Gitter (Start unten links = Reihe 9, Spalte 0 = Index 90)
+let fingerGeblasen = [];           // Indizes der bereits geblasenen Finger
+const FINGER_NODES = [72, 45, 27]; // die 3 Finger-Knoten (verteilt Richtung oben rechts)
+const FINGER_START = 90;           // unten links
+const FINGER_METYR = 9;            // oben rechts (Metyr)
 
 let playerHitsOnEnemy = 0;
 let enemyIsStaggered = false; let staggerVisualActive = false;
@@ -908,6 +937,7 @@ function speichereRun() {
     v: 1, hardMode: hardMode, challenge: activeChallenge, ts: Date.now(), runPlayMs: runPlayMs,
     runSeed, seedIsCustom, seedRngCalls,
     torbogenSpruenge, wolfsgeheulGehoert, wahnsinn, untouchableRunden, rellanaGetroffen, scharlachRot, dlcWahlOffen,
+    rauhGeheimIntakt, inFingerruinen, fingerPos, fingerGeblasen,
     spielerHp, spielerMaxHp, spielerFlasks, maxKlassenFlasks, estusHeilProzent,
     gewaehlteKlasse, basisAusweichChance, playerImageStr,
     waffenName, waffenSchaden, waffenUpgrade, waffenRaritaet, waffenSchadensarten,
@@ -950,6 +980,7 @@ function ladeGespeichertenRun() {
     if (window.ER && ER.setSeedRun) ER.setSeedRun(seedIsCustom);
     setTimeout(aktualisiereSeedAnzeige, 0);
     torbogenSpruenge = d.torbogenSpruenge || 0; wolfsgeheulGehoert = !!d.wolfsgeheulGehoert; wahnsinn = d.wahnsinn || 0; untouchableRunden = d.untouchableRunden || 0; rellanaGetroffen = !!d.rellanaGetroffen; scharlachRot = !!d.scharlachRot; dlcWahlOffen = !!d.dlcWahlOffen;
+    rauhGeheimIntakt = d.rauhGeheimIntakt !== false; inFingerruinen = !!d.inFingerruinen; fingerPos = (typeof d.fingerPos === "number") ? d.fingerPos : 90; fingerGeblasen = d.fingerGeblasen || [];
     setTimeout(aktualisiereWahnsinnAnzeige, 0);
     if (dlcWahlOffen) setTimeout(oeffneMohgDlcWahl, 100);   // Wahl-Popup übersteht einen Reload
     towerEtage=d.towerEtage||0;
@@ -1489,6 +1520,7 @@ const bilderDatenbankBosse = {
   "Rellana, Ritterin der Zwillingsmonde": "images/bosse/rellana.png",
   "Midra, Herr der Wahnsinnigen Flamme": "images/bosse/midra.png",
   "Romina, Heilige der Knospe": "images/bosse/romina.png",
+  "Metyr, Mutter der Finger": "images/bosse/metyr.png",
   "Verheißener Gemahl Radahn": "images/bosse/pcr.webp",
   "Aging Untouchable": "images/icons/4026614_full.webp",
   "Loretta, Knight of the Haligtree": "images/loretta-knight-of-haligtree.jpg",
@@ -1698,6 +1730,14 @@ function generiereRautenNetz(regionName) {
     });
   }
 
+  // DLC Ruinen von Rauh: derselbe verborgene Pfad wie im Abgrundwald — wer ihn EXAKT läuft,
+  // lässt die betretenen Felder golden aufglühen und schaltet nach Romina den Weg zu den Fingerruinen frei.
+  if (regionName === "Rauh") {
+    ABYSS_SAFE_PATH.forEach((idx, e) => {
+      if (fertigeKarte[e] && fertigeKarte[e].knoten[idx]) fertigeKarte[e].knoten[idx].geheim = true;
+    });
+  }
+
   return fertigeKarte;
 }
 
@@ -1898,7 +1938,7 @@ function direktNeustarten() {
   playerHitsOnEnemy = 0; enemyIsStaggered = false; staggerVisualActive = false; nextHitBonusDamage = false;
   currentAffinity = "Keine"; affinityHits = 0; completedDungeonsCount = 0;
   backpackItems = [null, null, null]; activeBuffs = []; inSubDungeon = false; inSewers = false; mainMapState = null; towerEtage = 0;
-  torbogenSpruenge = 0; wolfsgeheulGehoert = false; wahnsinn = 0; untouchableRunden = 0; rellanaGetroffen = false; scharlachRot = false; dlcWahlOffen = false; aktualisiereWahnsinnAnzeige();
+  torbogenSpruenge = 0; wolfsgeheulGehoert = false; wahnsinn = 0; untouchableRunden = 0; rellanaGetroffen = false; scharlachRot = false; dlcWahlOffen = false; rauhGeheimIntakt = true; inFingerruinen = false; fingerPos = 90; fingerGeblasen = []; aktualisiereWahnsinnAnzeige();
   // Seed-Run (geteilter Seed): derselbe Seed bleibt für den Retry — normaler Run: frisch würfeln
   setzeSeed(seedIsCustom ? runSeed : zufallsSeed(), seedIsCustom);
   oeffneKlassenAuswahl();
@@ -1939,7 +1979,8 @@ function baueKarteHTML() {
   let grid = document.getElementById("map-grid"); if (!grid) return;
   grid.innerHTML = ""; 
   let mapScrollArea = document.getElementById("map-view");
-  if (grid.offsetParent === null) return; 
+  if (grid.offsetParent === null) return;
+  if (inFingerruinen) { renderFingerruinen(grid, mapScrollArea); return; }   // DLC: eigenes 10×10-Gitter
   
   if (inSubDungeon) {
     mapScrollArea.style.backgroundImage = inSewers
@@ -1969,6 +2010,7 @@ function baueKarteHTML() {
     let rowDiv = document.createElement("div"); rowDiv.classList.add("map-row");
     zeile.knoten.forEach(knoten => {
       let nodeDiv = document.createElement("div"); nodeDiv.id = knoten.id; nodeDiv.className = "map-node";
+      if (knoten.geheimAktiv) nodeDiv.classList.add("gold-pfad");   // Rauh-Geheimpfad: golden pulsierendes Feld
       nodeDiv.setAttribute("data-tooltip", t("node_" + knoten.typ) || t("node_5"));
       let imgTag = document.createElement("img"); imgTag.classList.add("map-node-img");
       
@@ -2350,6 +2392,9 @@ function klickeKnoten(ebene, knoten) {
       speichereRun(); zeigeTodesBildschirm(true);   // die Fäule tötet — kein Vollmond rettet
       return;
     }
+    // Geheimpfad: exakt den Abgrundwald-Pfad laufen -> betretenes Feld glüht golden; ein Fehltritt bricht es
+    if (knoten.geheim && rauhGeheimIntakt) knoten.geheimAktiv = true;
+    if (!knoten.geheim) rauhGeheimIntakt = false;
   }
 
   if (knoten.typ === 20) {   // DLC Gräberebene: der Torbogen — hindurchspringen kostet den Knoten, aber…
@@ -3514,6 +3559,7 @@ function kampfGewonnen() {
     return;
   }
   if (gegnerName === "Romina, Heilige der Knospe") {
+    if (rauhGeheimIntakt) { oeffneWegwahlRauh(); return; }   // Gold-Pfad exakt gelaufen -> Wahl Fingerruinen / Enir-Ilim
     aktuelleRegion = "EnirIlim"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null; scharlachRot = false; netzKarte = generiereRautenNetz("EnirIlim");
     heileUndRegeneriereVoll(hardMode);
     oeffneStatPopup(L("Romina ist gefallen", "Romina Has Fallen"),
@@ -3524,6 +3570,13 @@ function kampfGewonnen() {
     vollendeRunMitAbschluss(
       L("ZEITALTER DER BARMHERZIGKEIT", "AGE OF COMPASSION"),
       L("Der Verheißene Gemahl Radahn ist gefallen, und Miquellas Traum zerbricht an der Spitze von Enir-Ilim.\n\nDu hast das Land des Schattens bis zu seinem Ende durchschritten und den größten aller Feinde bezwungen. <b>Nur die Allerwenigsten kommen je so weit.</b>", "Promised Consort Radahn has fallen, and Miquella's dream shatters at the summit of Enir-Ilim.\n\nYou have walked the Land of Shadow to its very end and defeated the greatest foe of all. <b>Only the fewest of the few ever come this far.</b>"));
+    return;
+  }
+  if (gegnerName === "Metyr, Mutter der Finger") {
+    inFingerruinen = false;
+    vollendeRunMitAbschluss(
+      L("DIE MUTTER DER FINGER IST TOT", "THE MOTHER OF FINGERS IS DEAD"),
+      L("Metyr, Botin der Äußeren Götter, zerfällt zu Sternenstaub. Ihr Blick, der aus dem Nichts zwischen den Welten auf die Zwischenlande fiel, erlischt für immer.\n\nDu hast das tiefste, bestgehütete Geheimnis des Schattenlands gelüftet — einen Boss, den <b>fast niemand</b> je zu Gesicht bekommt.", "Metyr, messenger of the Outer Gods, crumbles to stardust. Her gaze, cast upon the Lands Between from the void between worlds, is snuffed out forever.\n\nYou have uncovered the deepest, best-kept secret of the Land of Shadow — a boss <b>almost no one</b> ever lays eyes upon."));
     return;
   }
 
@@ -3955,6 +4008,128 @@ function aktualisiereWahnsinnAnzeige() {
   if (chip) chip.style.display = (aktuelleRegion === "Rauh" && scharlachRot) ? "block" : "none";
 }
 
+/* ============================================================
+   DLC: Fingerruinen & Metyr — eigenes 10×10-Erkundungsgitter.
+   Start unten links (Index 90), Ziel/Metyr oben rechts (9).
+   Drei Finger (72/45/27) müssen "geblasen" werden -> Metyr erwacht.
+   ============================================================ */
+function oeffneWegwahlRauh() {
+  let overlay = document.getElementById("popup-overlay"), content = document.getElementById("popup-content");
+  content.innerHTML =
+    '<div style="color:#8a7f68; font-size:0.72rem; letter-spacing:2px; font-family:sans-serif; margin-bottom:2px; text-transform:none;">' + L("Der Gold-Pfad glimmt weiter", "The golden path glimmers on") + '</div>' +
+    '<h3 style="color: var(--gold); font-size:1.7rem; margin-top:0; letter-spacing:3px; font-family: \'Mantinia\', serif;">' + L("GEHEIMER WEG", "SECRET PATH") + '</h3>' +
+    '<p style="color:#ddd; font-size:0.92rem; font-family: sans-serif; line-height:1.55;">' + L("Weil du Rauh <b>exakt</b> entlang des verborgenen Pfades durchschritten hast, tut sich am Fuß von Enir-Ilim ein zweiter Weg auf — hinab zu den <b>Ruinen der Finger</b>, wo <b>Metyr</b> auf jene lauert, die zu tief graben.", "Because you walked Rauh <b>exactly</b> along the hidden path, a second way opens at the foot of Enir-Ilim — down to the <b>Finger Ruins</b>, where <b>Metyr</b> waits for those who dig too deep.") + '</p>' +
+    '<p style="color:#cdbfa3; font-size:0.95rem; font-family:sans-serif; margin:14px 0 8px;">' + L("Wohin gehst du?", "Where do you go?") + '</p>' +
+    '<button class="btn-modal-action" style="border-color:#b8912f; color:var(--gold);" onclick="starteFingerruinen()">' + L("🖐 Zu den Fingerruinen", "🖐 To the Finger Ruins") + '</button>' +
+    '<button class="btn-modal-action" onclick="starteEnirNachRomina()">' + L("Weiter nach Enir-Ilim", "On to Enir-Ilim") + '</button>';
+  overlay.style.display = "flex";
+}
+function starteEnirNachRomina() {
+  document.getElementById("popup-overlay").style.display = "none";
+  aktuelleRegion = "EnirIlim"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null; scharlachRot = false;
+  netzKarte = generiereRautenNetz("EnirIlim"); heileUndRegeneriereVoll(hardMode); aktualisiereWahnsinnAnzeige();
+  oeffneStatPopup(L("Romina ist gefallen", "Romina Has Fallen"),
+    L("Die Heilige der Knospe sinkt in ihre eigenen Ranken zurück, und die Scharlachfäule ebbt ab.\n\nVor dir ragt der Turm von <b>Enir-Ilim</b> in den verhangenen Himmel — am Ende des Aufstiegs wartet der Verheißene Gemahl.", "The Saint of the Bud sinks back into her own vines, and the Scarlet Rot recedes.\n\nBefore you, the tower of <b>Enir-Ilim</b> rises into the veiled sky — at the summit of the ascent waits the Promised Consort."), 1);
+}
+function starteFingerruinen() {
+  let ov = document.getElementById("popup-overlay"); ov.style.display = "none";
+  aktuelleRegion = "Fingerruinen"; scharlachRot = false; inFingerruinen = true;
+  fingerPos = FINGER_START; fingerGeblasen = [];
+  aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null; imKampf = false;
+  heileUndRegeneriereVoll(hardMode);
+  aktualisiereWahnsinnAnzeige(); speichereRun(); baueKarteHTML(); updateUI();
+  let content = document.getElementById("popup-content");
+  content.innerHTML =
+    '<h3 style="color:var(--gold);font-size:1.6rem;margin-top:0;letter-spacing:2px;font-family:\'Mantinia\',serif;">' + L("Die Ruinen der Finger", "The Finger Ruins") + '</h3>' +
+    '<p style="color:#ddd;font-size:0.92rem;font-family:sans-serif;line-height:1.55;white-space:pre-line;">' +
+      L("Ein endloses Feld grauer Steinsäulen unter einem Sternenhimmel, der nicht der unsere ist.\n\nFinde deinen Weg von <b>unten links</b> nach <b>oben rechts</b>. Irgendwo verstreut liegen <b>drei Finger</b> — steh auf einem und <b>blas hinein</b>, bis er erklingt. Erst wenn alle drei getönt haben, erwacht <b>Metyr</b> in der oberen Ecke.\n\nVerlaufen? <b>Zurück zum Start</b> bringt dich nach unten links — geblasene Finger bleiben aktiv.",
+        "An endless field of grey stone pillars beneath a starfield not our own.\n\nFind your way from <b>bottom-left</b> to <b>top-right</b>. Three <b>fingers</b> lie scattered — stand on one and <b>blow into it</b> until it sounds. Only when all three have tolled does <b>Metyr</b> awaken in the far corner.\n\nLost? <b>Back to start</b> returns you to the bottom-left — blown fingers stay active.") + '</p>' +
+    '<button class="btn-modal-action" onclick="document.getElementById(\'popup-overlay\').style.display=\'none\'; baueKarteHTML();">' + L("Ich bin bereit", "I am ready") + '</button>';
+  ov.style.display = "flex";
+}
+function fingerNachbarn(i) {
+  let r = Math.floor(i / 10), c = i % 10, out = [];
+  if (r > 0) out.push(i - 10); if (r < 9) out.push(i + 10);
+  if (c > 0) out.push(i - 1); if (c < 9) out.push(i + 1);
+  return out;
+}
+function renderFingerruinen(grid, mv) {
+  if (mv) { mv.classList.remove("abyss-fog"); mv.style.backgroundImage = "linear-gradient(to bottom, rgba(18,14,30,0.92), rgba(5,4,10,0.985)), url('images/background/fingerruinen.jpg')"; }
+  let allBlown = fingerGeblasen.length >= FINGER_NODES.length;
+  let reach = fingerNachbarn(fingerPos);
+  let cells = "";
+  for (let i = 0; i < 100; i++) {
+    let cls = "fr-cell", inner = "";
+    if (i === fingerPos) { cls += " fr-here"; inner = '<img class="fr-me" src="images/tarnished_idle.png" onerror="this.replaceWith(document.createTextNode(\'🧍\'))">'; }
+    else if (reach.indexOf(i) >= 0) cls += " fr-reach";
+    if (i === FINGER_METYR) { cls += " fr-metyr" + (allBlown ? " lit" : ""); inner = '<img class="fr-metyr-img" src="' + (bilderDatenbankBosse["Metyr, Mutter der Finger"] || "") + '" onerror="this.replaceWith(document.createTextNode(\'👁\'))">'; }
+    else if (FINGER_NODES.indexOf(i) >= 0) { let blown = fingerGeblasen.indexOf(i) >= 0; cls += " fr-finger" + (blown ? " blown" : ""); inner = "🖐"; }
+    cells += '<div class="' + cls + '" onclick="fingerKlick(' + i + ')">' + inner + '</div>';
+  }
+  let onFinger = FINGER_NODES.indexOf(fingerPos) >= 0 && fingerGeblasen.indexOf(fingerPos) < 0;
+  grid.innerHTML =
+    '<div class="fr-wrap">' +
+      '<div class="fr-head">🖐 ' + L("Finger", "Fingers") + ': <b>' + fingerGeblasen.length + ' / ' + FINGER_NODES.length + '</b>' +
+        (allBlown ? ' — <b style="color:#c9a86a;">' + L("Metyr erwacht! Geh nach oben rechts.", "Metyr awakens! Head to the top-right.") + '</b>' : '') + '</div>' +
+      '<div class="fr-grid">' + cells + '</div>' +
+      '<div class="fr-actions">' +
+        (onFinger ? '<button class="btn-modal-action fr-blow" onclick="fingerBlasen()">🌬 ' + L("In den Finger blasen", "Blow into the finger") + '</button>' : '') +
+        '<button class="btn-modal-action fr-reset" onclick="fingerZurueckZumStart()">↩ ' + L("Zurück zum Start", "Back to start") + '</button>' +
+      '</div>' +
+    '</div>';
+}
+function fingerKlick(i) {
+  if (imKampf || aktionsSperre) return;
+  if (i === fingerPos) { if (FINGER_NODES.indexOf(i) >= 0 && fingerGeblasen.indexOf(i) < 0) fingerBlasen(); return; }
+  if (fingerNachbarn(fingerPos).indexOf(i) < 0) return;   // nur auf Nachbarfelder ziehen
+  if (i === FINGER_METYR) {
+    if (fingerGeblasen.length < FINGER_NODES.length) { zeigeFingerToast(L("Die drei Finger müssen erst erklingen…", "The three fingers must sound first…")); return; }
+    fingerPos = i; speichereRun(); starteMetyr(); return;
+  }
+  fingerPos = i; speichereRun(); baueKarteHTML();
+}
+function fingerBlasen() {
+  if (FINGER_NODES.indexOf(fingerPos) < 0 || fingerGeblasen.indexOf(fingerPos) >= 0) return;
+  fingerGeblasen.push(fingerPos); playFingerSound();
+  zeigeFingerToast(L("Ein tiefer Ton hallt durch die Ruinen…", "A deep tone echoes through the ruins…") + " (" + fingerGeblasen.length + "/" + FINGER_NODES.length + ")");
+  speichereRun(); baueKarteHTML();
+}
+function fingerZurueckZumStart() {
+  if (imKampf) return;
+  fingerPos = FINGER_START; speichereRun(); baueKarteHTML();
+}
+function starteMetyr() {
+  gegnerName = "Metyr, Mutter der Finger"; gegnerMaxHp = 3800; gegnerHp = 3800; gegnerSchaden = 195;
+  aktuellerKnotenTyp = 5; imKampf = true; aktionsSperre = false;
+  playerHitsOnEnemy = 0; enemyIsStaggered = false; staggerVisualActive = false; nextHitBonusDamage = false;
+  if (window.ER) try { ER.discover("Metyr, Mutter der Finger"); } catch (e) {}
+  document.getElementById("battle-log").innerText = L("Aus dem Sternenstaub über dir sinkt Metyr, Mutter der Finger — die blinde Botin der Äußeren Götter.", "From the stardust above descends Metyr, Mother of Fingers — the blind messenger of the Outer Gods.");
+  speichereRun(); updateUI();
+}
+function zeigeFingerToast(msg) {
+  let wrap = document.getElementById("ach-toast-wrap"); if (!wrap) return;
+  let el = document.createElement("div"); el.className = "ach-toast"; el.style.borderColor = "#7a5c22";
+  el.innerHTML = '<div class="ach-ic">🖐</div><div><div class="ach-label" style="color:#c9a86a;">' + L("FINGERRUINEN", "FINGER RUINS") + '</div><div class="ach-desc">' + msg + '</div></div>';
+  wrap.appendChild(el);
+  setTimeout(function () { el.style.transition = "opacity .5s"; el.style.opacity = "0"; setTimeout(function () { try { el.remove(); } catch (e) {} }, 500); }, 2600);
+}
+function playFingerSound() {
+  try {
+    if (typeof _soundOn !== "undefined" && !_soundOn) return;
+    var AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+    var ac = new AC(); var o = ac.createOscillator(), o2 = ac.createOscillator(), g = ac.createGain();
+    o.type = "sine"; o2.type = "triangle";
+    o.frequency.setValueAtTime(62, ac.currentTime); o.frequency.exponentialRampToValueAtTime(120, ac.currentTime + 0.6);
+    o2.frequency.setValueAtTime(93, ac.currentTime);
+    g.gain.setValueAtTime(0.0001, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.28, ac.currentTime + 0.1);
+    g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + 1.6);
+    o.connect(g); o2.connect(g); g.connect(ac.destination);
+    o.start(); o2.start(); o.stop(ac.currentTime + 1.7); o2.stop(ac.currentTime + 1.7);
+    o.onended = function () { try { ac.close(); } catch (e) {} };
+  } catch (e) {}
+}
+
 // Aging Untouchable: erscheint bei einem Fehltritt im Abgrundwald — ein "Kampf", der nur den Wahnsinn treibt
 function starteUntouchableKampf() {
   gegnerName = "Aging Untouchable"; gegnerMaxHp = 99999; gegnerHp = 99999; gegnerSchaden = 0;
@@ -4149,7 +4324,7 @@ function bestaetigeStufe(naechsteEbene) { document.getElementById("popup-overlay
     activeChallenge = "";
     hatGodrickRune = hatRadahnRune = hatMorgottRune = true;
     aktuelleRegion = region; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null;
-    torbogenSpruenge = 0; wolfsgeheulGehoert = false; wahnsinn = 0; untouchableRunden = 0; rellanaGetroffen = false;
+    torbogenSpruenge = 0; wolfsgeheulGehoert = false; wahnsinn = 0; untouchableRunden = 0; rellanaGetroffen = false; rauhGeheimIntakt = true; inFingerruinen = false; fingerPos = 90; fingerGeblasen = [];
     scharlachRot = (region === "Rauh");
     try { netzKarte = generiereRautenNetz(region); } catch(e){ console.warn(e); }
     devClosePopups(); devApply(); aktualisiereWahnsinnAnzeige();
@@ -4208,6 +4383,7 @@ function bestaetigeStufe(naechsteEbene) { document.getElementById("popup-overlay
     panel.appendChild(b("🩸 Mohg-Kampf (DLC-Zugang testen)", devMohgFight, "#c0392b"));
     var dlcRow = row();
     [["Grave","Gravesite"],["Ensis","CastleEnsis"],["Abyss","AbyssalWoods"],["Rauh","Rauh"],["Enir","EnirIlim"]].forEach(function(p){ dlcRow.appendChild(bSmall(p[0], function(){ devGotoDLC(p[1]); })); });
+    dlcRow.appendChild(bSmall("🖐Finger", function(){ devEnsureRun(); activeChallenge=""; hatGodrickRune=hatRadahnRune=hatMorgottRune=true; devClosePopups(); starteFingerruinen(); }));
     panel.appendChild(dlcRow);
     panel.appendChild(b("🗼 Battle-Tower Etage…", devTowerFloor, "#9b8cff"));
     panel.appendChild(b("🔄 Run neu starten", function(){ try{ direktNeustarten(); }catch(e){} devRefresh(); }, "#e67e22"));

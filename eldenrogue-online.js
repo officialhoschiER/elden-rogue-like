@@ -292,6 +292,7 @@
     { id: "all_bosses", name: "Götterdämmerung",        icon: "🌒", desc: "Besiege jeden Halbgott mindestens einmal.", check: s => HAUPTBOSSE.every(b => (s.bossKills[b] || 0) >= 1) },
     /* --- DLC: Schatten des Erdbaums --- */
     { id: "dlc_consort", name: "Gemahl des Gestirns",   icon: "🌘", desc: "Besiege den Verheißenen Gemahl Radahn am Ende von Enir-Ilim (nur im Schattenland — nicht im Turm).", check: s => ((s.bossKills || {})["Radahn, Gemahl Miquellas"] || 0) >= 1 },
+    { id: "dlc_metyr",   name: "Mutter der Finger",      icon: "🖐️", desc: "Lüfte das tiefste Geheimnis des Schattenlands und besiege Metyr in den Fingerruinen.", check: s => ((s.bossKills || {})["Metyr, Mutter der Finger"] || 0) >= 1 },
     /* --- Runs / Abschluss --- */
     { id: "elden_lord", name: "Elden Lord",             icon: "👑", desc: "Schließe einen Run ab und werde Elden Lord.", check: s => s.gamesCompleted >= 1 },
     { id: "complete_10",name: "Veteran",                icon: "🎖️", desc: "Schließe 10 Runs ab.",                  check: s => s.gamesCompleted >= 10 },
