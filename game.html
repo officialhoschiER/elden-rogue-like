@@ -461,9 +461,7 @@ h1, h2, h3, .btn-menu, .btn-combat, .btn-social, .game-author-tag, #region-displ
     .abyss-fog .map-node.completed { opacity: 0.3; }
     .abyss-fog .map-node::after { display: none; }              /* keine Tooltips — man erkennt die Knoten kaum */
     .abyss-fog #map-lines { opacity: 0.18; }
-    /* der richtige Weg glimmt ganz sacht — nur wer genau hinsieht, findet ihn */
-    .abyss-fog .map-node.abyss-sicher.selectable { animation: abyssGlimmer 3.2s ease-in-out infinite; }
-    @keyframes abyssGlimmer { 0%, 100% { opacity: 0.32; } 50% { opacity: 0.5; box-shadow: 0 0 14px rgba(200, 150, 60, 0.22); } }
+    /* Der richtige Weg gibt KEINEN Hinweis — alle Knoten sehen gleich (schwarz) aus. Nur Trial & Error. */
     /* aufgedeckter Fehltritt: der Wahnsinns-Knoten (Aging Untouchable) leuchtet voll auf */
     .abyss-fog .map-node.wahn-knoten { opacity: 1 !important; border-color: #d1a33a; box-shadow: 0 0 16px rgba(209,163,58,0.55); }
     .abyss-fog .map-node.wahn-knoten .map-node-img { filter: none !important; }
@@ -686,7 +684,7 @@ h1, h2, h3, .btn-menu, .btn-combat, .btn-social, .game-author-tag, #region-displ
       <div class="mad-head"><img src="images/icons/madness_status_effect_elden_ring_wiki_guide_100px.png" onerror="this.style.display='none'"><span>Wahnsinn <span id="madness-pct">0%</span></span></div>
       <div id="madness-track"><div id="madness-fill"></div></div>
     </div>
-    <div id="rot-chip">🩸 Scharlachfäule — <b>−10% HP</b> je Knoten</div>
+    <div id="rot-chip"><img src="images/icons/scarlet_rot_status_effect_elden_ring_wiki_guide_100px.png" style="width:16px;height:16px;vertical-align:middle;margin-right:5px;" onerror="this.style.display='none'">Scharlachfäule — <b>−10% HP</b> je Knoten</div>
     <div id="tower-phase-box" style="display:none;"></div>
     <div id="region-badge">
       <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
@@ -1529,6 +1527,9 @@ const bDatenbankHTML = {
 };
 
 const gewichteterPfadePool = [1, 1, 2, 2, 2, 3, 6, 9, 10, 14, 14];
+// DLC Abgrundwald: der EINE richtige Weg (Knotenindex je Reihe, 0 = ganz links; Layout [2,3,4,3,4,3,2,1]).
+// Reihe 1 links · 2 Mitte · 3 zweiter v.l. · 4 Mitte · 5 dritter v.l. · 6 rechts · 7 rechts · 8 Boss.
+const ABYSS_SAFE_PATH = [0, 1, 1, 1, 2, 2, 1, 0];
 let aktuelleRegion = "Limgrave"; let aktuelleEbene = 1; let geloesieKnotenIds = []; let aktuellerKnotenId = null; let netzKarte = [];
 
 window.addEventListener('resize', zeichneLinien);
@@ -1613,7 +1614,6 @@ function entferneBlaidd(karte) {
 function generiereRautenNetz(regionName) {
   let layout = [2, 3, 4, 3, 4, 3, 2, 1];
   if (regionName === "EldenThrone") { layout = [1, 1, 1]; }
-  if (regionName === "EnirIlim") { layout = [1, 1, 1]; }   // DLC-Finale: kurz wie der Eldenthron
   let temporaereKarte = [];
   let heilungEbene = Math.floor(srand() * 2) + 3; 
   let heilungKnotenIdx = -1;
@@ -1643,8 +1643,6 @@ function generiereRautenNetz(regionName) {
 
       if (regionName === "EldenThrone") {
         if (ebeneNummer === 1) typ = 5; if (ebeneNummer === 2) typ = 4; if (ebeneNummer === 3) typ = 5;
-      } else if (regionName === "EnirIlim") {
-        if (ebeneNummer === 1) typ = 1; if (ebeneNummer === 2) typ = 4; if (ebeneNummer === 3) typ = 5;   // Elite → Gnade → Verheißener Gemahl Radahn
       } else {
         if (ebeneNummer === 2 && k === 0 && (hatGodrickRune || hatRadahnRune || hatMorgottRune)) { typ = 8; }
         else if (ebeneNummer === 7) { if (k === 0) { typ = 4; } }
@@ -1692,17 +1690,12 @@ function generiereRautenNetz(regionName) {
     });
   }
 
-  // DLC Abgrundwald: EINEN sicheren Pfad durchs Netz markieren (entlang der echten Wege-Verknüpfungen).
-  // Alles abseits davon nährt den Todesfluch. Seed-deterministisch — geteilte Seeds haben denselben Pfad.
+  // DLC Abgrundwald: EIN fester, IMMER gleicher richtiger Pfad (unabhängig vom Seed — reines Trial & Error).
+  // Knotenindex je Reihe (0 = ganz links). Bewusst KEIN Glimmen: der Weg wird auswendig gelernt, nicht gesehen.
   if (regionName === "AbyssalWoods") {
-    let pfadIdx = Math.floor(srand() * fertigeKarte[0].knoten.length);
-    fertigeKarte[0].knoten[pfadIdx].sicher = true;
-    for (let e = 0; e < fertigeKarte.length - 1; e++) {
-      let cur = fertigeKarte[e].knoten[pfadIdx];
-      let ziele = (cur.wege && cur.wege.length) ? cur.wege : [0];
-      pfadIdx = ziele[Math.floor(srand() * ziele.length)];
-      if (fertigeKarte[e + 1].knoten[pfadIdx]) fertigeKarte[e + 1].knoten[pfadIdx].sicher = true;
-    }
+    ABYSS_SAFE_PATH.forEach((idx, e) => {
+      if (fertigeKarte[e] && fertigeKarte[e].knoten[idx]) fertigeKarte[e].knoten[idx].sicher = true;
+    });
   }
 
   return fertigeKarte;
@@ -2332,20 +2325,31 @@ function klickeKnoten(ebene, knoten) {
 
   playerHitsOnEnemy = 0; enemyIsStaggered = false; staggerVisualActive = false; nextHitBonusDamage = false; affinityHits = 0;
 
-  // DLC Abgrundwald: Verlässt man den (kaum sichtbaren) richtigen Pfad, deckt sich der Knoten als
-  // Wahnsinns-Knoten auf und der Aging Untouchable stellt sich dir — er kostet kein Leben, treibt aber den Wahnsinn.
-  if (aktuelleRegion === "AbyssalWoods" && !inSubDungeon && !knoten.sicher) {
-    knoten.wahnKnoten = true;
-    starteUntouchableKampf();
-    return;
+  // DLC Abgrundwald: reine Navigations-Region — keine normalen Knoten.
+  //  · Falscher Weg (nicht sicher): Knoten deckt sich auf, der Aging Untouchable treibt den Wahnsinn.
+  //  · Richtiger Weg (sicher), kein Boss: es passiert einfach NICHTS — du schleichst weiter.
+  if (aktuelleRegion === "AbyssalWoods" && !inSubDungeon) {
+    if (!knoten.sicher) { knoten.wahnKnoten = true; starteUntouchableKampf(); return; }
+    if (knoten.typ !== 5) {
+      speichereRun();
+      oeffneStatPopup(L("Stille", "Silence"),
+        L("Du setzt einen Fuß vor den anderen. Nichts regt sich in der Schwärze — der Pfad war richtig.", "You place one foot before the other. Nothing stirs in the blackness — the path was true."), ebene + 1);
+      return;
+    }
   }
 
-  // DLC Ruinen von Rauh: Scharlachfäule — jeder betretene Knoten kostet 10% der Max-HP (Gnade heilt danach wieder voll)
+  // DLC Ruinen von Rauh: Scharlachfäule — jeder betretene Knoten kostet 10% der Max-HP. Sie TÖTET auch (Gnade heilt).
   if (aktuelleRegion === "Rauh" && !inSubDungeon && knoten.typ !== 4) {
-    let rot = Math.max(1, Math.round(berechneFinalMaxHp() * 0.10));
-    spielerHp = Math.max(1, spielerHp - rot);   // die Fäule allein tötet nicht — sie schwächt (min. 1 HP)
+    let rot = Math.round(berechneFinalMaxHp() * 0.10);
+    spielerHp = Math.max(0, spielerHp - rot);
     zeigeRotToast(rot);
     updateUI();
+    if (spielerHp <= 0) {
+      let ovR = document.getElementById("popup-overlay"); if (ovR) ovR.style.display = "none";
+      let logR = document.getElementById("battle-log"); if (logR) logR.innerText = L("☠ Die Scharlachfäule zerfrisst dich von innen.", "☠ The Scarlet Rot devours you from within.");
+      speichereRun(); zeigeTodesBildschirm(true);   // die Fäule tötet — kein Vollmond rettet
+      return;
+    }
   }
 
   if (knoten.typ === 20) {   // DLC Gräberebene: der Torbogen — hindurchspringen kostet den Knoten, aber…
@@ -3900,16 +3904,16 @@ function starteDLC() {
     L("Du berührst die verwelkte Hand — und die Welt zerfließt zu goldener Asche.\n\nAls du erwachst, liegt ein fremdes Land unter einem verhangenen Himmel vor dir: die <b>Gräberebene</b>. Steinerne Torbögen säumen die Gräber, und die Gegner hier sind von ganz anderer Härte.\n\n<b>Es gibt kein Zurück.</b>", "You touch the withered hand — and the world dissolves into golden ash.\n\nWhen you wake, a strange land lies before you beneath a veiled sky: the <b>Gravesite Plain</b>. Stone archways line the graves, and the enemies here are of a different caliber entirely.\n\n<b>There is no way back.</b>"), 1);
 }
 
-// Nach Rellana OHNE Treffer (hitless): Wahl zwischen dem geheimen Abgrundwald und den Ruinen von Rauh
+// Nach Rellana OHNE Treffer (hitless): geheime Wand -> JA in den Abgrundwald, NEIN regulärer Weg (Rauh)
 function oeffneWegwahlEnsis() {
   let overlay = document.getElementById("popup-overlay"); let content = document.getElementById("popup-content");
   content.innerHTML = `
-    <div style="color:#888; font-size:0.72rem; letter-spacing:3px; text-transform:uppercase; font-family:sans-serif; margin-bottom:6px;">${L("Rellana ist gefallen — makellos", "Rellana has fallen — flawless")}</div>
-    <h3 style="color: var(--gold); font-size:1.6rem; margin-top:0; letter-spacing:2px; font-family: 'Mantinia', serif;">${L("ZWEI PFADE", "TWO PATHS")}</h3>
-    <p style="color:#ddd; font-size:0.92rem; font-family: sans-serif; line-height:1.55;">${L("Kein Hieb hat dich getroffen. Als die Zwillingsmonde erlöschen, öffnet dir deine makellose Klinge einen verborgenen Weg: Hinter dem Thron gleitet eine steinerne Pforte auf und gibt den Abstieg in den <b>Abgrundwald</b> frei.\n\nDu kannst hinabsteigen — oder den regulären Weg über die <b>Ruinen von Rauh</b> nehmen. Beide führen ans Ende.", "Not a single blow has touched you. As the twin moons go dark, your flawless blade reveals a hidden way: behind the throne, a stone gate slides open, baring the descent into the <b>Abyssal Woods</b>.\n\nYou may descend — or take the regular road through the <b>Ruins of Rauh</b>. Both lead to the end.")}</p>
-    <button class="btn-modal-action" style="border-color:#8a7a2a; color:#c9b84a;" onclick="starteAbyssalWoods()">🕯 ${L("In den Abgrundwald hinabsteigen", "Descend into the Abyssal Woods")}</button>
-    <button class="btn-modal-action" style="border-color:#7a1520; color:#e06a6a;" onclick="starteRauh(false)">🩸 ${L("Zu den Ruinen von Rauh", "To the Ruins of Rauh")}</button>
-    <p style="color:#666; font-size:0.72rem; font-family:sans-serif; margin-top:10px;">${L("Warnung: Im Abgrundwald siehst du fast nichts — jeder falsche Schritt weckt den Aging Untouchable und treibt den Wahnsinn.", "Warning: in the Abyssal Woods you can barely see — every wrong step wakes the Aging Untouchable and feeds the madness.")}</p>
+    <div style="color:#8a7f68; font-size:0.72rem; letter-spacing:2px; font-family:sans-serif; margin-bottom:2px; text-transform:none;">${L("Boah, ist der krass", "Whew, that was intense")}</div>
+    <h3 style="color: var(--gold); font-size:1.8rem; margin-top:0; letter-spacing:4px; font-family: 'Mantinia', serif;">HITLESS</h3>
+    <p style="color:#ddd; font-size:0.92rem; font-family: sans-serif; line-height:1.55;">${L("In ihrem letzten Atemzug zeigt Rellana auf eine geheime Wand — anders als bei einem richtig coolen Boss aus Dark Souls&nbsp;2 fällt sie einfach nur um.\n\nDu machst dich auf zum geheimen Weg! Er führt in den <b>Abgrundwald</b>!", "With her last breath, Rellana points at a secret wall — unlike a truly cool boss from Dark Souls&nbsp;2, it simply topples over.\n\nYou set off toward the secret path! It leads into the <b>Abyssal Woods</b>!")}</p>
+    <p style="color:#cdbfa3; font-size:0.95rem; font-family:sans-serif; margin:14px 0 8px;">${L("Möchtest du weitergehen?", "Do you want to go on?")}</p>
+    <button class="btn-modal-action" style="border-color:#27ae60; color:#2ecc71;" onclick="starteAbyssalWoods()">${L("JA", "YES")}</button>
+    <button class="btn-modal-action" style="border-color:#c0392b; color:#e74c3c;" onclick="starteRauh(false)">${L("NEIN", "NO")}</button>
   `;
   overlay.style.display = "flex";
 }
@@ -3972,7 +3976,7 @@ function zeigeRotToast(rot) {
   let wrap = document.getElementById("ach-toast-wrap"); if (!wrap) return;
   let el = document.createElement("div");
   el.className = "ach-toast"; el.style.borderColor = "#7a1520";
-  el.innerHTML = '<div class="ach-ic">🩸</div><div><div class="ach-label" style="color:#e06a6a;">' + L("SCHARLACHFÄULE", "SCARLET ROT") + '</div><div class="ach-desc">−' + rot + ' HP</div></div>';
+  el.innerHTML = '<div class="ach-ic"><img src="images/icons/scarlet_rot_status_effect_elden_ring_wiki_guide_100px.png" style="width:26px;height:26px;object-fit:contain;" onerror="this.parentNode.textContent=\'🩸\'"></div><div><div class="ach-label" style="color:#e06a6a;">' + L("SCHARLACHFÄULE", "SCARLET ROT") + '</div><div class="ach-desc">−' + rot + ' HP</div></div>';
   wrap.appendChild(el);
   setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 3200);
 }
