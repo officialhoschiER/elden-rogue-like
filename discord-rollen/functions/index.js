@@ -27,11 +27,12 @@ admin.initializeApp();
    du kannst also klein anfangen und später Rollen ergänzen.
    ------------------------------------------------------------ */
 const ROLLEN_MAPPING = {
-  elden_lord:   "HIER_ROLLEN_ID",   // Eldenbestie besiegt (Run abgeschlossen = Elden Lord)
-  dlc_consort:  "HIER_ROLLEN_ID",   // Verheißener Gemahl Radahn im DLC besiegt — NICHT der Turm-"Baby PCR"!
-  // Hinweis: Die "Patch-Benachrichtigung"-Rolle läuft NICHT über diesen Bot,
-  // sondern als selbst-vergebene Rolle (Reaction-Role / Discord-Onboarding) — siehe Anleitung.
+  elden_lord:   "1524146710199402596",   // Eldenbestie besiegt (Run abgeschlossen = Elden Lord)
+  dlc_consort:  "1524146852524720208",   // Verheißener Gemahl Radahn im DLC besiegt — NICHT der Turm-"Baby PCR"!
 };
+// Rolle, die JEDER bekommt, der sich per /verify verknüpft (z. B. für Patch-Pings).
+// Leer lassen ("HIER…") = aus.
+const ROLLE_VERIFIZIERT = "1515004004504043563";
 const ROLLE_100_PROZENT = "HIER_ROLLEN_ID";   // (optional, aus) 100%-Club — leer lassen = wird übersprungen
 
 const CODE_GUELTIG_MS = 15 * 60 * 1000;   // Codes aus dem Spiel gelten 15 Minuten
@@ -128,6 +129,9 @@ async function verarbeiteRefresh(discordUserId, guildId) {
 async function vergebeRollen(userDoc, discordUserId, guildId) {
   const achievements = userDoc.achievements || [];
   const verdient = [];
+
+  // Rolle für ALLE Verknüpften (Patch-Pings o. Ä.) — unabhängig von Erfolgen
+  if (ROLLE_VERIFIZIERT && !ROLLE_VERIFIZIERT.startsWith("HIER")) verdient.push(ROLLE_VERIFIZIERT);
 
   for (const [achId, rolleId] of Object.entries(ROLLEN_MAPPING)) {
     if (rolleId.startsWith("HIER")) continue;             // noch nicht konfiguriert
