@@ -608,6 +608,19 @@
     /* --- Aktions-Codes einlösen (codes/{CODE} in Firestore, vom Admin in der Konsole angelegt) ---
        Dokument-Felder: { aktiv: true, seelen: 1000, bis: <Timestamp/Millis, optional> }
        cb bekommt: {ok:true, seelen:N, code:C} oder {ok:false, grund:"offline"|"schon"|"ungueltig"|"abgelaufen"} */
+    /* --- Discord-Verknüpfung: 6-stelligen Code erzeugen und ins eigene
+       Cloud-Profil schreiben. Der Discord-Bot (discord-rollen/) sucht den Code
+       per /verify und vergibt Rollen anhand der Achievements. --- */
+    generateDiscordCode: function (cb) {
+      cb = cb || function () {};
+      if (!ONLINE || !fbDB || !currentUser) { cb({ ok: false, grund: "offline" }); return; }
+      var chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789", code = "";
+      for (var i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+      fbDB.collection("users").doc(currentUser.uid).set({ discordLinkCode: code, discordLinkTs: Date.now() }, { merge: true })
+        .then(function () { cloudPush(); cb({ ok: true, code: code }); })
+        .catch(function () { cb({ ok: false, grund: "fehler" }); });
+    },
+
     redeemCode: function (code, cb) {
       cb = cb || function () {};
       code = String(code || "").trim().toUpperCase();

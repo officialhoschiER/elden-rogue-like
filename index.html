@@ -521,6 +521,14 @@
       </div>
       <div id="set-code-result" style="width:100%; font-family:sans-serif; font-size:0.78rem; margin-top:6px; min-height:1em;"></div>
     </div>
+    <div class="set-row" style="flex-wrap:wrap;">
+      <div>
+        <div class="set-label" id="set-discord-label">Discord verknüpfen</div>
+        <div class="set-sub" id="set-discord-sub">Rollen für deine Erfolge — automatisch</div>
+      </div>
+      <button class="btn-mini" id="set-discord-btn" onclick="erzeugeDiscordCode()">Code erzeugen</button>
+      <div id="set-discord-result" style="width:100%; font-family:sans-serif; font-size:0.78rem; margin-top:6px; min-height:1em;"></div>
+    </div>
   </div>
 </div>
 
@@ -1408,6 +1416,29 @@
   window.updateShopButtonSouls = updateShopButtonSouls;
 
   /* ===== Aktions-Codes einlösen (Codes legt der Admin in Firestore unter codes/{CODE} an) ===== */
+  /* Discord-Verknüpfung: Code erzeugen, den man im Discord per /verify eingibt */
+  function erzeugeDiscordCode() {
+    var en = _menuIsEn();
+    var out = document.getElementById("set-discord-result");
+    if (!window.ER || !ER.currentUser || !ER.currentUser()) {
+      if (out) out.innerHTML = '<span style="color:#e74c3c;">' + (en ? "Please sign in with Google first." : "Bitte melde dich zuerst mit Google an.") + '</span>';
+      return;
+    }
+    if (out) out.textContent = en ? "Generating code…" : "Erzeuge Code…";
+    ER.generateDiscordCode(function (r) {
+      if (!out) return;
+      if (r.ok) {
+        out.innerHTML = (en ? "Your code: " : "Dein Code: ") +
+          '<b style="color:var(--gold); letter-spacing:2px; font-size:1.05rem;">' + r.code + '</b><br>' +
+          (en ? "Type <b>/verify " + r.code + "</b> on the Discord server — your roles are assigned automatically. Valid for 15 minutes."
+              : "Tippe <b>/verify " + r.code + "</b> auf dem Discord-Server — deine Rollen kommen automatisch. Gültig für 15 Minuten.");
+      } else {
+        out.innerHTML = '<span style="color:#e74c3c;">' + (en ? "Failed — are you online and signed in?" : "Fehlgeschlagen — bist du online und angemeldet?") + '</span>';
+      }
+    });
+  }
+  window.erzeugeDiscordCode = erzeugeDiscordCode;
+
   function einloeseCode() {
     var en = _menuIsEn();
     var input = document.getElementById("set-code-input");
@@ -2108,6 +2139,9 @@ function localizeMenuExtras(){
   set("set-speedrun-sub", "Neben ein Pop-up klicken = nichts nehmen & weiter", "Click beside a pop-up = take nothing & continue");
   set("set-timer-label", "Timer anzeigen", "Show timer");
   set("set-timer-sub", "Laufzeit-Anzeige im Spiel", "In-game run timer display");
+  set("set-discord-label", "Discord verknüpfen", "Link Discord");
+  set("set-discord-sub", "Rollen für deine Erfolge — automatisch", "Roles for your feats — automatic");
+  set("set-discord-btn", "Code erzeugen", "Generate code");
   _updateSpeedrunBtn();
   _updateTimerBtn();
   setH("info-l1", "<b>Modus wählen:</b> Starte einen <b>Normalen</b> Run. Den <b>Hard Mode</b> schaltest du frei, sobald du einmal durchgespielt hast.", "<b>Pick a mode:</b> Start a <b>Normal</b> run. <b>Hard Mode</b> unlocks once you've finished the game.");
