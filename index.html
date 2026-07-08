@@ -874,6 +874,7 @@
     ["normal",       "lb_cat_normal"],
     ["hard",         "lb_cat_hard"],
     ["daily",        "lb_cat_daily"],
+    ["idle",         "lb_cat_idle"],
     ["speedrun",     "lb_cat_speedrun"],
     ["completionist","lb_cat_completionist"],
     ["tower",        "lb_cat_tower"],
@@ -1777,6 +1778,12 @@
       thBosses.innerText = t("lb_th_bosses");
       thScore.innerText = t("lb_th_score");
       if (patchSel) patchSel.style.display = "none";   // Daily-Board gilt für den heutigen Seed, nicht pro Patch
+    } else if (lbKategorie === "idle") {
+      table.classList.add("lbmode-score");
+      thStage.innerText = _menuIsEn() ? "Retinue" : "Gefolge";   // Anzahl angeworbener Champions
+      thBosses.innerText = "/min";                               // aktuelle Runen-Rate
+      thScore.innerText = _menuIsEn() ? "Runes" : "Runen";       // erwirtschaftete Runen (Sortierung)
+      if (patchSel) patchSel.style.display = "none";
     } else {
       table.classList.add("lbmode-score");
       var istTower = (lbKategorie === "tower");
@@ -1794,6 +1801,23 @@
           document.getElementById("lb-pagenav").style.visibility = "hidden";
           status.textContent = online
             ? (_menuIsEn() ? "No one has played today's seed yet — be the first! (🎲 " + dailySeedStr() + ")" : "Heute hat den Seed noch niemand gespielt — sei der Erste! (🎲 " + dailySeedStr() + ")")
+            : (window.i18n ? t("lb_no_entries_local") : "Noch keine lokalen Läufe. Spiel eine Runde!");
+          return;
+        }
+        _lbRows = rows; renderLbPage();
+        status.classList.add("hidden"); table.classList.remove("hidden");
+      });
+      return;
+    }
+
+    // Gefolge-/Idle-Board: meiste erwirtschaftete Runen
+    if (lbKategorie === "idle") {
+      lbPage = 0;
+      ER.getIdleLeaderboard(50, function (rows, online) {
+        if (!rows || rows.length === 0) {
+          document.getElementById("lb-pagenav").style.visibility = "hidden";
+          status.textContent = online
+            ? (_menuIsEn() ? "No Runes farmed yet — recruit your Retinue!" : "Noch keine Runen erwirtschaftet — wirb dein Gefolge an!")
             : (window.i18n ? t("lb_no_entries_local") : "Noch keine lokalen Läufe. Spiel eine Runde!");
           return;
         }
@@ -2251,12 +2275,13 @@
     { key:"Metyr, Mutter der Finger",             kurz:"Metyr",         rate:150, kosten:90000, grp:"aussen",    img:"images/bosse/metyr.png" }
   ];
   function idleRosterByKey(k){ for (var i=0;i<IDLE_ROSTER.length;i++) if (IDLE_ROSTER[i].key===k) return IDLE_ROSTER[i]; return null; }
-  function idleBeaten(k){ try { return (ER.getStats().bossKills[k]||0) >= 1; } catch (e) { return false; } }
+  // Ab jetzt zählen: ein Boss wird fürs Gefolge nur freigeschaltet, wenn man ihn AB SOFORT im Hard Mode legt (game.html -> meta.idleUnlocked). Kein rückwirkendes Freischalten.
+  function idleBeaten(k){ try { return (ladeMeta().idleUnlocked||[]).indexOf(k) >= 0; } catch (e) { return false; } }
   function idleHardUnlocked(){ try { return !!(window.ER && ER.isUnlocked && ER.isUnlocked("hard_mode")); } catch (e) { return false; } }
-  function getIdle(){ var m=ladeMeta(); var d=m.idle||{}; return { runen:d.runen||0, owned:(d.owned||[]).slice(), slots:(d.slots||[null,null]).slice(), lastTs:d.lastTs||Date.now() }; }
-  function saveIdle(idle){ var m=ladeMeta(); m.idle={ runen:idle.runen, owned:idle.owned, slots:idle.slots, lastTs:idle.lastTs }; speichereMeta(m); }
+  function getIdle(){ var m=ladeMeta(); var d=m.idle||{}; return { runen:d.runen||0, earned:d.earned||0, owned:(d.owned||[]).slice(), slots:(d.slots||[null,null]).slice(), lastTs:d.lastTs||Date.now() }; }
+  function saveIdle(idle){ var m=ladeMeta(); m.idle={ runen:idle.runen, earned:idle.earned||0, rate:idleRate(idle).rate, owned:idle.owned, slots:idle.slots, lastTs:idle.lastTs }; speichereMeta(m); }
   function idleRate(idle){ var r=0, grps=[]; idle.slots.forEach(function(k){ if(!k) return; var b=idleRosterByKey(k); if(b){ r+=b.rate; grps.push(b.grp); } }); var syn=(grps.length===2 && grps[0]===grps[1]); return { rate:r*(syn?1.5:1), syn:syn }; }
-  function idleAccrue(idle){ var now=Date.now(); if(!idle.lastTs) idle.lastTs=now; var min=Math.min((now-idle.lastTs)/60000, 720); var g=min*idleRate(idle).rate; idle.runen+=g; idle.lastTs=now; return g; }
+  function idleAccrue(idle){ var now=Date.now(); if(!idle.lastTs) idle.lastTs=now; var min=Math.min((now-idle.lastTs)/60000, 720); var g=min*idleRate(idle).rate; idle.runen+=g; idle.earned=(idle.earned||0)+g; idle.lastTs=now; return g; }
   function idleGrpName(g,en){ var m={sturm:en?"Storm":"Sturm",gestirn:en?"Stars":"Gestirn",mond:en?"Moon":"Mond",gott:en?"God-Eater":"Gottverschlinger",omen:"Omen",feuer:en?"Fire":"Feuer",klinge:en?"Blade":"Klinge",haligtree:"Haligtree",dlc:en?"Shadow":"Schatten",wahnsinn:en?"Frenzy":"Wahnsinn",aussen:en?"Outer Gods":"Äußere Götter"}; return m[g]||g; }
 
   var _idle=null, _idleTimer=null;
@@ -2289,11 +2314,12 @@
       var beaten=idleBeaten(b.key), owned=_idle.owned.indexOf(b.key)>=0, slotted=_idle.slots.indexOf(b.key)>=0;
       var freeSlot=_idle.slots.indexOf(null)>=0;
       var action;
-      if(!beaten) action='<span class="idle-locked">🔒 '+(en?"not defeated":"nicht besiegt")+'</span>';
-      else if(!owned) action='<button class="idle-buy"'+(_idle.runen>=b.kosten?"":" disabled")+' onclick="idleBuy(\''+b.key+'\')">'+(b.kosten===0?(en?"Recruit (free)":"Anwerben (gratis)"):(en?"Recruit · ":"Anwerben · ")+n(b.kosten)+" 🪙")+'</button>';
-      else if(slotted) action='<span class="idle-inslot">'+(en?"in slot":"im Slot")+'</span>';
-      else action='<button class="idle-slotbtn"'+(freeSlot?"":" disabled")+' onclick="idleToSlot(\''+b.key+'\')">'+(freeSlot?(en?"To slot":"In Slot"):(en?"slots full":"Slots voll"))+'</button>';
-      return '<div class="idle-row'+(beaten?"":" dim")+'"><img class="idle-row-img" src="'+b.img+'" onerror="this.style.display=\'none\'"><div class="idle-row-info"><div class="idle-row-nm">'+b.kurz+'</div><div class="idle-row-rt">'+b.rate+' Runen/min · '+idleGrpName(b.grp,en)+'</div></div><div class="idle-row-act">'+action+'</div></div>';
+      // Bereits Angeworbene bleiben immer nutzbar; sonst muss der Boss AB JETZT (Hard Mode) besiegt sein
+      if(slotted) action='<span class="idle-inslot">'+(en?"in slot":"im Slot")+'</span>';
+      else if(owned) action='<button class="idle-slotbtn"'+(freeSlot?"":" disabled")+' onclick="idleToSlot(\''+b.key+'\')">'+(freeSlot?(en?"To slot":"In Slot"):(en?"slots full":"Slots voll"))+'</button>';
+      else if(!beaten) action='<span class="idle-locked">🔒 '+(en?"not defeated":"nicht besiegt")+'</span>';
+      else action='<button class="idle-buy"'+(_idle.runen>=b.kosten?"":" disabled")+' onclick="idleBuy(\''+b.key+'\')">'+(b.kosten===0?(en?"Recruit (free)":"Anwerben (gratis)"):(en?"Recruit · ":"Anwerben · ")+n(b.kosten)+" 🪙")+'</button>';
+      return '<div class="idle-row'+(beaten||owned?"":" dim")+'"><img class="idle-row-img" src="'+b.img+'" onerror="this.style.display=\'none\'"><div class="idle-row-info"><div class="idle-row-nm">'+b.kurz+'</div><div class="idle-row-rt">'+b.rate+' Runen/min · '+idleGrpName(b.grp,en)+'</div></div><div class="idle-row-act">'+action+'</div></div>';
     }).join("");
     body.innerHTML=
       (gained?'<div class="idle-away">'+(en?"While you were away: ":"Während du weg warst: ")+'<b>+'+n(gained)+' 🪙</b></div>':'')+
@@ -2307,7 +2333,7 @@
   function idleToSlot(key){ if(!_idle||_idle.owned.indexOf(key)<0||_idle.slots.indexOf(key)>=0) return; var i=_idle.slots.indexOf(null); if(i<0) return; _idle.slots[i]=key; saveIdle(_idle); renderIdleBody(0); }
   function idleClearSlot(i){ if(!_idle) return; _idle.slots[i]=null; saveIdle(_idle); renderIdleBody(0); }
   function idleUpdateBalance(){ if(!_idle) return; var el=document.getElementById("idle-runen"); if(el){ var en=(typeof _menuIsEn==="function")?_menuIsEn():false; el.textContent=Math.floor(_idle.runen).toLocaleString(en?"en-US":"de-DE"); } }
-  function idleStartTick(){ if(_idleTimer) clearInterval(_idleTimer); var saveCtr=0; _idleTimer=setInterval(function(){ var modal=document.getElementById("modal-idle"); if(!modal||!modal.classList.contains("open")||!_idle){ if(_idle) saveIdle(_idle); clearInterval(_idleTimer); _idleTimer=null; return; } _idle.runen+=idleRate(_idle).rate/60; _idle.lastTs=Date.now(); idleUpdateBalance(); if(++saveCtr>=5){ saveCtr=0; saveIdle(_idle); } },1000); }
+  function idleStartTick(){ if(_idleTimer) clearInterval(_idleTimer); var saveCtr=0; _idleTimer=setInterval(function(){ var modal=document.getElementById("modal-idle"); if(!modal||!modal.classList.contains("open")||!_idle){ if(_idle) saveIdle(_idle); clearInterval(_idleTimer); _idleTimer=null; return; } var _tr=idleRate(_idle).rate/60; _idle.runen+=_tr; _idle.earned=(_idle.earned||0)+_tr; _idle.lastTs=Date.now(); idleUpdateBalance(); if(++saveCtr>=5){ saveCtr=0; saveIdle(_idle); } },1000); }
   window.idleBuy=idleBuy; window.idleToSlot=idleToSlot; window.idleClearSlot=idleClearSlot; window.renderIdle=renderIdle;
 </script>
 

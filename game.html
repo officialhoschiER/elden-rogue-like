@@ -1079,6 +1079,8 @@ function ladeMeta() {
   return metaDefault();
 }
 function speichereMeta(m) { try { localStorage.setItem(META_KEY, JSON.stringify(m)); } catch(e) {} if (window.ER && ER.syncNow) try { ER.syncNow(); } catch(e) {} }
+// Bosse fürs Gefolge (Idle) zählen erst AB JETZT und nur im Hard Mode (kein rückwirkendes Freischalten)
+function markiereGefolgeBoss(name) { try { if (!hardMode || !name) return; let m = ladeMeta(); m.idleUnlocked = m.idleUnlocked || []; if (m.idleUnlocked.indexOf(name) < 0) { m.idleUnlocked.push(name); speichereMeta(m); } } catch (e) {} }
 function L(de, en) { return (window.i18n && window.i18n.getLang && window.i18n.getLang() === "en") ? en : de; }
 
 const SEELEN_REGION_TIEFE = { Limgrave:0, Caelid:1, Leyndell:2, Mountaintops:3, FarumAzula:4, AshenCapital:5, EldenThrone:6, Haligtree:6, Gravesite:7, CastleEnsis:8, AbyssalWoods:9, Rauh:9, EnirIlim:10 };
@@ -3495,7 +3497,7 @@ function kampfGewonnen() {
 
   if (window.ER) {
     ER.fightWon();
-    if (gegnerName === "Eldenbiest" || (gegnerName === "Mohg, Fürst des Blutes" && !mohgZweiterKill)) { if (!__schonGezaehlt) { ER.bossKilled(gegnerName); if (window.ER && ER.addBossValue) ER.addBossValue(gibStageNummer()); runBosseGelegt++; recordHallOfFame(); ER.gameCompleted(gewaehlteKlasse, hardMode ? "hard" : "normal", !blaiddEncounteredRun, (armorRemovedByPlayer && !hatRuestungAusgeruestet())); stopRunTimer();
+    if (gegnerName === "Eldenbiest" || (gegnerName === "Mohg, Fürst des Blutes" && !mohgZweiterKill)) { if (!__schonGezaehlt) { ER.bossKilled(gegnerName); if (window.ER && ER.addBossValue) ER.addBossValue(gibStageNummer()); runBosseGelegt++; markiereGefolgeBoss(gegnerName); recordHallOfFame(); ER.gameCompleted(gewaehlteKlasse, hardMode ? "hard" : "normal", !blaiddEncounteredRun, (armorRemovedByPlayer && !hatRuestungAusgeruestet())); stopRunTimer();
       // Completion-Marks für die Klassen-Tafel (Hard schließt Normal mit ein)
       ER.classFeat(gewaehlteKlasse, "normal");
       if (hardMode) ER.classFeat(gewaehlteKlasse, "hard");
@@ -3507,9 +3509,9 @@ function kampfGewonnen() {
       if (maleniaBesiegtRun) ER.maleniaRunCompleted();   // Achievement "Pfad des Haligtree"
       if (waffenRaritaet === "legendary" && ruestungRaritaet === "legendary" && Array.isArray(ausgeruesteteTalismane) && ausgeruesteteTalismane.some(function(tt){ return tt && tt.rarity === "legendary"; })) ER.legendaryRunCompleted();  // "Legendär ausgestattet"
     } }
-    else if (mohgZweiterKill) { if (!__schonGezaehlt) { ER.bossKilled(gegnerName); if (window.ER && ER.addBossValue) ER.addBossValue(gibStageNummer()); runBosseGelegt++; ER.classFeat(gewaehlteKlasse, "mohgwyn"); } }   // Zweitsieg: Kill zählt, Run-Abschluss erst nach der Hand-Wahl
-    else if (aktuellerKnotenTyp === 5 && !inSubDungeon && !inSewers) { if (!__schonGezaehlt) { ER.bossKilled(gegnerName); if (window.ER && ER.addBossValue) ER.addBossValue(gibStageNummer()); runBosseGelegt++; } }
-    else if (aktuellerKnotenTyp === 15 || aktuellerKnotenTyp === 19) { if (!__schonGezaehlt) { ER.bossKilled(gegnerName); if (window.ER && ER.addBossValue) ER.addBossValue(gibStageNummer()); runBosseGelegt++; } }
+    else if (mohgZweiterKill) { if (!__schonGezaehlt) { ER.bossKilled(gegnerName); if (window.ER && ER.addBossValue) ER.addBossValue(gibStageNummer()); runBosseGelegt++; markiereGefolgeBoss(gegnerName); ER.classFeat(gewaehlteKlasse, "mohgwyn"); } }   // Zweitsieg: Kill zählt, Run-Abschluss erst nach der Hand-Wahl
+    else if (aktuellerKnotenTyp === 5 && !inSubDungeon && !inSewers) { if (!__schonGezaehlt) { ER.bossKilled(gegnerName); if (window.ER && ER.addBossValue) ER.addBossValue(gibStageNummer()); runBosseGelegt++; markiereGefolgeBoss(gegnerName); } }
+    else if (aktuellerKnotenTyp === 15 || aktuellerKnotenTyp === 19) { if (!__schonGezaehlt) { ER.bossKilled(gegnerName); if (window.ER && ER.addBossValue) ER.addBossValue(gibStageNummer()); runBosseGelegt++; markiereGefolgeBoss(gegnerName); } }
     else if (aktuellerKnotenTyp === 5 && inSewers) ER.eliteKilled();   // Esgar zählt als Gegner, nicht als Boss
     else if (aktuellerKnotenTyp === 14) ER.minibossKilled();
     else if (aktuellerKnotenTyp === 1) ER.eliteKilled();

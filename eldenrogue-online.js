@@ -874,6 +874,27 @@
     return [{ name: ER.getPlayerName(), photo: "", score: box.score, stage: box.stage || 0, bosses: box.bosses || 0, klasse: box.klasse || "" }];
   }
 
+  /* ====== 5e) GEFOLGE (IDLE) – Rangliste nach erwirtschafteten Runen ====== */
+  function idleSelbst() {
+    try { var m = JSON.parse(localStorage.getItem("eldenRogueMeta") || "{}"); var i = m.idle;
+      if (i && i.earned > 0) return [{ name: ER.getPlayerName(), photo: "", score: Math.round(i.earned), stage: (i.owned || []).length, bosses: Math.round(i.rate || 0) }];
+    } catch (e) {}
+    return [];
+  }
+  ER.getIdleLeaderboard = function (limit, cb) {
+    limit = limit || 20;
+    if (ONLINE && fbDB) {
+      fbDB.collection("users").orderBy("idleRunen", "desc").limit(limit).get()
+        .then(function (snap) {
+          var rows = [];
+          snap.forEach(function (d) { var x = d.data(); if (!(x.idleRunen > 0)) return;
+            rows.push({ name: x.displayName || "Befleckter", photo: x.photoURL || "", score: x.idleRunen, stage: x.idleOwned || 0, bosses: x.idleRate || 0 }); });
+          cb(rows, true);
+        })
+        .catch(function (e) { console.warn("[ER] Gefolge-Board:", e); cb(idleSelbst(), false); });
+    } else { cb(idleSelbst(), false); }
+  };
+
   /* ====== 6) LOKALE BESTENLISTE ====== */
   function eintragKategorie(x) { return x.category || normDiff(x.difficulty); }   // Legacy-Einträge -> Schwierigkeit
   function localBoard(limit, category, patch) {
@@ -1017,6 +1038,10 @@
     if (s.bestTimeMs > 0) { doc.bestTimeMs = s.bestTimeMs; doc.bestTimeMeta = s.bestTimeMeta || null; }
     // Täglicher-Seed-Board (nach dailyBest.<datum>.score sortiert) – Top-Level für die Query
     if (s.dailyBest && Object.keys(s.dailyBest).length) doc.dailyBest = s.dailyBest;
+    // Gefolge-/Idle-Rangliste: meiste erwirtschaftete Runen (Top-Level für orderBy)
+    try { var __m = JSON.parse(localStorage.getItem("eldenRogueMeta") || "{}"); var __i = __m.idle;
+      if (__i && (__i.earned > 0)) { doc.idleRunen = Math.round(__i.earned); doc.idleOwned = (__i.owned || []).length; doc.idleRate = Math.round(__i.rate || 0); }
+    } catch (e) {}
     // 100%-Achievements-Board (Sortierung nach Datum, wer zuerst alles hatte)
     if (s.allAchDate > 0) { doc.allAchDate = s.allAchDate; doc.allAchCount = s.allAchCount || 0; }
     else if (firebase.firestore && firebase.firestore.FieldValue) {   // Selbstheilung: fälschlichen Eintrag aus der Cloud entfernen
