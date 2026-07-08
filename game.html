@@ -473,6 +473,8 @@ h1, h2, h3, .btn-menu, .btn-combat, .btn-social, .game-author-tag, #region-displ
     .fr-cell.fr-reach { border-color: #6b6486; background: rgba(80,74,120,0.35); cursor: pointer; box-shadow: 0 0 8px rgba(120,110,180,0.4); }
     .fr-cell.fr-reach:hover { background: rgba(120,110,180,0.55); border-color: #a99fd0; }
     .fr-cell.fr-here { border-color: var(--gold); background: rgba(205,163,79,0.25); box-shadow: 0 0 12px rgba(205,163,79,0.7); }
+    .fr-cell.fr-visited { border-color: #23202f; background: rgba(10,9,16,0.7); opacity: 0.5; }
+    .fr-cell.fr-visited::after { content: "·"; color: #4a4560; font-size: 1.1rem; }
     .fr-cell .fr-me { width: 78%; height: 78%; object-fit: contain; }
     .fr-cell.fr-finger { font-size: 1.15rem; border-color: #8a6a2a; background: rgba(90,66,20,0.4); box-shadow: 0 0 10px rgba(200,150,60,0.5); }
     .fr-cell.fr-finger.blown { filter: grayscale(1) brightness(0.6); box-shadow: none; border-color: #3a3a46; }
@@ -936,6 +938,7 @@ let inFingerruinen = false;        // Fingerruinen-Modus (eigenes 10×10-Gitter 
 let fingerPos = 90;                // aktuelle Position im 10×10-Gitter (Start unten links = Reihe 9, Spalte 0 = Index 90)
 let fingerGeblasen = [];           // Indizes der bereits geblasenen Finger
 let fingerNodes = [];              // die 3 Finger-Knoten — pro Run an ZUFÄLLIGEN Orten (im Save gehalten)
+let fingerPfad = [90];             // besuchte Felder (Einbahn: nur hoch/rechts, kein Zurück)
 const FINGER_START = 90;           // unten links
 const FINGER_METYR = 9;            // oben rechts (Metyr)
 
@@ -965,7 +968,7 @@ function speichereRun() {
     v: 1, hardMode: hardMode, challenge: activeChallenge, ts: Date.now(), runPlayMs: runPlayMs,
     runSeed, seedIsCustom, seedRngCalls, runEbeneMax, runBosseGelegt,
     torbogenSpruenge, wolfsgeheulGehoert, wahnsinn, untouchableRunden, rellanaGetroffen, scharlachRot, dlcWahlOffen,
-    rauhGeheimIntakt, inFingerruinen, fingerPos, fingerGeblasen, fingerNodes,
+    rauhGeheimIntakt, inFingerruinen, fingerPos, fingerGeblasen, fingerNodes, fingerPfad,
     spielerHp, spielerMaxHp, spielerFlasks, maxKlassenFlasks, estusHeilProzent,
     gewaehlteKlasse, basisAusweichChance, playerImageStr,
     waffenName, waffenSchaden, waffenUpgrade, waffenRaritaet, waffenSchadensarten,
@@ -1008,7 +1011,7 @@ function ladeGespeichertenRun() {
     if (window.ER && ER.setSeedRun) ER.setSeedRun(seedIsCustom);
     setTimeout(aktualisiereSeedAnzeige, 0);
     torbogenSpruenge = d.torbogenSpruenge || 0; wolfsgeheulGehoert = !!d.wolfsgeheulGehoert; wahnsinn = d.wahnsinn || 0; untouchableRunden = d.untouchableRunden || 0; rellanaGetroffen = !!d.rellanaGetroffen; scharlachRot = !!d.scharlachRot; dlcWahlOffen = !!d.dlcWahlOffen;
-    rauhGeheimIntakt = d.rauhGeheimIntakt !== false; inFingerruinen = !!d.inFingerruinen; fingerPos = (typeof d.fingerPos === "number") ? d.fingerPos : 90; fingerGeblasen = d.fingerGeblasen || []; fingerNodes = d.fingerNodes || [];
+    rauhGeheimIntakt = d.rauhGeheimIntakt !== false; inFingerruinen = !!d.inFingerruinen; fingerPos = (typeof d.fingerPos === "number") ? d.fingerPos : 90; fingerGeblasen = d.fingerGeblasen || []; fingerNodes = d.fingerNodes || []; fingerPfad = (d.fingerPfad && d.fingerPfad.length) ? d.fingerPfad : [fingerPos];
     setTimeout(aktualisiereWahnsinnAnzeige, 0);
     if (dlcWahlOffen) setTimeout(oeffneMohgDlcWahl, 100);   // Wahl-Popup übersteht einen Reload
     towerEtage=d.towerEtage||0;
@@ -1969,7 +1972,7 @@ function direktNeustarten() {
   playerHitsOnEnemy = 0; enemyIsStaggered = false; staggerVisualActive = false; nextHitBonusDamage = false;
   currentAffinity = "Keine"; affinityHits = 0; completedDungeonsCount = 0;
   backpackItems = [null, null, null]; activeBuffs = []; inSubDungeon = false; inSewers = false; mainMapState = null; towerEtage = 0;
-  torbogenSpruenge = 0; wolfsgeheulGehoert = false; wahnsinn = 0; untouchableRunden = 0; rellanaGetroffen = false; scharlachRot = false; dlcWahlOffen = false; rauhGeheimIntakt = true; inFingerruinen = false; fingerPos = 90; fingerGeblasen = []; fingerNodes = []; aktualisiereWahnsinnAnzeige();
+  torbogenSpruenge = 0; wolfsgeheulGehoert = false; wahnsinn = 0; untouchableRunden = 0; rellanaGetroffen = false; scharlachRot = false; dlcWahlOffen = false; rauhGeheimIntakt = true; inFingerruinen = false; fingerPos = 90; fingerGeblasen = []; fingerNodes = []; fingerPfad = [90]; aktualisiereWahnsinnAnzeige();
   // Seed-Run (geteilter Seed): derselbe Seed bleibt für den Retry — normaler Run: frisch würfeln
   setzeSeed(seedIsCustom ? runSeed : zufallsSeed(), seedIsCustom);
   oeffneKlassenAuswahl();
@@ -4079,7 +4082,7 @@ function starteEnirNachRomina() {
 function starteFingerruinen() {
   let ov = document.getElementById("popup-overlay"); ov.style.display = "none";
   aktuelleRegion = "Fingerruinen"; scharlachRot = false; inFingerruinen = true;
-  fingerPos = FINGER_START; fingerGeblasen = []; fingerNodes = wuerfleFinger();
+  fingerPos = FINGER_START; fingerGeblasen = []; fingerNodes = wuerfleFinger(); fingerPfad = [FINGER_START];
   aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null; imKampf = false;
   heileUndRegeneriereVoll(hardMode);
   aktualisiereWahnsinnAnzeige(); speichereRun(); baueKarteHTML(); updateUI();
@@ -4087,37 +4090,62 @@ function starteFingerruinen() {
   content.innerHTML =
     '<h3 style="color:var(--gold);font-size:1.6rem;margin-top:0;letter-spacing:2px;font-family:\'Mantinia\',serif;">' + L("Die Ruinen der Finger", "The Finger Ruins") + '</h3>' +
     '<p style="color:#ddd;font-size:0.92rem;font-family:sans-serif;line-height:1.55;white-space:pre-line;">' +
-      L("Ein endloses Feld grauer Steinsäulen unter einem Sternenhimmel, der nicht der unsere ist.\n\nFinde deinen Weg von <b>unten links</b> nach <b>oben rechts</b>. Irgendwo verstreut liegen <b>drei Finger</b> — steh auf einem und <b>blas hinein</b>, bis er erklingt. Erst wenn alle drei getönt haben, erwacht <b>Metyr</b> in der oberen Ecke.\n\nVerlaufen? <b>Zurück zum Start</b> bringt dich nach unten links — geblasene Finger bleiben aktiv.",
-        "An endless field of grey stone pillars beneath a starfield not our own.\n\nFind your way from <b>bottom-left</b> to <b>top-right</b>. Three <b>fingers</b> lie scattered — stand on one and <b>blow into it</b> until it sounds. Only when all three have tolled does <b>Metyr</b> awaken in the far corner.\n\nLost? <b>Back to start</b> returns you to the bottom-left — blown fingers stay active.") + '</p>' +
+      L("Ein endloses Feld grauer Steinsäulen unter einem Sternenhimmel, der nicht der unsere ist.\n\nDu steigst von <b>unten links</b> nach <b>oben rechts</b> — Schritt für Schritt, immer nur <b>nach oben oder rechts</b>. Es gibt <b>kein Zurück</b>. Auf dem Weg liegen <b>drei Finger</b>: steh auf einem und <b>blas hinein</b>, bis er erklingt. Erst wenn alle drei getönt haben, erwacht <b>Metyr</b> in der oberen Ecke.\n\nDu siehst alles — plane deinen Weg so, dass du keinen Finger auslässt. Felder, die einen Finger abschneiden würden, bleiben gesperrt.",
+        "An endless field of grey stone pillars beneath a starfield not our own.\n\nYou ascend from <b>bottom-left</b> to <b>top-right</b> — step by step, only ever <b>up or right</b>. There is <b>no going back</b>. Three <b>fingers</b> lie along the way: stand on one and <b>blow into it</b> until it sounds. Only when all three have tolled does <b>Metyr</b> awaken in the far corner.\n\nYou can see everything — plan your route so you miss no finger. Tiles that would strand a finger stay locked.") + '</p>' +
     '<button class="btn-modal-action" onclick="document.getElementById(\'popup-overlay\').style.display=\'none\'; baueKarteHTML();">' + L("Ich bin bereit", "I am ready") + '</button>';
   ov.style.display = "flex";
 }
-// 3 verschiedene, zufällige Finger-Felder (nicht Start/Metyr, nicht zu nah am Rand-Startknoten)
+// Einbahn: 3 zufällige Finger, aber garantiert auf EINEM monotonen Treppen-Pfad
+// (Start unten links -> Metyr oben rechts, nur hoch/rechts). So ist jeder Finger
+// ohne Umkehr erreichbar und es kann keinen Soft-Lock geben.
 function wuerfleFinger() {
-  let out = [], banned = {};
-  banned[FINGER_START] = 1; banned[FINGER_METYR] = 1;
-  while (out.length < 3) {
-    let i = Math.floor(Math.random() * 100);
-    if (banned[i]) continue;
-    banned[i] = 1; out.push(i);
+  let r = 9, c = 0, pfad = [];
+  while (!(r === 0 && c === 9)) {
+    if (r > 0 && c < 9) { if (Math.random() < 0.5) r--; else c++; }
+    else if (r > 0) r--; else c++;
+    let idx = r * 10 + c;
+    if (idx !== FINGER_METYR) pfad.push(idx);
   }
+  let kandidaten = pfad.filter(i => i !== FINGER_START && i !== FINGER_METYR);
+  let out = [];
+  // gleichmäßig streuen: Pfad in Drittel teilen, aus jedem eins ziehen
+  for (let seg = 0; seg < 3 && kandidaten.length; seg++) {
+    let lo = Math.floor(kandidaten.length * seg / 3), hi = Math.floor(kandidaten.length * (seg + 1) / 3);
+    if (hi <= lo) hi = lo + 1;
+    let pick = kandidaten[Math.min(kandidaten.length - 1, lo + Math.floor(Math.random() * (hi - lo)))];
+    if (pick != null && out.indexOf(pick) < 0) out.push(pick);
+  }
+  while (out.length < 3 && kandidaten.length >= 3) { let p = kandidaten[Math.floor(Math.random() * kandidaten.length)]; if (out.indexOf(p) < 0) out.push(p); }
   return out;
 }
-function fingerNachbarn(i) {
-  let r = Math.floor(i / 10), c = i % 10, out = [];
-  if (r > 0) out.push(i - 10); if (r < 9) out.push(i + 10);
-  if (c > 0) out.push(i - 1); if (c < 9) out.push(i + 1);
+// noch nicht geblasene Finger
+function fingerOffen() { return fingerNodes.filter(i => fingerGeblasen.indexOf(i) < 0); }
+// Bleiben von (nr,nc) aus (per hoch/rechts) noch alle offenen Finger erreichbar?
+function fingerErreichbarVon(nr, nc) {
+  return fingerOffen().every(f => { let fr = Math.floor(f / 10), fc = f % 10; return fr <= nr && fc >= nc; });
+}
+// Erlaubte Züge: nur nach OBEN (Reihe−1) oder RECHTS (Spalte+1) und nur, wenn danach
+// kein offener Finger abgeschnitten wird (Metyr erst offen, wenn alle Finger tönen).
+function fingerErlaubteZuege(pos) {
+  let r = Math.floor(pos / 10), c = pos % 10, out = [];
+  [[r - 1, c], [r, c + 1]].forEach(function (m) {
+    let nr = m[0], nc = m[1]; if (nr < 0 || nc > 9) return;
+    let idx = nr * 10 + nc;
+    if (idx === FINGER_METYR) { if (fingerGeblasen.length >= fingerNodes.length) out.push(idx); return; }
+    if (fingerErreichbarVon(nr, nc)) out.push(idx);
+  });
   return out;
 }
 function renderFingerruinen(grid, mv) {
   if (mv) { mv.classList.remove("abyss-fog"); mv.style.backgroundImage = "linear-gradient(to bottom, rgba(18,14,30,0.92), rgba(5,4,10,0.985)), url('images/background/fingerruinen.jpg')"; }
   let allBlown = fingerGeblasen.length >= fingerNodes.length;
-  let reach = fingerNachbarn(fingerPos);
+  let reach = fingerErlaubteZuege(fingerPos);
   let cells = "";
   for (let i = 0; i < 100; i++) {
     let cls = "fr-cell", inner = "";
     if (i === fingerPos) { cls += " fr-here"; inner = '<img class="fr-me" src="images/tarnished_idle.png" onerror="this.replaceWith(document.createTextNode(\'🧍\'))">'; }
     else if (reach.indexOf(i) >= 0) cls += " fr-reach";
+    else if (fingerPfad.indexOf(i) >= 0) cls += " fr-visited";   // schon durchquert — kein Zurück
     if (i === FINGER_METYR) { cls += " fr-metyr" + (allBlown ? " lit" : ""); inner = '<img class="fr-metyr-img" src="' + (bilderDatenbankBosse["Metyr, Mutter der Finger"] || "") + '" onerror="this.replaceWith(document.createTextNode(\'👁\'))">'; }
     else if (fingerNodes.indexOf(i) >= 0) { let blown = fingerGeblasen.indexOf(i) >= 0; cls += " fr-finger" + (blown ? " blown" : ""); inner = "🖐"; }
     cells += '<div class="' + cls + '" onclick="fingerKlick(' + i + ')">' + inner + '</div>';
@@ -4126,33 +4154,29 @@ function renderFingerruinen(grid, mv) {
   grid.innerHTML =
     '<div class="fr-wrap">' +
       '<div class="fr-head">🖐 ' + L("Finger", "Fingers") + ': <b>' + fingerGeblasen.length + ' / ' + fingerNodes.length + '</b>' +
-        (allBlown ? ' — <b style="color:#c9a86a;">' + L("Metyr erwacht! Geh nach oben rechts.", "Metyr awakens! Head to the top-right.") + '</b>' : '') + '</div>' +
+        (allBlown ? ' — <b style="color:#c9a86a;">' + L("Metyr erwacht! Geh nach oben rechts.", "Metyr awakens! Head to the top-right.") + '</b>'
+                  : ' <span style="color:#8a83a8;">— ' + L("nur hoch/rechts, kein Zurück", "up/right only, no going back") + '</span>') + '</div>' +
       '<div class="fr-grid">' + cells + '</div>' +
       '<div class="fr-actions">' +
         (onFinger ? '<button class="btn-modal-action fr-blow" onclick="fingerBlasen()">🌬 ' + L("In den Finger blasen", "Blow into the finger") + '</button>' : '') +
-        '<button class="btn-modal-action fr-reset" onclick="fingerZurueckZumStart()">↩ ' + L("Zurück zum Start", "Back to start") + '</button>' +
       '</div>' +
     '</div>';
 }
 function fingerKlick(i) {
   if (imKampf || aktionsSperre) return;
   if (i === fingerPos) { if (fingerNodes.indexOf(i) >= 0 && fingerGeblasen.indexOf(i) < 0) fingerBlasen(); return; }
-  if (fingerNachbarn(fingerPos).indexOf(i) < 0) return;   // nur auf Nachbarfelder ziehen
-  if (i === FINGER_METYR) {
-    if (fingerGeblasen.length < fingerNodes.length) { zeigeFingerToast(L("Die drei Finger müssen erst erklingen…", "The three fingers must sound first…")); return; }
-    fingerPos = i; speichereRun(); starteMetyr(); return;
+  if (fingerErlaubteZuege(fingerPos).indexOf(i) < 0) {   // Einbahn: nur erlaubte Vorwärts-Züge
+    if (i === FINGER_METYR && fingerGeblasen.length < fingerNodes.length) zeigeFingerToast(L("Die drei Finger müssen erst erklingen…", "The three fingers must sound first…"));
+    return;
   }
-  fingerPos = i; speichereRun(); baueKarteHTML();
+  if (i === FINGER_METYR) { fingerPos = i; fingerPfad.push(i); speichereRun(); starteMetyr(); return; }
+  fingerPos = i; if (fingerPfad.indexOf(i) < 0) fingerPfad.push(i); speichereRun(); baueKarteHTML();
 }
 function fingerBlasen() {
   if (fingerNodes.indexOf(fingerPos) < 0 || fingerGeblasen.indexOf(fingerPos) >= 0) return;
   fingerGeblasen.push(fingerPos); playFingerSound();
   zeigeFingerToast(L("Ein tiefer Ton hallt durch die Ruinen…", "A deep tone echoes through the ruins…") + " (" + fingerGeblasen.length + "/" + fingerNodes.length + ")");
   speichereRun(); baueKarteHTML();
-}
-function fingerZurueckZumStart() {
-  if (imKampf) return;
-  fingerPos = FINGER_START; speichereRun(); baueKarteHTML();
 }
 function starteMetyr() {
   gegnerName = "Metyr, Mutter der Finger"; gegnerMaxHp = 3800; gegnerHp = 3800; gegnerSchaden = 195;
@@ -4380,7 +4404,7 @@ function bestaetigeStufe(naechsteEbene) { document.getElementById("popup-overlay
     activeChallenge = "";
     hatGodrickRune = hatRadahnRune = hatMorgottRune = true;
     aktuelleRegion = region; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null;
-    torbogenSpruenge = 0; wolfsgeheulGehoert = false; wahnsinn = 0; untouchableRunden = 0; rellanaGetroffen = false; rauhGeheimIntakt = true; inFingerruinen = false; fingerPos = 90; fingerGeblasen = []; fingerNodes = [];
+    torbogenSpruenge = 0; wolfsgeheulGehoert = false; wahnsinn = 0; untouchableRunden = 0; rellanaGetroffen = false; rauhGeheimIntakt = true; inFingerruinen = false; fingerPos = 90; fingerGeblasen = []; fingerNodes = []; fingerPfad = [90];
     scharlachRot = (region === "Rauh");
     try { netzKarte = generiereRautenNetz(region); } catch(e){ console.warn(e); }
     devClosePopups(); devApply(); aktualisiereWahnsinnAnzeige();
