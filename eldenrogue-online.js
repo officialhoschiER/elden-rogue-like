@@ -830,6 +830,7 @@
   ER.addBossValue  = function (stage) { var r = getRun(); r.bossScore = (r.bossScore || 0) + Math.max(1, stage || 1) * 120; saveRun(r); };
   ER.recordRunTime = function (ms) { var r = getRun(); r.timeMs = Math.round(ms || 0); saveRun(r); };
   ER.computeScore  = berechneScore;
+  ER.isDevMode     = istDevUmgebung;   // dev/Test -> Läufe zählen nicht für die geteilte Bestenliste
 
   /* ====== 5d) TÄGLICHER SEED – eigene Rangliste (bester Score pro Tag) ====== */
   function heutigerDailyKey() {
@@ -1010,6 +1011,42 @@
     return m;
   }
 
+  /* ====== DEV-/TEST-UMGEBUNG ======
+     Läufe auf lokalem Server oder dem Cloudflare-Pages-Test-Deploy (dev-Branch)
+     dürfen die GETEILTE Bestenliste nicht verfälschen. Alles andere (Speichern,
+     Geräte-Sync, Progression, Achievements) funktioniert zum Testen normal weiter.
+     Live bleibt officialhoschier.github.io (oder eine echte Domain) unberührt. */
+  function istDevUmgebung() {
+    try {
+      if (location.protocol === "file:") return true;
+      var h = location.hostname || "";
+      if (h === "localhost" || h === "127.0.0.1" || h === "0.0.0.0") return true;
+      if (/\.pages\.dev$/i.test(h)) return true;   // Cloudflare-Pages Test-Deploy
+      return false;
+    } catch (e) { return false; }
+  }
+  // Diese Top-Level-Felder speisen die geteilten Ranglisten -> auf dev NICHT schreiben.
+  var LB_CLOUD_FELDER = [
+    "bestScore", "bestRunBosses", "furthestStage",
+    "bestScoreNormal", "bestScoreHard", "bestRunBossesNormal", "bestRunBossesHard",
+    "furthestStageNormal", "furthestStageHard", "lb",
+    "bestTimeMs", "bestTimeMeta", "dailyBest",
+    "idleRunen", "idleOwned", "idleRate", "allAchDate", "allAchCount"
+  ];
+  function zeigeDevBadge() {
+    if (!istDevUmgebung() || typeof document === "undefined") return;
+    function inject() {
+      if (document.getElementById("er-dev-badge")) return;
+      var b = document.createElement("div"); b.id = "er-dev-badge";
+      b.textContent = "🛠 DEV — Läufe zählen nicht für die Bestenliste";
+      b.style.cssText = "position:fixed;left:8px;bottom:8px;z-index:99999;background:rgba(40,20,60,0.92);color:#e0b0ff;border:1px solid #a060e0;border-radius:6px;padding:4px 10px;font:600 11px/1.3 sans-serif;letter-spacing:0.4px;pointer-events:none;box-shadow:0 2px 10px rgba(0,0,0,0.5);";
+      (document.body || document.documentElement).appendChild(b);
+    }
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", inject); else inject();
+  }
+  if (istDevUmgebung()) { try { console.log("%c[ER] DEV-Umgebung erkannt — Läufe zählen NICHT für die geteilte Bestenliste.", "color:#c080ff;font-weight:bold;"); } catch (e) {} }
+  zeigeDevBadge();
+
   function cloudPush() {
     if (!ONLINE || !fbDB || !currentUser) return;
     var s = getStats();
@@ -1056,6 +1093,8 @@
       try { var us = localStorage.getItem("eldenRogueSeenUnlocks"); if (us) doc.seenStr = us; } catch (e) {}
       try { doc.runStr = localStorage.getItem("eldenRogueSave") || ""; } catch (e) {}   // "" = kein aktiver Run (löscht beendete Runs auch in der Cloud)
     }
+    // Dev-/Test-Umgebung: Ranglisten-Felder NICHT schreiben (merge lässt evtl. echte Live-Werte unberührt)
+    if (istDevUmgebung()) LB_CLOUD_FELDER.forEach(function (k) { delete doc[k]; });
     try { fbDB.collection("users").doc(currentUser.uid).set(doc, { merge: true }); } catch (e) { console.warn("[ER] cloudPush:", e); }
   }
 
