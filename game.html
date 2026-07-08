@@ -1083,7 +1083,7 @@ function ladeMeta() {
 }
 function speichereMeta(m) { try { localStorage.setItem(META_KEY, JSON.stringify(m)); } catch(e) {} if (window.ER && ER.syncNow) try { ER.syncNow(); } catch(e) {} }
 // Bosse fürs Gefolge (Idle) zählen erst AB JETZT und nur im Hard Mode (kein rückwirkendes Freischalten)
-function markiereGefolgeBoss(name) { try { if (!hardMode || !name) return; let m = ladeMeta(); m.idleUnlocked = m.idleUnlocked || []; if (m.idleUnlocked.indexOf(name) < 0) { m.idleUnlocked.push(name); speichereMeta(m); } } catch (e) {} }
+function markiereGefolgeBoss(name) { try { if (!hardMode || !name || seedIsCustom) return; let m = ladeMeta(); m.idleUnlocked = m.idleUnlocked || []; if (m.idleUnlocked.indexOf(name) < 0) { m.idleUnlocked.push(name); speichereMeta(m); } } catch (e) {} }
 function L(de, en) { return (window.i18n && window.i18n.getLang && window.i18n.getLang() === "en") ? en : de; }
 
 const SEELEN_REGION_TIEFE = { Limgrave:0, Caelid:1, Leyndell:2, Mountaintops:3, FarumAzula:4, AshenCapital:5, EldenThrone:6, Haligtree:6, Gravesite:7, CastleEnsis:8, AbyssalWoods:9, Rauh:9, EnirIlim:10 };
