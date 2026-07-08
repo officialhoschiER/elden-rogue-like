@@ -1088,7 +1088,8 @@ function L(de, en) { return (window.i18n && window.i18n.getLang && window.i18n.g
 
 const SEELEN_REGION_TIEFE = { Limgrave:0, Caelid:1, Leyndell:2, Mountaintops:3, FarumAzula:4, AshenCapital:5, EldenThrone:6, Haligtree:6, Gravesite:7, CastleEnsis:8, AbyssalWoods:9, Rauh:9, EnirIlim:10 };
 function belohneSeelen(gewonnen) {
-  if (seedIsCustom) { letzteRunSeelen = 0; return 0; }   // Seed-Run: keine Seelen (sonst Lucky-Seed-Farming)
+  // Seed-Run: keine Seelen (sonst Lucky-Seed-Farming) — AUSSER in der Dev-/Test-Umgebung, damit man dort vernünftig testen kann
+  if (seedIsCustom && !(window.ER && ER.isDevMode && ER.isDevMode())) { letzteRunSeelen = 0; return 0; }
   if (seelenVergeben) return letzteRunSeelen;
   seelenVergeben = true;
   let tiefe = SEELEN_REGION_TIEFE[aktuelleRegion] || 0;
