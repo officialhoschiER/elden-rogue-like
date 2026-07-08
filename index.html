@@ -116,7 +116,7 @@
 
     .btn-tower { background: linear-gradient(135deg, #2a1d0c, #3a2a12); color: #e6a23c; border: 1px solid #e6a23c; position: relative; overflow: hidden; }
     .btn-tower:hover { background: linear-gradient(135deg, #e6a23c, #d4892a); color: #1a1208; box-shadow: 0 0 26px rgba(230,162,60,0.55); transform: translateY(-2px); }
-    .btn-daily { display: block; width: fit-content; max-width: none; margin: 4px auto 0; padding: 8px 20px; font-size: 0.78rem; letter-spacing: 1.5px; white-space: nowrap; background: rgba(20,28,34,0.72); color: #8fb3c4; border: 1px solid #3f5f6d; border-radius: 6px; }
+    .btn-daily { display: block; width: fit-content; max-width: none; margin: 22px auto 0; padding: 8px 20px; font-size: 0.78rem; letter-spacing: 1.5px; white-space: nowrap; background: rgba(20,28,34,0.72); color: #8fb3c4; border: 1px solid #3f5f6d; border-radius: 6px; }
     .btn-daily:hover { background: rgba(58,90,104,0.5); color: #d3e8f0; border-color: #5a8296; box-shadow: 0 0 14px rgba(58,90,104,0.4); transform: translateY(-1px); }
     #daily-label { font-weight: bold; }
     /* ===== Idle "Gefolge" ===== */
@@ -1766,31 +1766,31 @@
       table.classList.add("lbmode-speedrun");
       thStage.innerText = t("lb_th_mode");             // Spalte 3 = Modus (Normal/Hard)
       thScore.innerText = t("lb_th_time");
-      if (patchSel) patchSel.style.display = "none";   // Speedrun-Board ist patch-übergreifend
+      if (patchSel) patchSel.style.visibility = "hidden";   // Speedrun-Board ist patch-übergreifend (Platz bleibt -> Modal gleich groß)
     } else if (lbKategorie === "completionist") {
       table.classList.add("lbmode-completionist");
       thStage.innerText = t("lb_th_date");
       thScore.innerText = t("lb_th_achievements");
-      if (patchSel) patchSel.style.display = "none";
+      if (patchSel) patchSel.style.visibility = "hidden";
     } else if (lbKategorie === "daily") {
       table.classList.add("lbmode-score");
       thStage.innerText = t("lb_th_stage");
       thBosses.innerText = t("lb_th_bosses");
       thScore.innerText = t("lb_th_score");
-      if (patchSel) patchSel.style.display = "none";   // Daily-Board gilt für den heutigen Seed, nicht pro Patch
+      if (patchSel) patchSel.style.visibility = "hidden";   // Daily-Board gilt für den heutigen Seed, nicht pro Patch
     } else if (lbKategorie === "idle") {
       table.classList.add("lbmode-score");
       thStage.innerText = _menuIsEn() ? "Retinue" : "Gefolge";   // Anzahl angeworbener Champions
       thBosses.innerText = "/min";                               // aktuelle Runen-Rate
       thScore.innerText = _menuIsEn() ? "Runes" : "Runen";       // erwirtschaftete Runen (Sortierung)
-      if (patchSel) patchSel.style.display = "none";
+      if (patchSel) patchSel.style.visibility = "hidden";
     } else {
       table.classList.add("lbmode-score");
       var istTower = (lbKategorie === "tower");
       thStage.innerText = istTower ? t("lb_th_akt") : t("lb_th_stage");
       thBosses.innerText = t("lb_th_bosses");
       thScore.innerText = t("lb_th_score");
-      if (patchSel) patchSel.style.display = "";
+      if (patchSel) patchSel.style.visibility = "visible";
     }
 
     // Täglicher-Seed-Board: eigener Abruf (heutiger Seed, datums-basiert)
