@@ -484,6 +484,26 @@
   function patchKey(p) { return String(p || PATCH).replace(/\./g, "_"); } // "1.5" -> "1_5"
   function leererPatchSlot() { var o = {}; LB_KATEGORIEN.forEach(function (c) { o[c] = { score: 0, stage: 0, bosses: 0 }; }); return o; }
 
+  /* ====== SKILL-BASIERTES PUNKTESYSTEM (v1.5) ======
+     SCORE = ( BASIS + SKILL + ZEIT ) × Schwierigkeit
+       BASIS = Ebene × 800  +  Boss-Wert (nach Stärke = Ebene beim Kill × 120)
+       SKILL = Riposten × 200  +  Schwäche-Treffer × 15
+       ZEIT  = gedeckelter Tempo-Bonus, max +10 % der Basis (Richtzeit 75 s/Ebene)
+       ×     = Normal 1.0 | Hard 1.5
+     Reine Funktion – wird von endRun (Rangliste), Hall of Fame und der Daily-Wertung genutzt. */
+  function berechneScore(r) {
+    r = r || {};
+    var stage = r.stage || 0;
+    var basis = stage * 800 + (r.bossScore || 0);
+    var skill = (r.ripostes || 0) * 200 + (r.weakHits || 0) * 15;
+    var parSec = Math.max(60, stage * 75);
+    var elapsed = (r.timeMs || 0) / 1000;
+    var tempo = elapsed > 0 ? Math.max(0, Math.min(1, (parSec - elapsed) / parSec)) : 0;
+    var zeit = Math.round(basis * 0.10 * tempo);
+    var mult = normDiff(r.difficulty) === "hard" ? 1.5 : 1.0;
+    return Math.max(0, Math.round((basis + skill + zeit) * mult));
+  }
+
   /* ====== 5) ÖFFENTLICHE API (window.ER) ====== */
   const ER = {
     ACHIEVEMENTS: ACHIEVEMENTS,
@@ -493,7 +513,7 @@
     startRun: function (difficulty, category) {
       var diff = normDiff(difficulty);
       var cat = normCat(category || diff);
-      saveRun({ stage: 1, bosses: 0, fights: 0, difficulty: diff, category: cat, hadDeath: false });
+      saveRun({ stage: 1, bosses: 0, fights: 0, ripostes: 0, weakHits: 0, bossScore: 0, timeMs: 0, startTs: Date.now(), difficulty: diff, category: cat, hadDeath: false });
       bump("runsStarted");
       setMax("furthestStage", 1);
       setMax(diff === "hard" ? "furthestStageHard" : "furthestStageNormal", 1);
@@ -502,7 +522,7 @@
       var r = getRun();
       var diff = normDiff(r.difficulty);
       var cat = normCat(r.category || diff);
-      var score = (r.stage || 0) * 1000 + (r.bosses || 0) * 200 + (r.fights || 0) * 10;
+      var score = berechneScore(r);
       // kombiniert (für die Stat-Anzeige) ...
       setMax("bestScore", score);
       setMax("bestRunBosses", r.bosses || 0);
@@ -522,7 +542,7 @@
       }
       submitToBoard(score, { stage: r.stage || 0, bosses: r.bosses || 0, fights: r.fights || 0, difficulty: diff, category: cat });
       // Zähler zurücksetzen – Schwierigkeit, Kategorie & hadDeath bleiben bis zum nächsten startRun erhalten
-      saveRun({ stage: 0, bosses: 0, fights: 0, difficulty: diff, category: cat, hadDeath: r.hadDeath });
+      saveRun({ stage: 0, bosses: 0, fights: 0, ripostes: 0, weakHits: 0, bossScore: 0, timeMs: 0, difficulty: diff, category: cat, hadDeath: r.hadDeath });
       return score;
     },
 
@@ -803,6 +823,57 @@
     ER[name] = function () { if (seedRunAktiv) return; return orig.apply(ER, arguments); };
   });
 
+  /* ====== 5c) SKILL-ZÄHLER + ZEIT (ungewrappt: laufen auch im Seed-/Daily-Run,
+     damit die Daily-Wertung dieselbe Formel benutzen kann) ====== */
+  ER.skillRiposte  = function () { runBump("ripostes"); };                                        // Stagger gebrochen -> Konter gelandet
+  ER.skillWeakness = function () { runBump("weakHits"); };                                        // Gegner an seiner Schwäche getroffen
+  ER.addBossValue  = function (stage) { var r = getRun(); r.bossScore = (r.bossScore || 0) + Math.max(1, stage || 1) * 120; saveRun(r); };
+  ER.recordRunTime = function (ms) { var r = getRun(); r.timeMs = Math.round(ms || 0); saveRun(r); };
+  ER.computeScore  = berechneScore;
+
+  /* ====== 5d) TÄGLICHER SEED – eigene Rangliste (bester Score pro Tag) ====== */
+  function heutigerDailyKey() {
+    var d = new Date();
+    return "" + d.getUTCFullYear() + String(d.getUTCMonth() + 1).padStart(2, "0") + String(d.getUTCDate()).padStart(2, "0");
+  }
+  ER.dailyKey = heutigerDailyKey;
+  ER.submitDaily = function (dateKey, seed, score, meta) {
+    score = Math.round(score || 0); if (score <= 0) return;
+    dateKey = dateKey || heutigerDailyKey();
+    var s = getStats();
+    s.dailyBest = s.dailyBest || {};
+    var slot = s.dailyBest[dateKey];
+    if (!slot || score > (slot.score || 0)) {
+      s.dailyBest[dateKey] = { score: score, seed: seed || "", stage: (meta && meta.stage) || 0, bosses: (meta && meta.bosses) || 0, klasse: (meta && meta.klasse) || "", ts: Date.now() };
+      var keys = Object.keys(s.dailyBest).sort();
+      while (keys.length > 14) { delete s.dailyBest[keys.shift()]; }   // Doc schlank halten: nur ~2 Wochen
+      saveStats(s);
+      cloudPush();
+    }
+  };
+  ER.getDailyLeaderboard = function (limit, cb, dateKey) {
+    limit = limit || 20; dateKey = dateKey || heutigerDailyKey();
+    var field = "dailyBest." + dateKey + ".score";
+    if (ONLINE && fbDB) {
+      fbDB.collection("users").orderBy(field, "desc").limit(limit).get()
+        .then(function (snap) {
+          var rows = [];
+          snap.forEach(function (d) {
+            var x = d.data(); var box = (x.dailyBest && x.dailyBest[dateKey]) ? x.dailyBest[dateKey] : null;
+            if (!box || !(box.score > 0)) return;
+            rows.push({ name: x.displayName || "Befleckter", photo: x.photoURL || "", score: box.score, stage: box.stage || 0, bosses: box.bosses || 0, klasse: box.klasse || "" });
+          });
+          cb(rows, true);
+        })
+        .catch(function (e) { console.warn("[ER] Daily-Board:", e); cb(localDaily(dateKey), false); });
+    } else { cb(localDaily(dateKey), false); }
+  };
+  function localDaily(dateKey) {
+    var s = getStats(); var box = s.dailyBest && s.dailyBest[dateKey];
+    if (!box || !(box.score > 0)) return [];
+    return [{ name: ER.getPlayerName(), photo: "", score: box.score, stage: box.stage || 0, bosses: box.bosses || 0, klasse: box.klasse || "" }];
+  }
+
   /* ====== 6) LOKALE BESTENLISTE ====== */
   function eintragKategorie(x) { return x.category || normDiff(x.difficulty); }   // Legacy-Einträge -> Schwierigkeit
   function localBoard(limit, category, patch) {
@@ -944,6 +1015,8 @@
     // Speedrun-Board (Sortierung aufsteigend) — Feld nur schreiben, wenn es eine echte Zeit gibt,
     // sonst würde eine 0 die Bestenliste anführen.
     if (s.bestTimeMs > 0) { doc.bestTimeMs = s.bestTimeMs; doc.bestTimeMeta = s.bestTimeMeta || null; }
+    // Täglicher-Seed-Board (nach dailyBest.<datum>.score sortiert) – Top-Level für die Query
+    if (s.dailyBest && Object.keys(s.dailyBest).length) doc.dailyBest = s.dailyBest;
     // 100%-Achievements-Board (Sortierung nach Datum, wer zuerst alles hatte)
     if (s.allAchDate > 0) { doc.allAchDate = s.allAchDate; doc.allAchCount = s.allAchCount || 0; }
     else if (firebase.firestore && firebase.firestore.FieldValue) {   // Selbstheilung: fälschlichen Eintrag aus der Cloud entfernen

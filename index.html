@@ -873,6 +873,7 @@
   var LB_CATS = [
     ["normal",       "lb_cat_normal"],
     ["hard",         "lb_cat_hard"],
+    ["daily",        "lb_cat_daily"],
     ["speedrun",     "lb_cat_speedrun"],
     ["completionist","lb_cat_completionist"],
     ["tower",        "lb_cat_tower"],
@@ -1770,6 +1771,12 @@
       thStage.innerText = t("lb_th_date");
       thScore.innerText = t("lb_th_achievements");
       if (patchSel) patchSel.style.display = "none";
+    } else if (lbKategorie === "daily") {
+      table.classList.add("lbmode-score");
+      thStage.innerText = t("lb_th_stage");
+      thBosses.innerText = t("lb_th_bosses");
+      thScore.innerText = t("lb_th_score");
+      if (patchSel) patchSel.style.display = "none";   // Daily-Board gilt für den heutigen Seed, nicht pro Patch
     } else {
       table.classList.add("lbmode-score");
       var istTower = (lbKategorie === "tower");
@@ -1777,6 +1784,23 @@
       thBosses.innerText = t("lb_th_bosses");
       thScore.innerText = t("lb_th_score");
       if (patchSel) patchSel.style.display = "";
+    }
+
+    // Täglicher-Seed-Board: eigener Abruf (heutiger Seed, datums-basiert)
+    if (lbKategorie === "daily") {
+      lbPage = 0;
+      ER.getDailyLeaderboard(50, function (rows, online) {
+        if (!rows || rows.length === 0) {
+          document.getElementById("lb-pagenav").style.visibility = "hidden";
+          status.textContent = online
+            ? (_menuIsEn() ? "No one has played today's seed yet — be the first! (🎲 " + dailySeedStr() + ")" : "Heute hat den Seed noch niemand gespielt — sei der Erste! (🎲 " + dailySeedStr() + ")")
+            : (window.i18n ? t("lb_no_entries_local") : "Noch keine lokalen Läufe. Spiel eine Runde!");
+          return;
+        }
+        _lbRows = rows; renderLbPage();
+        status.classList.add("hidden"); table.classList.remove("hidden");
+      });
+      return;
     }
 
     lbPage = 0;

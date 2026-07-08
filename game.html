@@ -855,6 +855,28 @@ function aktualisiereSeedAnzeige() {
   let badge = document.getElementById("seed-badge");
   if (badge) { badge.style.display = seedIsCustom ? "block" : "none"; badge.innerHTML = "🎲 " + t("seed_badge"); }
 }
+/* ===== Täglicher Seed – Wertung (identischer Algorithmus wie das Menü) ===== */
+function spielDailySeedStr() {
+  var d = new Date();
+  var key = "" + d.getUTCFullYear() + String(d.getUTCMonth() + 1).padStart(2, "0") + String(d.getUTCDate()).padStart(2, "0");
+  var h = 1779033703 ^ key.length;
+  for (var i = 0; i < key.length; i++) { h = Math.imul(h ^ key.charCodeAt(i), 3432918353); h = (h << 13) | (h >>> 19); }
+  var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", s = "";
+  for (var j = 0; j < 6; j++) { h = Math.imul(h ^ (h >>> 16), 2246822507); h >>>= 0; s += chars[h % 36]; }
+  return s;
+}
+let __dailyEingereicht = false;   // pro Run nur einmal in die Daily-Rangliste eintragen
+function pruefeDailyWertung() {
+  try {
+    if (__dailyEingereicht) return;
+    if (!seedIsCustom || !window.ER || !ER.submitDaily || !ER.computeScore) return;
+    if (String(runSeed).toUpperCase() !== spielDailySeedStr().toUpperCase()) return;   // nur der HEUTIGE Tages-Seed zählt für die Daily-Rangliste
+    __dailyEingereicht = true;
+    let run = {}; try { run = JSON.parse(localStorage.getItem("eldenRogueRun")) || {}; } catch (e) {}
+    let sc = ER.computeScore({ stage: runEbeneMax, bossScore: run.bossScore || 0, ripostes: run.ripostes || 0, weakHits: run.weakHits || 0, timeMs: runPlayMs, difficulty: hardMode ? "hard" : "normal" });
+    ER.submitDaily(ER.dailyKey ? ER.dailyKey() : null, runSeed, sc, { stage: runEbeneMax, bosses: runBosseGelegt, klasse: gewaehlteKlasse });
+  } catch (e) {}
+}
 function kopiereSeed() {
   let link = window.location.origin + window.location.pathname + "?seed=" + runSeed + (hardMode ? "&mode=hard" : "");
   try { navigator.clipboard.writeText(link); } catch (e) {}
@@ -941,7 +963,7 @@ function speichereRun() {
   try { tickTimer(); } catch(e) {}
   let save = {
     v: 1, hardMode: hardMode, challenge: activeChallenge, ts: Date.now(), runPlayMs: runPlayMs,
-    runSeed, seedIsCustom, seedRngCalls,
+    runSeed, seedIsCustom, seedRngCalls, runEbeneMax, runBosseGelegt,
     torbogenSpruenge, wolfsgeheulGehoert, wahnsinn, untouchableRunden, rellanaGetroffen, scharlachRot, dlcWahlOffen,
     rauhGeheimIntakt, inFingerruinen, fingerPos, fingerGeblasen, fingerNodes,
     spielerHp, spielerMaxHp, spielerFlasks, maxKlassenFlasks, estusHeilProzent,
@@ -990,7 +1012,7 @@ function ladeGespeichertenRun() {
     setTimeout(aktualisiereWahnsinnAnzeige, 0);
     if (dlcWahlOffen) setTimeout(oeffneMohgDlcWahl, 100);   // Wahl-Popup übersteht einen Reload
     towerEtage=d.towerEtage||0;
-    runPlayMs = d.runPlayMs || 0; startRunTimer();
+    runPlayMs = d.runPlayMs || 0; runEbeneMax = d.runEbeneMax || 1; runBosseGelegt = d.runBosseGelegt || 0; startRunTimer();
     window.__attr = (ladeMeta().attr) || {};   // Attribut-Schadensbonus auch nach Fortsetzen aktiv
     if (activeChallenge === "tower") { if (!towerEtage) towerEtage = 1; starteTowerEtage(); return true; }
     // Kampf-Zustand wiederherstellen -> Rausquitten setzt den Kampf nicht zurück (kein Farmen)
@@ -1884,15 +1906,16 @@ function zeigeTodesBildschirm(endgueltig) {
 
 /* ===== Run-Timer ===== */
 let runPlayMs = 0, _timerLastTick = null, _timerInterval = null;
+let runEbeneMax = 0, runBosseGelegt = 0;   // Skill-Score-Anker (funktionieren auch im Seed-/Daily-Run)
 function fmtRunTime(ms) {
   let s = Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), ss = s % 60;
   let mm = (h > 0) ? String(m).padStart(2, "0") : String(m);
   return (h > 0 ? h + ":" : "") + mm + ":" + String(ss).padStart(2, "0");
 }
 function updateTimerDisplay() { let el = document.getElementById("run-timer"); if (el) el.innerHTML = ICO("carian_inverted_statue_elden_ring_wiki_guide_200px.png", "margin-right:5px;") + fmtRunTime(runPlayMs); }
-function tickTimer() { if (_timerLastTick != null) { runPlayMs += Date.now() - _timerLastTick; _timerLastTick = Date.now(); } updateTimerDisplay(); }
+function tickTimer() { if (_timerLastTick != null) { runPlayMs += Date.now() - _timerLastTick; _timerLastTick = Date.now(); if (window.ER && ER.recordRunTime) ER.recordRunTime(runPlayMs); } updateTimerDisplay(); }
 function startRunTimer() { _timerLastTick = Date.now(); if (_timerInterval) clearInterval(_timerInterval); _timerInterval = setInterval(tickTimer, 1000); updateTimerDisplay(); }
-function stopRunTimer() { tickTimer(); if (_timerInterval) { clearInterval(_timerInterval); _timerInterval = null; } _timerLastTick = null; }
+function stopRunTimer() { tickTimer(); if (_timerInterval) { clearInterval(_timerInterval); _timerInterval = null; } _timerLastTick = null; try { pruefeDailyWertung(); } catch (e) {} }
 
 /* ===== Hall of Fame: abgeschlossenen Run mit Ausrüstung + Zeit sichern ===== */
 function recordHallOfFame() {
@@ -1909,7 +1932,7 @@ function recordHallOfFame() {
       klasse: gewaehlteKlasse || "",
       bosses: run.bosses || 0,
       fights: run.fights || 0,
-      score: (run.stage || 0) * 1000 + (run.bosses || 0) * 200 + (run.fights || 0) * 10,
+      score: (window.ER && ER.computeScore) ? ER.computeScore(run) : ((run.stage || 0) * 1000 + (run.bosses || 0) * 200 + (run.fights || 0) * 10),
       timeMs: runPlayMs,
       weapon: { name: waffenName, upgrade: waffenUpgrade || 0, rarity: waffenRaritaet || "common", img: weaponImg },
       armor: (typeof hatRuestungAusgeruestet === "function" && hatRuestungAusgeruestet()) ? { name: ruestungName, rarity: ruestungRaritaet || "common", img: ruestungBild || "" } : null
@@ -1975,7 +1998,7 @@ function waehleKlasseEngine(klasse) {
   // in ihrer eigenen Bestenliste landen. Leeres activeChallenge -> normCat fällt auf normal/hard zurück.
   if (window.ER) ER.startRun(hardMode ? "hard" : "normal", activeChallenge);
   aktualisiereSeedAnzeige();
-  runPlayMs = 0; startRunTimer();
+  runPlayMs = 0; runEbeneMax = 1; runBosseGelegt = 0; __dailyEingereicht = false; startRunTimer();
   speichereRun();
   if (activeChallenge === "tower") { starteTowerModus(); return; }   // Tower: direkt in den Aufstieg statt Regionskarte
   updateUI();
@@ -2379,6 +2402,7 @@ function useBackpackItem(slotIndex) {
 function klickeKnoten(ebene, knoten) {
   if (imKampf || spielerHp <= 0 || aktionsSperre) return;
   if (window.ER && !inSubDungeon) ER.reachStage(gibStageNummer());
+  if (!inSubDungeon) runEbeneMax = Math.max(runEbeneMax, gibStageNummer());   // tiefste erreichte Ebene (auch für die Daily-Wertung, die im Seed-Run läuft)
   geloesieKnotenIds.push(knoten.id); aktuellerKnotenId = knoten.id; aktuellerKnotenTyp = knoten.typ;
 
   playerHitsOnEnemy = 0; enemyIsStaggered = false; staggerVisualActive = false; nextHitBonusDamage = false; affinityHits = 0;
@@ -2858,6 +2882,8 @@ async function spielerAngriff() {
 
   let warBurst = false; let warBonus = false;
   if (nextHitBonusDamage) { finalDmg = Math.round(finalDmg * CONFIG.staggerBonusSchaden); nextHitBonusDamage = false; warBonus = true; }
+  // Skill-Wertung fürs Punktesystem: Riposte (Stagger-Konter) + Schwäche-Treffer
+  if (window.ER) { if (warBonus && ER.skillRiposte) ER.skillRiposte(); if (bossMod > 0 && ER.skillWeakness) ER.skillWeakness(); }
 
   if (currentAffinity !== "Keine") {
     affinityHits++;
@@ -3469,7 +3495,7 @@ function kampfGewonnen() {
 
   if (window.ER) {
     ER.fightWon();
-    if (gegnerName === "Eldenbiest" || (gegnerName === "Mohg, Fürst des Blutes" && !mohgZweiterKill)) { if (!__schonGezaehlt) { ER.bossKilled(gegnerName); recordHallOfFame(); ER.gameCompleted(gewaehlteKlasse, hardMode ? "hard" : "normal", !blaiddEncounteredRun, (armorRemovedByPlayer && !hatRuestungAusgeruestet())); stopRunTimer();
+    if (gegnerName === "Eldenbiest" || (gegnerName === "Mohg, Fürst des Blutes" && !mohgZweiterKill)) { if (!__schonGezaehlt) { ER.bossKilled(gegnerName); if (window.ER && ER.addBossValue) ER.addBossValue(gibStageNummer()); runBosseGelegt++; recordHallOfFame(); ER.gameCompleted(gewaehlteKlasse, hardMode ? "hard" : "normal", !blaiddEncounteredRun, (armorRemovedByPlayer && !hatRuestungAusgeruestet())); stopRunTimer();
       // Completion-Marks für die Klassen-Tafel (Hard schließt Normal mit ein)
       ER.classFeat(gewaehlteKlasse, "normal");
       if (hardMode) ER.classFeat(gewaehlteKlasse, "hard");
@@ -3481,9 +3507,9 @@ function kampfGewonnen() {
       if (maleniaBesiegtRun) ER.maleniaRunCompleted();   // Achievement "Pfad des Haligtree"
       if (waffenRaritaet === "legendary" && ruestungRaritaet === "legendary" && Array.isArray(ausgeruesteteTalismane) && ausgeruesteteTalismane.some(function(tt){ return tt && tt.rarity === "legendary"; })) ER.legendaryRunCompleted();  // "Legendär ausgestattet"
     } }
-    else if (mohgZweiterKill) { if (!__schonGezaehlt) { ER.bossKilled(gegnerName); ER.classFeat(gewaehlteKlasse, "mohgwyn"); } }   // Zweitsieg: Kill zählt, Run-Abschluss erst nach der Hand-Wahl
-    else if (aktuellerKnotenTyp === 5 && !inSubDungeon && !inSewers) { if (!__schonGezaehlt) ER.bossKilled(gegnerName); }
-    else if (aktuellerKnotenTyp === 15 || aktuellerKnotenTyp === 19) { if (!__schonGezaehlt) ER.bossKilled(gegnerName); }
+    else if (mohgZweiterKill) { if (!__schonGezaehlt) { ER.bossKilled(gegnerName); if (window.ER && ER.addBossValue) ER.addBossValue(gibStageNummer()); runBosseGelegt++; ER.classFeat(gewaehlteKlasse, "mohgwyn"); } }   // Zweitsieg: Kill zählt, Run-Abschluss erst nach der Hand-Wahl
+    else if (aktuellerKnotenTyp === 5 && !inSubDungeon && !inSewers) { if (!__schonGezaehlt) { ER.bossKilled(gegnerName); if (window.ER && ER.addBossValue) ER.addBossValue(gibStageNummer()); runBosseGelegt++; } }
+    else if (aktuellerKnotenTyp === 15 || aktuellerKnotenTyp === 19) { if (!__schonGezaehlt) { ER.bossKilled(gegnerName); if (window.ER && ER.addBossValue) ER.addBossValue(gibStageNummer()); runBosseGelegt++; } }
     else if (aktuellerKnotenTyp === 5 && inSewers) ER.eliteKilled();   // Esgar zählt als Gegner, nicht als Boss
     else if (aktuellerKnotenTyp === 14) ER.minibossKilled();
     else if (aktuellerKnotenTyp === 1) ER.eliteKilled();
