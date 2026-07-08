@@ -2318,7 +2318,7 @@
       if(slotted) action='<span class="idle-inslot">'+(en?"in slot":"im Slot")+'</span>';
       else if(owned) action='<button class="idle-slotbtn"'+(freeSlot?"":" disabled")+' onclick="idleToSlot(\''+b.key+'\')">'+(freeSlot?(en?"To slot":"In Slot"):(en?"slots full":"Slots voll"))+'</button>';
       else if(!beaten) action='<span class="idle-locked">🔒 '+(en?"not defeated":"nicht besiegt")+'</span>';
-      else action='<button class="idle-buy"'+(_idle.runen>=b.kosten?"":" disabled")+' onclick="idleBuy(\''+b.key+'\')">'+(b.kosten===0?(en?"Recruit (free)":"Anwerben (gratis)"):(en?"Recruit · ":"Anwerben · ")+n(b.kosten)+" 🪙")+'</button>';
+      else action='<button class="idle-buy" data-kosten="'+b.kosten+'"'+(_idle.runen>=b.kosten?"":" disabled")+' onclick="idleBuy(\''+b.key+'\')">'+(b.kosten===0?(en?"Recruit (free)":"Anwerben (gratis)"):(en?"Recruit · ":"Anwerben · ")+n(b.kosten)+" 🪙")+'</button>';
       return '<div class="idle-row'+(beaten||owned?"":" dim")+'"><img class="idle-row-img" src="'+b.img+'" onerror="this.style.display=\'none\'"><div class="idle-row-info"><div class="idle-row-nm">'+b.kurz+'</div><div class="idle-row-rt">'+b.rate+' Runen/min · '+idleGrpName(b.grp,en)+'</div></div><div class="idle-row-act">'+action+'</div></div>';
     }).join("");
     body.innerHTML=
@@ -2332,7 +2332,11 @@
   function idleBuy(key){ if(!_idle) return; var b=idleRosterByKey(key); if(!b||!idleBeaten(key)||_idle.owned.indexOf(key)>=0||_idle.runen<b.kosten) return; _idle.runen-=b.kosten; _idle.owned.push(key); saveIdle(_idle); renderIdleBody(0); }
   function idleToSlot(key){ if(!_idle||_idle.owned.indexOf(key)<0||_idle.slots.indexOf(key)>=0) return; var i=_idle.slots.indexOf(null); if(i<0) return; _idle.slots[i]=key; saveIdle(_idle); renderIdleBody(0); }
   function idleClearSlot(i){ if(!_idle) return; _idle.slots[i]=null; saveIdle(_idle); renderIdleBody(0); }
-  function idleUpdateBalance(){ if(!_idle) return; var el=document.getElementById("idle-runen"); if(el){ var en=(typeof _menuIsEn==="function")?_menuIsEn():false; el.textContent=Math.floor(_idle.runen).toLocaleString(en?"en-US":"de-DE"); } }
+  function idleUpdateBalance(){ if(!_idle) return; var floor=Math.floor(_idle.runen);
+    var el=document.getElementById("idle-runen"); if(el){ var en=(typeof _menuIsEn==="function")?_menuIsEn():false; el.textContent=floor.toLocaleString(en?"en-US":"de-DE"); }
+    // Kauf-Buttons live mit-freischalten, sobald man genug Runen hat (ohne Neu-Render)
+    document.querySelectorAll("#idle-body .idle-buy").forEach(function(btn){ var k=parseInt(btn.getAttribute("data-kosten")||"0",10); btn.disabled = floor < k; });
+  }
   function idleStartTick(){ if(_idleTimer) clearInterval(_idleTimer); var saveCtr=0; _idleTimer=setInterval(function(){ var modal=document.getElementById("modal-idle"); if(!modal||!modal.classList.contains("open")||!_idle){ if(_idle) saveIdle(_idle); clearInterval(_idleTimer); _idleTimer=null; return; } var _tr=idleRate(_idle).rate/60; _idle.runen+=_tr; _idle.earned=(_idle.earned||0)+_tr; _idle.lastTs=Date.now(); idleUpdateBalance(); if(++saveCtr>=5){ saveCtr=0; saveIdle(_idle); } },1000); }
   window.idleBuy=idleBuy; window.idleToSlot=idleToSlot; window.idleClearSlot=idleClearSlot; window.renderIdle=renderIdle;
 </script>
