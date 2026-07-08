@@ -116,6 +116,8 @@
 
     .btn-tower { background: linear-gradient(135deg, #2a1d0c, #3a2a12); color: #e6a23c; border: 1px solid #e6a23c; position: relative; overflow: hidden; }
     .btn-tower:hover { background: linear-gradient(135deg, #e6a23c, #d4892a); color: #1a1208; box-shadow: 0 0 26px rgba(230,162,60,0.55); transform: translateY(-2px); }
+    .btn-daily { background: linear-gradient(135deg, #10242a, #163540); color: #6fd3e0; border: 1px solid #3a8a99; max-width: 340px; margin: 0 auto; }
+    .btn-daily:hover { background: linear-gradient(135deg, #3a8a99, #2b6b78); color: #06181c; box-shadow: 0 0 24px rgba(58,138,153,0.5); transform: translateY(-2px); }
     .btn-ico { height: 1.15em; width: auto; vertical-align: -0.22em; margin-right: 7px; display: inline-block; }
     /* Seelen-Anzeige oben links */
     #souls-badge { position: fixed; top: 18px; left: 86px; z-index: 40; display: flex; align-items: center; gap: 10px;
@@ -450,6 +452,8 @@
     <button class="btn-main btn-tower" id="btn-tower"><span id="btn-tower-label">Battle Tower</span></button>
     <a href="game.html?challenge=autobattle" class="btn-main btn-autobattle" id="btn-autobattle" onclick="return checkOverwrite('game.html?challenge=autobattle')">Auto-Battle</a>
   </div>
+
+  <a href="game.html" id="btn-daily" class="btn-main btn-daily reveal d3">🗓️ <span id="daily-label">Täglicher Seed</span></a>
 
   <div class="btn-row reveal d4">
     <button class="btn-secondary" onclick="openModal('seelenschmiede')">
@@ -2169,6 +2173,29 @@
   }
   window.setTheme = setTheme;
   (function () { var saved = "elden"; try { saved = localStorage.getItem("eldenRogueTheme") || "elden"; } catch (e) {} setTheme(saved); })();
+
+  /* ===== Täglicher Seed (weltweit gleich, datums-basiert) ===== */
+  function dailySeedStr() {
+    var d = new Date();
+    var key = "" + d.getUTCFullYear() + String(d.getUTCMonth() + 1).padStart(2, "0") + String(d.getUTCDate()).padStart(2, "0");
+    var h = 1779033703 ^ key.length;
+    for (var i = 0; i < key.length; i++) { h = Math.imul(h ^ key.charCodeAt(i), 3432918353); h = (h << 13) | (h >>> 19); }
+    var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", s = "";
+    for (var j = 0; j < 6; j++) { h = Math.imul(h ^ (h >>> 16), 2246822507); h >>>= 0; s += chars[h % 36]; }
+    return s;
+  }
+  function wireDaily() {
+    var btn = document.getElementById("btn-daily"); if (!btn) return;
+    var seed = dailySeedStr();
+    var en = (typeof _menuIsEn === "function") ? _menuIsEn() : false;
+    var url = "game.html?seed=" + seed;
+    btn.href = url;
+    var lbl = document.getElementById("daily-label");
+    if (lbl) lbl.textContent = (en ? "Daily Seed" : "Täglicher Seed") + " · " + seed;
+    btn.onclick = function () { return checkOverwrite(url); };
+  }
+  wireDaily();
+  document.addEventListener("languageChanged", wireDaily);
 </script>
 
 <script>
