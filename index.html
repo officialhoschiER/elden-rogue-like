@@ -116,8 +116,38 @@
 
     .btn-tower { background: linear-gradient(135deg, #2a1d0c, #3a2a12); color: #e6a23c; border: 1px solid #e6a23c; position: relative; overflow: hidden; }
     .btn-tower:hover { background: linear-gradient(135deg, #e6a23c, #d4892a); color: #1a1208; box-shadow: 0 0 26px rgba(230,162,60,0.55); transform: translateY(-2px); }
-    .btn-daily { background: linear-gradient(135deg, #10242a, #163540); color: #6fd3e0; border: 1px solid #3a8a99; max-width: 340px; margin: 0 auto; }
-    .btn-daily:hover { background: linear-gradient(135deg, #3a8a99, #2b6b78); color: #06181c; box-shadow: 0 0 24px rgba(58,138,153,0.5); transform: translateY(-2px); }
+    .btn-daily { display: block; width: fit-content; max-width: none; margin: 4px auto 0; padding: 8px 20px; font-size: 0.78rem; letter-spacing: 1.5px; white-space: nowrap; background: rgba(20,28,34,0.72); color: #8fb3c4; border: 1px solid #3f5f6d; border-radius: 6px; }
+    .btn-daily:hover { background: rgba(58,90,104,0.5); color: #d3e8f0; border-color: #5a8296; box-shadow: 0 0 14px rgba(58,90,104,0.4); transform: translateY(-1px); }
+    #daily-label { font-weight: bold; }
+    /* ===== Idle "Gefolge" ===== */
+    .idle-away { text-align:center; background:rgba(46,204,113,0.12); border:1px solid rgba(46,204,113,0.4); color:#8fe6b0; border-radius:6px; padding:8px; margin-bottom:12px; font-family:sans-serif; font-size:0.85rem; }
+    .idle-top { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+    .idle-runen-box { font-family:'Cinzel',serif; color:var(--gold); font-size:1.4rem; }
+    .idle-runen-lbl { font-size:0.72rem; color:#8a7f68; font-family:sans-serif; }
+    .idle-rate-box { font-family:sans-serif; color:#9fce8f; font-size:0.9rem; font-weight:bold; }
+    .idle-syn { color:#c9a86a; font-size:0.72rem; margin-left:4px; }
+    .idle-slots { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:8px; }
+    .idle-slot { position:relative; min-height:96px; border:1px dashed #4a4335; border-radius:8px; background:rgba(0,0,0,0.3); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:8px; }
+    .idle-slot.filled { border-style:solid; border-color:var(--gold-dark); background:rgba(30,24,14,0.5); }
+    .idle-slot img { width:52px; height:52px; object-fit:cover; border-radius:50%; border:1px solid var(--gold-dark); }
+    .idle-slot-nm { font-family:sans-serif; font-weight:bold; color:#ede6d4; font-size:0.85rem; margin-top:4px; }
+    .idle-slot-rt { font-family:sans-serif; color:#9fce8f; font-size:0.72rem; }
+    .idle-slot-empty { color:#6a6250; font-family:sans-serif; font-size:0.82rem; }
+    .idle-x { position:absolute; top:4px; right:6px; background:none; border:none; color:#8a7f68; cursor:pointer; font-size:0.8rem; z-index:2; }
+    .idle-x:hover { color:#e74c3c; }
+    .idle-hint { font-family:sans-serif; color:#8a7f68; font-size:0.74rem; text-align:center; margin-bottom:12px; }
+    .idle-roster { display:flex; flex-direction:column; gap:6px; }
+    .idle-row { display:flex; align-items:center; gap:10px; background:#0f0f0f; border:1px solid var(--border-color); border-radius:6px; padding:7px 10px; }
+    .idle-row.dim { opacity:0.5; }
+    .idle-row-img { width:38px; height:38px; object-fit:cover; border-radius:50%; border:1px solid var(--gold-dark); flex-shrink:0; }
+    .idle-row-info { flex:1; min-width:0; }
+    .idle-row-nm { font-family:sans-serif; font-weight:bold; color:#ede6d4; font-size:0.86rem; }
+    .idle-row-rt { font-family:sans-serif; color:#8a7f68; font-size:0.72rem; }
+    .idle-buy, .idle-slotbtn { background:#2c2214; color:var(--gold); border:1px solid var(--gold-dark); border-radius:5px; padding:6px 12px; font-family:sans-serif; font-size:0.78rem; cursor:pointer; white-space:nowrap; }
+    .idle-buy:hover:not(:disabled), .idle-slotbtn:hover:not(:disabled) { background:var(--gold); color:#111; }
+    .idle-buy:disabled, .idle-slotbtn:disabled { opacity:0.4; cursor:not-allowed; }
+    .idle-locked { color:#6a6250; font-family:sans-serif; font-size:0.76rem; }
+    .idle-inslot { color:#9fce8f; font-family:sans-serif; font-size:0.76rem; }
     .btn-ico { height: 1.15em; width: auto; vertical-align: -0.22em; margin-right: 7px; display: inline-block; }
     /* Seelen-Anzeige oben links */
     #souls-badge { position: fixed; top: 18px; left: 86px; z-index: 40; display: flex; align-items: center; gap: 10px;
@@ -419,6 +449,7 @@
   <button class="sb-item" onclick="openModal('stats')"><span class="sb-ic">📊</span><span class="sb-label" id="sb-stats-label">Statistik</span></button>
   <button class="sb-item" onclick="openModal('eldendex')"><span class="sb-ic">📖</span><span class="sb-label" id="btn-dex-text">Eldendex</span></button>
   <button class="sb-item" onclick="openModal('unlocks')"><span class="sb-ic">🔓</span><span class="sb-label" id="sb-unlocks-label">Freischaltungen</span></button>
+  <button class="sb-item" onclick="openModal('idle')"><span class="sb-ic">⚔️</span><span class="sb-label" id="sb-idle-label">Gefolge</span></button>
   <button class="sb-item" onclick="openModal('patchnotes')"><span class="sb-ic">📜</span><span class="sb-label" id="sb-patch-label">Patch Notes</span></button>
   <div class="sb-spacer"></div>
   <div class="sb-brand">ELDEN ROGUE</div>
@@ -710,6 +741,14 @@
   </div>
 </div>
 
+<div class="modal-bg" id="modal-idle">
+  <div class="modal-box" style="max-width:640px;">
+    <button class="modal-close" onclick="closeModals()">&times;</button>
+    <div class="modal-title" id="idle-title">⚔️ Gefolge</div>
+    <div id="idle-body"></div>
+  </div>
+</div>
+
 <div class="modal-bg" id="modal-onboarding">
   <div class="modal-box" style="max-width:560px;">
     <div id="onb-icon" style="font-size:2.6rem;text-align:center;margin-bottom:6px;">🔥</div>
@@ -873,6 +912,7 @@
     if (name === "bestenliste") { fuelleLbKategorien(); ladeBestenliste(); }
     if (name === "achievements") ladeAchievements();
     if (name === "stats") ladeStats();
+    if (name === "idle") renderIdle();
     if (name === "onboarding") renderOnboarding(0);
     if (name === "eldendex") ladeEldendex();
     if (name === "patchnotes") ladePatchNotes();
@@ -2167,6 +2207,84 @@
   }
   wireDaily();
   document.addEventListener("languageChanged", wireDaily);
+
+  /* ===== Idle-Modus "Gefolge": besiegte Bosse farmen passiv Runen (nach Hard-Mode-Freischaltung) ===== */
+  var IDLE_ROSTER = [
+    { key:"Godrick, der Verpflanzte",             kurz:"Godrick",       rate:1,   kosten:0,     grp:"sturm",     img:"images/godrick.webp" },
+    { key:"Sternengeißel Radahn",                 kurz:"Radahn",        rate:3,   kosten:40,    grp:"gestirn",   img:"images/radahn.webp" },
+    { key:"Rennala, Königin des Vollmonds",       kurz:"Rennala",       rate:4,   kosten:80,    grp:"mond",      img:"images/bosse/rennala.jpg" },
+    { key:"Rykard, Herr der Blasphemie",          kurz:"Rykard",        rate:6,   kosten:160,   grp:"gott",      img:"images/bosse/rykardp1.jpg" },
+    { key:"Morgott, der Omenkönig",               kurz:"Morgott",       rate:9,   kosten:320,   grp:"omen",      img:"images/Morgott.webp" },
+    { key:"Feuerriese",                           kurz:"Feuerriese",    rate:12,  kosten:600,   grp:"feuer",     img:"images/firegiant.avif" },
+    { key:"Maliketh, die Schwarze Klinge",        kurz:"Maliketh",      rate:16,  kosten:1000,  grp:"klinge",    img:"images/maliketh.jpg" },
+    { key:"Mohg, Fürst des Blutes",               kurz:"Mohg",          rate:20,  kosten:1600,  grp:"omen",      img:"images/bosse/Titel-8-fc80008000ffff_1920x1080.avif" },
+    { key:"Malenia, Blade of Miquella",           kurz:"Malenia",       rate:26,  kosten:2600,  grp:"haligtree", img:"images/maleniap1.webp" },
+    { key:"Göttliches Tanzlöwenbiest",            kurz:"Tanzlöwe",      rate:34,  kosten:4500,  grp:"dlc",       img:"images/bosse/tanzloewe.jpg" },
+    { key:"Rellana, Ritterin der Zwillingsmonde", kurz:"Rellana",       rate:42,  kosten:7500,  grp:"mond",      img:"images/bosse/rellana.png" },
+    { key:"Midra, Herr der Wahnsinnigen Flamme",  kurz:"Midra",         rate:52,  kosten:12000, grp:"wahnsinn",  img:"images/bosse/midra.png" },
+    { key:"Romina, Heilige der Knospe",           kurz:"Romina",        rate:64,  kosten:20000, grp:"dlc",       img:"images/bosse/romina.png" },
+    { key:"Radahn, Gemahl Miquellas",             kurz:"Gemahl Radahn", rate:90,  kosten:40000, grp:"gestirn",   img:"images/bosse/pcr.webp" },
+    { key:"Metyr, Mutter der Finger",             kurz:"Metyr",         rate:150, kosten:90000, grp:"aussen",    img:"images/bosse/metyr.png" }
+  ];
+  function idleRosterByKey(k){ for (var i=0;i<IDLE_ROSTER.length;i++) if (IDLE_ROSTER[i].key===k) return IDLE_ROSTER[i]; return null; }
+  function idleBeaten(k){ try { return (ER.getStats().bossKills[k]||0) >= 1; } catch (e) { return false; } }
+  function idleHardUnlocked(){ try { return !!(window.ER && ER.isUnlocked && ER.isUnlocked("hard_mode")); } catch (e) { return false; } }
+  function getIdle(){ var m=ladeMeta(); var d=m.idle||{}; return { runen:d.runen||0, owned:(d.owned||[]).slice(), slots:(d.slots||[null,null]).slice(), lastTs:d.lastTs||Date.now() }; }
+  function saveIdle(idle){ var m=ladeMeta(); m.idle={ runen:idle.runen, owned:idle.owned, slots:idle.slots, lastTs:idle.lastTs }; speichereMeta(m); }
+  function idleRate(idle){ var r=0, grps=[]; idle.slots.forEach(function(k){ if(!k) return; var b=idleRosterByKey(k); if(b){ r+=b.rate; grps.push(b.grp); } }); var syn=(grps.length===2 && grps[0]===grps[1]); return { rate:r*(syn?1.5:1), syn:syn }; }
+  function idleAccrue(idle){ var now=Date.now(); if(!idle.lastTs) idle.lastTs=now; var min=Math.min((now-idle.lastTs)/60000, 720); var g=min*idleRate(idle).rate; idle.runen+=g; idle.lastTs=now; return g; }
+  function idleGrpName(g,en){ var m={sturm:en?"Storm":"Sturm",gestirn:en?"Stars":"Gestirn",mond:en?"Moon":"Mond",gott:en?"God-Eater":"Gottverschlinger",omen:"Omen",feuer:en?"Fire":"Feuer",klinge:en?"Blade":"Klinge",haligtree:"Haligtree",dlc:en?"Shadow":"Schatten",wahnsinn:en?"Frenzy":"Wahnsinn",aussen:en?"Outer Gods":"Äußere Götter"}; return m[g]||g; }
+
+  var _idle=null, _idleTimer=null;
+  function renderIdle(){
+    var body=document.getElementById("idle-body"); if(!body) return;
+    var en=(typeof _menuIsEn==="function")?_menuIsEn():false;
+    if(!idleHardUnlocked()){
+      body.innerHTML='<div style="text-align:center;padding:16px 8px;font-family:sans-serif;"><div style="font-size:2.2rem;margin-bottom:8px;">🔒</div><p class="info-lead">'+(en?"The Retinue unlocks once you've finished the game and unlocked <b>Hard Mode</b>.":"Das Gefolge schaltet sich frei, sobald du das Spiel einmal durchgespielt und den <b>Hard Mode</b> freigeschaltet hast.")+'</p></div>';
+      return;
+    }
+    _idle=getIdle();
+    var gained=idleAccrue(_idle); saveIdle(_idle);
+    renderIdleBody(gained>=1?gained:0);
+    idleStartTick();
+  }
+  function renderIdleBody(gained){
+    var body=document.getElementById("idle-body"); if(!body||!_idle) return;
+    var en=(typeof _menuIsEn==="function")?_menuIsEn():false;
+    var rt=idleRate(_idle);
+    function n(x){ return Math.floor(x).toLocaleString(en?"en-US":"de-DE"); }
+    var slotsHtml="";
+    for(var s=0;s<2;s++){
+      var k=_idle.slots[s]; var b=k?idleRosterByKey(k):null;
+      slotsHtml+='<div class="idle-slot'+(b?" filled":"")+'">'+
+        (b? '<button class="idle-x" onclick="idleClearSlot('+s+')">✕</button><img src="'+b.img+'" onerror="this.style.display=\'none\'"><div class="idle-slot-nm">'+b.kurz+'</div><div class="idle-slot-rt">'+b.rate+'/min</div>'
+           : '<div class="idle-slot-empty">'+(en?"empty slot":"leerer Slot")+'</div>')+
+        '</div>';
+    }
+    var rosterHtml=IDLE_ROSTER.map(function(b){
+      var beaten=idleBeaten(b.key), owned=_idle.owned.indexOf(b.key)>=0, slotted=_idle.slots.indexOf(b.key)>=0;
+      var freeSlot=_idle.slots.indexOf(null)>=0;
+      var action;
+      if(!beaten) action='<span class="idle-locked">🔒 '+(en?"not defeated":"nicht besiegt")+'</span>';
+      else if(!owned) action='<button class="idle-buy"'+(_idle.runen>=b.kosten?"":" disabled")+' onclick="idleBuy(\''+b.key+'\')">'+(b.kosten===0?(en?"Recruit (free)":"Anwerben (gratis)"):(en?"Recruit · ":"Anwerben · ")+n(b.kosten)+" 🪙")+'</button>';
+      else if(slotted) action='<span class="idle-inslot">'+(en?"in slot":"im Slot")+'</span>';
+      else action='<button class="idle-slotbtn"'+(freeSlot?"":" disabled")+' onclick="idleToSlot(\''+b.key+'\')">'+(freeSlot?(en?"To slot":"In Slot"):(en?"slots full":"Slots voll"))+'</button>';
+      return '<div class="idle-row'+(beaten?"":" dim")+'"><img class="idle-row-img" src="'+b.img+'" onerror="this.style.display=\'none\'"><div class="idle-row-info"><div class="idle-row-nm">'+b.kurz+'</div><div class="idle-row-rt">'+b.rate+' Runen/min · '+idleGrpName(b.grp,en)+'</div></div><div class="idle-row-act">'+action+'</div></div>';
+    }).join("");
+    body.innerHTML=
+      (gained?'<div class="idle-away">'+(en?"While you were away: ":"Während du weg warst: ")+'<b>+'+n(gained)+' 🪙</b></div>':'')+
+      '<div class="idle-top"><div class="idle-runen-box">🪙 <span id="idle-runen">'+n(_idle.runen)+'</span> <span class="idle-runen-lbl">'+(en?"Runes":"Runen")+'</span></div>'+
+        '<div class="idle-rate-box">'+n(rt.rate)+' /min'+(rt.syn?' <span class="idle-syn">'+(en?"synergy +50%":"Synergie +50%")+'</span>':'')+'</div></div>'+
+      '<div class="idle-slots">'+slotsHtml+'</div>'+
+      '<div class="idle-hint">'+(en?"Place two champions in the slots — they farm Runes even while you're away (max 12 h). Same faction = +50% synergy.":"Leg zwei Gefährten in die Slots — sie farmen Runen, auch wenn du weg bist (max. 12 Std). Gleiche Fraktion = +50% Synergie.")+'</div>'+
+      '<div class="idle-roster">'+rosterHtml+'</div>';
+  }
+  function idleBuy(key){ if(!_idle) return; var b=idleRosterByKey(key); if(!b||!idleBeaten(key)||_idle.owned.indexOf(key)>=0||_idle.runen<b.kosten) return; _idle.runen-=b.kosten; _idle.owned.push(key); saveIdle(_idle); renderIdleBody(0); }
+  function idleToSlot(key){ if(!_idle||_idle.owned.indexOf(key)<0||_idle.slots.indexOf(key)>=0) return; var i=_idle.slots.indexOf(null); if(i<0) return; _idle.slots[i]=key; saveIdle(_idle); renderIdleBody(0); }
+  function idleClearSlot(i){ if(!_idle) return; _idle.slots[i]=null; saveIdle(_idle); renderIdleBody(0); }
+  function idleUpdateBalance(){ if(!_idle) return; var el=document.getElementById("idle-runen"); if(el){ var en=(typeof _menuIsEn==="function")?_menuIsEn():false; el.textContent=Math.floor(_idle.runen).toLocaleString(en?"en-US":"de-DE"); } }
+  function idleStartTick(){ if(_idleTimer) clearInterval(_idleTimer); var saveCtr=0; _idleTimer=setInterval(function(){ var modal=document.getElementById("modal-idle"); if(!modal||!modal.classList.contains("open")||!_idle){ if(_idle) saveIdle(_idle); clearInterval(_idleTimer); _idleTimer=null; return; } _idle.runen+=idleRate(_idle).rate/60; _idle.lastTs=Date.now(); idleUpdateBalance(); if(++saveCtr>=5){ saveCtr=0; saveIdle(_idle); } },1000); }
+  window.idleBuy=idleBuy; window.idleToSlot=idleToSlot; window.idleClearSlot=idleClearSlot; window.renderIdle=renderIdle;
 </script>
 
 <script>
@@ -2430,6 +2548,8 @@ function localizeMenuExtras(){
   set("set-discord-label", "Discord verknüpfen", "Link Discord");
   set("set-discord-sub", "Rollen für deine Erfolge — automatisch", "Roles for your feats — automatic");
   set("set-discord-btn", "Code erzeugen", "Generate code");
+  set("sb-idle-label", "Gefolge", "Retinue");
+  set("idle-title", "⚔️ Gefolge", "⚔️ Retinue");
   set("set-todo-label", "Erste-Schritte-Liste", "First-steps list");
   set("set-todo-sub", "Die To-Do-Karte im Hauptmenü wieder einblenden", "Show the to-do card in the main menu again");
   set("set-todo-btn", "Wieder anzeigen", "Show again");
