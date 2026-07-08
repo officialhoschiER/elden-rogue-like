@@ -338,6 +338,11 @@ h1, h2, h3, .btn-menu, .btn-combat, .btn-social, .game-author-tag, #region-displ
     .battle-buttons .btn-combat { flex: 1 1 0; max-width: 240px; margin: 6px 0; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
     
     .btn-combat:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; box-shadow: none !important; background-color: #111 !important; color: #555 !important; border-color: #333 !important; }
+    /* Haltungs-/Stagger-Balken am Gegner (Rauten füllen sich mit jedem Treffer) */
+    .stagger-meter { display: flex; align-items: center; justify-content: center; gap: 4px; margin: 3px 0 6px; }
+    .stagger-lbl { font-family: sans-serif; font-size: 0.55rem; letter-spacing: 1.5px; color: #b0742a; margin-right: 4px; font-weight: bold; }
+    .stagger-pip { width: 12px; height: 12px; transform: rotate(45deg); border: 1px solid #6a4a1c; background: rgba(40,30,15,0.6); border-radius: 2px; transition: all 0.15s ease; }
+    .stagger-pip.on { background: linear-gradient(135deg, #ffcf5a, #e6952a); border-color: #ffcf5a; box-shadow: 0 0 8px rgba(243,156,18,0.85); }
 
     button.btn-modal-action { background-color: #2c2214; color: var(--gold); border: 1px solid var(--gold); padding: 10px 24px; font-family: 'Mantinia', serif; font-weight: bold; cursor: pointer; margin-top: 15px; text-transform: uppercase; letter-spacing: 1px; }
     button.btn-modal-action:hover { background-color: var(--gold); color: #111; }
@@ -744,6 +749,7 @@ h1, h2, h3, .btn-menu, .btn-combat, .btn-social, .game-author-tag, #region-displ
             <progress id="enemy-hp-bar" class="enemy-progress" value="100" max="100"></progress>
             <span id="arena-enemy-hp-text" class="bar-text-overlay">40 / 40</span>
           </div>
+          <div id="enemy-stagger-meter" class="stagger-meter" style="display:none;"></div>
           <div class="combat-sprite-frame">
             <img id="enemy-img" src="" alt="Gegner">
           </div>
@@ -907,7 +913,7 @@ let rauhGeheimIntakt = true;       // Rauh: läuft man EXAKT den geheimen Gold-P
 let inFingerruinen = false;        // Fingerruinen-Modus (eigenes 10×10-Gitter statt Rautennetz)
 let fingerPos = 90;                // aktuelle Position im 10×10-Gitter (Start unten links = Reihe 9, Spalte 0 = Index 90)
 let fingerGeblasen = [];           // Indizes der bereits geblasenen Finger
-const FINGER_NODES = [72, 45, 27]; // die 3 Finger-Knoten (verteilt Richtung oben rechts)
+let fingerNodes = [];              // die 3 Finger-Knoten — pro Run an ZUFÄLLIGEN Orten (im Save gehalten)
 const FINGER_START = 90;           // unten links
 const FINGER_METYR = 9;            // oben rechts (Metyr)
 
@@ -937,7 +943,7 @@ function speichereRun() {
     v: 1, hardMode: hardMode, challenge: activeChallenge, ts: Date.now(), runPlayMs: runPlayMs,
     runSeed, seedIsCustom, seedRngCalls,
     torbogenSpruenge, wolfsgeheulGehoert, wahnsinn, untouchableRunden, rellanaGetroffen, scharlachRot, dlcWahlOffen,
-    rauhGeheimIntakt, inFingerruinen, fingerPos, fingerGeblasen,
+    rauhGeheimIntakt, inFingerruinen, fingerPos, fingerGeblasen, fingerNodes,
     spielerHp, spielerMaxHp, spielerFlasks, maxKlassenFlasks, estusHeilProzent,
     gewaehlteKlasse, basisAusweichChance, playerImageStr,
     waffenName, waffenSchaden, waffenUpgrade, waffenRaritaet, waffenSchadensarten,
@@ -980,7 +986,7 @@ function ladeGespeichertenRun() {
     if (window.ER && ER.setSeedRun) ER.setSeedRun(seedIsCustom);
     setTimeout(aktualisiereSeedAnzeige, 0);
     torbogenSpruenge = d.torbogenSpruenge || 0; wolfsgeheulGehoert = !!d.wolfsgeheulGehoert; wahnsinn = d.wahnsinn || 0; untouchableRunden = d.untouchableRunden || 0; rellanaGetroffen = !!d.rellanaGetroffen; scharlachRot = !!d.scharlachRot; dlcWahlOffen = !!d.dlcWahlOffen;
-    rauhGeheimIntakt = d.rauhGeheimIntakt !== false; inFingerruinen = !!d.inFingerruinen; fingerPos = (typeof d.fingerPos === "number") ? d.fingerPos : 90; fingerGeblasen = d.fingerGeblasen || [];
+    rauhGeheimIntakt = d.rauhGeheimIntakt !== false; inFingerruinen = !!d.inFingerruinen; fingerPos = (typeof d.fingerPos === "number") ? d.fingerPos : 90; fingerGeblasen = d.fingerGeblasen || []; fingerNodes = d.fingerNodes || [];
     setTimeout(aktualisiereWahnsinnAnzeige, 0);
     if (dlcWahlOffen) setTimeout(oeffneMohgDlcWahl, 100);   // Wahl-Popup übersteht einen Reload
     towerEtage=d.towerEtage||0;
@@ -1938,7 +1944,7 @@ function direktNeustarten() {
   playerHitsOnEnemy = 0; enemyIsStaggered = false; staggerVisualActive = false; nextHitBonusDamage = false;
   currentAffinity = "Keine"; affinityHits = 0; completedDungeonsCount = 0;
   backpackItems = [null, null, null]; activeBuffs = []; inSubDungeon = false; inSewers = false; mainMapState = null; towerEtage = 0;
-  torbogenSpruenge = 0; wolfsgeheulGehoert = false; wahnsinn = 0; untouchableRunden = 0; rellanaGetroffen = false; scharlachRot = false; dlcWahlOffen = false; rauhGeheimIntakt = true; inFingerruinen = false; fingerPos = 90; fingerGeblasen = []; aktualisiereWahnsinnAnzeige();
+  torbogenSpruenge = 0; wolfsgeheulGehoert = false; wahnsinn = 0; untouchableRunden = 0; rellanaGetroffen = false; scharlachRot = false; dlcWahlOffen = false; rauhGeheimIntakt = true; inFingerruinen = false; fingerPos = 90; fingerGeblasen = []; fingerNodes = []; aktualisiereWahnsinnAnzeige();
   // Seed-Run (geteilter Seed): derselbe Seed bleibt für den Retry — normaler Run: frisch würfeln
   setzeSeed(seedIsCustom ? runSeed : zufallsSeed(), seedIsCustom);
   oeffneKlassenAuswahl();
@@ -2297,6 +2303,16 @@ function updateUI() {
     
     document.getElementById("enemy-stagger-badge").style.display = (enemyIsStaggered || staggerVisualActive) ? "block" : "none";
     document.getElementById("enemy-sprite-wrapper").classList.toggle("staggered", enemyIsStaggered || staggerVisualActive);
+    // Haltungs-Balken: zeigt live, wie nah der Gegner am Stagger ist (Treffer / Schwelle)
+    { let stm = document.getElementById("enemy-stagger-meter");
+      if (stm) {
+        if (imKampf && !enemyIsStaggered && !staggerVisualActive) {
+          let thr = diffVal(CONFIG.staggerTreffer); let pips = "";
+          for (let pi = 0; pi < thr; pi++) pips += '<span class="stagger-pip' + (pi < playerHitsOnEnemy ? " on" : "") + '"></span>';
+          stm.innerHTML = '<span class="stagger-lbl">' + L("HALTUNG", "POISE") + '</span>' + pips;
+          stm.style.display = "flex";
+        } else { stm.style.display = "none"; }
+      } }
 
     let affInfo = document.getElementById("enemy-affinity-info"); let aff = gibGegnerAffinitaeten();
     if (aff) {
@@ -2903,6 +2919,7 @@ async function spielerHeilen() {
   let finalMaxHp = berechneFinalMaxHp();
   let heilWert = Math.round(finalMaxHp * estusHeilProzent * (1 + tStats.bonusHealPercent));
   spielerHp = Math.min(finalMaxHp, spielerHp + heilWert); spielerFlasks--;
+  if (playerHitsOnEnemy > 0) playerHitsOnEnemy--;   // Heilen statt Angreifen -> die Haltung des Gegners erholt sich eine Stufe
   if (window.ER) ER.flaskDrunk();
   document.getElementById("battle-log").innerText = t("heal_log", { hp: heilWert }); updateUI();
   let playerWrapper = document.getElementById("player-sprite-wrapper");
@@ -4034,7 +4051,7 @@ function starteEnirNachRomina() {
 function starteFingerruinen() {
   let ov = document.getElementById("popup-overlay"); ov.style.display = "none";
   aktuelleRegion = "Fingerruinen"; scharlachRot = false; inFingerruinen = true;
-  fingerPos = FINGER_START; fingerGeblasen = [];
+  fingerPos = FINGER_START; fingerGeblasen = []; fingerNodes = wuerfleFinger();
   aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null; imKampf = false;
   heileUndRegeneriereVoll(hardMode);
   aktualisiereWahnsinnAnzeige(); speichereRun(); baueKarteHTML(); updateUI();
@@ -4047,6 +4064,17 @@ function starteFingerruinen() {
     '<button class="btn-modal-action" onclick="document.getElementById(\'popup-overlay\').style.display=\'none\'; baueKarteHTML();">' + L("Ich bin bereit", "I am ready") + '</button>';
   ov.style.display = "flex";
 }
+// 3 verschiedene, zufällige Finger-Felder (nicht Start/Metyr, nicht zu nah am Rand-Startknoten)
+function wuerfleFinger() {
+  let out = [], banned = {};
+  banned[FINGER_START] = 1; banned[FINGER_METYR] = 1;
+  while (out.length < 3) {
+    let i = Math.floor(Math.random() * 100);
+    if (banned[i]) continue;
+    banned[i] = 1; out.push(i);
+  }
+  return out;
+}
 function fingerNachbarn(i) {
   let r = Math.floor(i / 10), c = i % 10, out = [];
   if (r > 0) out.push(i - 10); if (r < 9) out.push(i + 10);
@@ -4055,7 +4083,7 @@ function fingerNachbarn(i) {
 }
 function renderFingerruinen(grid, mv) {
   if (mv) { mv.classList.remove("abyss-fog"); mv.style.backgroundImage = "linear-gradient(to bottom, rgba(18,14,30,0.92), rgba(5,4,10,0.985)), url('images/background/fingerruinen.jpg')"; }
-  let allBlown = fingerGeblasen.length >= FINGER_NODES.length;
+  let allBlown = fingerGeblasen.length >= fingerNodes.length;
   let reach = fingerNachbarn(fingerPos);
   let cells = "";
   for (let i = 0; i < 100; i++) {
@@ -4063,13 +4091,13 @@ function renderFingerruinen(grid, mv) {
     if (i === fingerPos) { cls += " fr-here"; inner = '<img class="fr-me" src="images/tarnished_idle.png" onerror="this.replaceWith(document.createTextNode(\'🧍\'))">'; }
     else if (reach.indexOf(i) >= 0) cls += " fr-reach";
     if (i === FINGER_METYR) { cls += " fr-metyr" + (allBlown ? " lit" : ""); inner = '<img class="fr-metyr-img" src="' + (bilderDatenbankBosse["Metyr, Mutter der Finger"] || "") + '" onerror="this.replaceWith(document.createTextNode(\'👁\'))">'; }
-    else if (FINGER_NODES.indexOf(i) >= 0) { let blown = fingerGeblasen.indexOf(i) >= 0; cls += " fr-finger" + (blown ? " blown" : ""); inner = "🖐"; }
+    else if (fingerNodes.indexOf(i) >= 0) { let blown = fingerGeblasen.indexOf(i) >= 0; cls += " fr-finger" + (blown ? " blown" : ""); inner = "🖐"; }
     cells += '<div class="' + cls + '" onclick="fingerKlick(' + i + ')">' + inner + '</div>';
   }
-  let onFinger = FINGER_NODES.indexOf(fingerPos) >= 0 && fingerGeblasen.indexOf(fingerPos) < 0;
+  let onFinger = fingerNodes.indexOf(fingerPos) >= 0 && fingerGeblasen.indexOf(fingerPos) < 0;
   grid.innerHTML =
     '<div class="fr-wrap">' +
-      '<div class="fr-head">🖐 ' + L("Finger", "Fingers") + ': <b>' + fingerGeblasen.length + ' / ' + FINGER_NODES.length + '</b>' +
+      '<div class="fr-head">🖐 ' + L("Finger", "Fingers") + ': <b>' + fingerGeblasen.length + ' / ' + fingerNodes.length + '</b>' +
         (allBlown ? ' — <b style="color:#c9a86a;">' + L("Metyr erwacht! Geh nach oben rechts.", "Metyr awakens! Head to the top-right.") + '</b>' : '') + '</div>' +
       '<div class="fr-grid">' + cells + '</div>' +
       '<div class="fr-actions">' +
@@ -4080,18 +4108,18 @@ function renderFingerruinen(grid, mv) {
 }
 function fingerKlick(i) {
   if (imKampf || aktionsSperre) return;
-  if (i === fingerPos) { if (FINGER_NODES.indexOf(i) >= 0 && fingerGeblasen.indexOf(i) < 0) fingerBlasen(); return; }
+  if (i === fingerPos) { if (fingerNodes.indexOf(i) >= 0 && fingerGeblasen.indexOf(i) < 0) fingerBlasen(); return; }
   if (fingerNachbarn(fingerPos).indexOf(i) < 0) return;   // nur auf Nachbarfelder ziehen
   if (i === FINGER_METYR) {
-    if (fingerGeblasen.length < FINGER_NODES.length) { zeigeFingerToast(L("Die drei Finger müssen erst erklingen…", "The three fingers must sound first…")); return; }
+    if (fingerGeblasen.length < fingerNodes.length) { zeigeFingerToast(L("Die drei Finger müssen erst erklingen…", "The three fingers must sound first…")); return; }
     fingerPos = i; speichereRun(); starteMetyr(); return;
   }
   fingerPos = i; speichereRun(); baueKarteHTML();
 }
 function fingerBlasen() {
-  if (FINGER_NODES.indexOf(fingerPos) < 0 || fingerGeblasen.indexOf(fingerPos) >= 0) return;
+  if (fingerNodes.indexOf(fingerPos) < 0 || fingerGeblasen.indexOf(fingerPos) >= 0) return;
   fingerGeblasen.push(fingerPos); playFingerSound();
-  zeigeFingerToast(L("Ein tiefer Ton hallt durch die Ruinen…", "A deep tone echoes through the ruins…") + " (" + fingerGeblasen.length + "/" + FINGER_NODES.length + ")");
+  zeigeFingerToast(L("Ein tiefer Ton hallt durch die Ruinen…", "A deep tone echoes through the ruins…") + " (" + fingerGeblasen.length + "/" + fingerNodes.length + ")");
   speichereRun(); baueKarteHTML();
 }
 function fingerZurueckZumStart() {
@@ -4324,7 +4352,7 @@ function bestaetigeStufe(naechsteEbene) { document.getElementById("popup-overlay
     activeChallenge = "";
     hatGodrickRune = hatRadahnRune = hatMorgottRune = true;
     aktuelleRegion = region; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null;
-    torbogenSpruenge = 0; wolfsgeheulGehoert = false; wahnsinn = 0; untouchableRunden = 0; rellanaGetroffen = false; rauhGeheimIntakt = true; inFingerruinen = false; fingerPos = 90; fingerGeblasen = [];
+    torbogenSpruenge = 0; wolfsgeheulGehoert = false; wahnsinn = 0; untouchableRunden = 0; rellanaGetroffen = false; rauhGeheimIntakt = true; inFingerruinen = false; fingerPos = 90; fingerGeblasen = []; fingerNodes = [];
     scharlachRot = (region === "Rauh");
     try { netzKarte = generiereRautenNetz(region); } catch(e){ console.warn(e); }
     devClosePopups(); devApply(); aktualisiereWahnsinnAnzeige();
