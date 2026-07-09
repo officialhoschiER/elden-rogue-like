@@ -153,8 +153,8 @@
     .idle-price.locked { color:#b9b0a0; background:rgba(0,0,0,0.7); }
     .idle-price.owned { color:#a9e08f; background:rgba(14,24,10,0.82); }
     .idle-price.slotted { color:#111; background:rgba(205,163,79,0.9); }
-    .idle-card-nm { font-family:sans-serif; font-size:0.76rem; color:#cdbf9a; text-align:center; padding:4px 3px 1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .idle-card-rt { font-family:sans-serif; font-size:0.68rem; color:#7d9a6d; text-align:center; padding-bottom:5px; }
+    .idle-card-rt { font-family:sans-serif; font-size:0.72rem; color:#7d9a6d; text-align:center; padding:5px 3px; }
+    .idle-soul-ic { height:0.95em; width:auto; vertical-align:-0.16em; }
     .btn-ico { height: 1.15em; width: auto; vertical-align: -0.22em; margin-right: 7px; display: inline-block; }
     /* Seelen-Anzeige oben links */
     #souls-badge { position: fixed; top: 18px; left: 86px; z-index: 40; display: flex; align-items: center; gap: 10px;
@@ -2317,34 +2317,34 @@
     var seelen=idleSeelen();
     function n(x){ return Math.floor(x).toLocaleString(en?"en-US":"de-DE"); }
     var perStd=en?" /h":" /Std";
-    // Oben: die beiden aktiven Slots (die farmenden Bosse)
+    var soulIc='<img src="images/icons/lords-rune-tools-elden-ring-wiki-guide.png" class="idle-soul-ic" alt="" onerror="this.replaceWith(document.createTextNode(\'◆\'))">';
+    // Oben: die beiden aktiven Slots (nur andeuten — kein Name, nur Bild)
     var slotsHtml="";
     for(var s=0;s<2;s++){
       var k=_idle.slots[s]; var b=k?idleRosterByKey(k):null;
       slotsHtml+='<div class="idle-slot'+(b?" filled":"")+'">'+
-        (b? '<button class="idle-x" title="'+(en?"remove":"entfernen")+'" onclick="idleClearSlot('+s+')">✕</button><img src="'+b.img+'" onerror="this.style.display=\'none\'"><div class="idle-slot-nm">'+b.kurz+'</div><div class="idle-slot-rt">'+b.rate+perStd+'</div>'
+        (b? '<button class="idle-x" title="'+(en?"remove":"entfernen")+'" onclick="idleClearSlot('+s+')">✕</button><img src="'+b.img+'" onerror="this.style.display=\'none\'"><div class="idle-slot-rt">'+b.rate+perStd+'</div>'
            : '<div class="idle-slot-empty">'+(en?"empty slot":"leerer Slot")+'</div>')+
         '</div>';
     }
-    // Darunter: scrollfreies Boss-Grid, Preis unten auf dem Bild
+    // Darunter: scrollfreies Boss-Grid, Preis unten auf dem Bild (keine Namen — nur das Bild deutet an)
     var rosterHtml=IDLE_ROSTER.map(function(b){
       var beaten=idleBeaten(b.key), owned=_idle.owned.indexOf(b.key)>=0, slotted=_idle.slots.indexOf(b.key)>=0;
       var cls, price;
       if(slotted){ cls="slotted"; price=en?"active":"aktiv"; }
       else if(owned){ cls="owned"; price=en?"To slot":"In Slot"; }
       else if(!beaten){ cls="locked"; price="🔒"; }
-      else { cls="buy"+(seelen>=b.kosten?"":" poor"); price=(b.kosten===0?(en?"Free":"Gratis"):"🪙 "+n(b.kosten)); }
+      else { cls="buy"+(seelen>=b.kosten?"":" poor"); price=(b.kosten===0?(en?"Free":"Gratis"):soulIc+" "+n(b.kosten)); }
       var cardCls="idle-card"+(slotted?" slotted":(owned?" owned":(!beaten?" locked":"")));
       return '<div class="'+cardCls+'" onclick="idleCard(\''+b.key+'\')">'+
                '<div class="idle-imgwrap"><img class="idle-card-img" src="'+b.img+'" onerror="this.style.visibility=\'hidden\'">'+
                  '<div class="idle-price '+cls+'" data-kosten="'+b.kosten+'">'+price+'</div></div>'+
-               '<div class="idle-card-nm">'+b.kurz+'</div>'+
                '<div class="idle-card-rt">'+b.rate+perStd+'</div>'+
              '</div>';
     }).join("");
     body.innerHTML=
       (gained?'<div class="idle-away">'+(en?"While you were away: ":"Während du weg warst: ")+'<b>+'+n(gained)+(en?' Souls':' Seelen')+'</b></div>':'')+
-      '<div class="idle-top"><div class="idle-runen-box">🪙 <span id="idle-runen">'+n(seelen)+'</span> <span class="idle-runen-lbl">'+(en?"Souls":"Seelen")+'</span></div>'+
+      '<div class="idle-top"><div class="idle-runen-box">'+soulIc+' <span id="idle-runen">'+n(seelen)+'</span> <span class="idle-runen-lbl">'+(en?"Souls":"Seelen")+'</span></div>'+
         '<div class="idle-rate-box">+'+n(rt.rate)+perStd+'</div></div>'+
       '<div class="idle-slots">'+slotsHtml+'</div>'+
       '<div class="idle-hint">'+(en?"Place two bosses in the slots — they passively produce Souls, even while you're away (up to 2 h). Tap a boss to recruit or slot them.":"Setz zwei Bosse in die Slots — sie produzieren passiv Seelen, auch wenn du weg bist (bis zu 2 Std). Tipp einen Boss an zum Anwerben oder Einsetzen.")+'</div>'+
