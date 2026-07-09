@@ -807,6 +807,7 @@ const CONFIG = {
   estusHeilProzent: { normal: 0.35, hard: 0.25 },   // Anteil der Max-HP, den ein Flakon heilt
   ausweichenCap:    { normal: 0.75, hard: 0.65 },   // maximale Ausweichchance
   // --- Kampf ---
+  globalDifficulty:    1.15,                          // globaler Schwierigkeits-Multiplikator auf ALLEN eingehenden Gegnerschaden (~15% haerter, Normal + Hard)
   staggerTreffer:      { normal: 4, hard: 5 },       // Treffer, bis der Gegner taumelt
   staggerBonusSchaden: 1.3,                          // Schadensmultiplikator für den Treffer nach dem Stagger
   buffBonusProStack:   0.15,                         // Bonus je gestapeltem Rucksack-Buff (dmg / dodge / hp)
@@ -2555,7 +2556,7 @@ function klickeKnoten(ebene, knoten) {
       else if (aktuelleRegion === "CastleEnsis") { gegnerName = "Rellana, Ritterin der Zwillingsmonde"; gegnerMaxHp = 2700; gegnerSchaden = 160; }
       else if (aktuelleRegion === "AbyssalWoods") { gegnerName = "Midra, Herr der Wahnsinnigen Flamme"; gegnerMaxHp = 3200; gegnerSchaden = 175; }
       else if (aktuelleRegion === "Rauh") { gegnerName = "Romina, Heilige der Knospe"; gegnerMaxHp = 2900; gegnerSchaden = 165; }
-      else if (aktuelleRegion === "EnirIlim") { gegnerName = "Verheißener Gemahl Radahn"; gegnerMaxHp = 3400; gegnerSchaden = 185; }
+      else if (aktuelleRegion === "EnirIlim") { gegnerName = "Verheißener Gemahl Radahn"; gegnerMaxHp = 3800; gegnerSchaden = 195; }   // finaler DLC-Boss: bewusst der haerteste
       else if (aktuelleRegion === "EldenThrone") {
         if (ebene === 1) { gegnerName = "Godfrey, der Erste Eldenlord"; gegnerMaxHp = 1800; gegnerSchaden = 100; }
         if (ebene === 3) { gegnerName = "Radagon von der Goldenen Ordnung"; gegnerMaxHp = 2000; gegnerSchaden = 110; }
@@ -2840,6 +2841,7 @@ async function gegnerKonter(opts) {
   } else {
     let gSchaden = gegnerSchaden + opts.dmgVariance();
     gSchaden = Math.round(gSchaden * (1 + tStats.bonusDmgTakenPercent) * (1 - ruestungReduktion));
+    gSchaden = Math.round(gSchaden * CONFIG.globalDifficulty);   // globaler +15%-Schwierigkeits-Multiplikator (trifft alle Gegner & Bosse)
     gSchaden = Math.max(1, gSchaden);
     // Malenia: Schaden skaliert mit der Max-HP des Spielers, damit sie auch bei hoher Meta-HP bedrohlich
     // bleibt (gefaehrlicher als Radagon) — aber durch das 55%-Cap NIE ein One-Shot. Ruestung/Talismane wirken weiter.
@@ -3479,7 +3481,7 @@ function kampfGewonnen() {
   // Verheißener Gemahl Radahn (DLC-Finale) Phase 1 -> Phase 2: VOR dem ER-Block (P1 zählt nicht separat)
   if (gegnerName === "Verheißener Gemahl Radahn" && aktuelleRegion === "EnirIlim") {
     document.getElementById("battle-log").innerText = L("Miquella erhebt sich auf Radahns Schultern — das Zeitalter der Barmherzigkeit bricht an!", "Miquella rises upon Radahn's shoulders — the Age of Compassion dawns!");
-    gegnerName = "Radahn, Gemahl Miquellas"; gegnerMaxHp = Math.round(gegnerMaxHp * 1.25); gegnerHp = gegnerMaxHp; gegnerSchaden = Math.round(gegnerSchaden * 1.1);
+    gegnerName = "Radahn, Gemahl Miquellas"; gegnerMaxHp = Math.round(gegnerMaxHp * 1.3); gegnerHp = gegnerMaxHp; gegnerSchaden = Math.round(gegnerSchaden * 1.15);
     if (window.ER) try { ER.discover("Radahn, Gemahl Miquellas"); } catch(e){}
     bossPhaseWechsel = true; aktionsSperre = false;
     updateUI(); speichereRun();
@@ -4507,12 +4509,15 @@ function bestaetigeStufe(naechsteEbene) { document.getElementById("popup-overlay
     if(sichtbar) devRefresh();
   }
 
+  // Dev-Tools nur in der Dev-/Test-Umgebung (localhost / *.pages.dev). Auf Live gesperrt -> kein Cheaten in die Bestenliste.
+  function devErlaubt(){ return !!(window.ER && ER.isDevMode && ER.isDevMode()); }
   document.addEventListener("keydown", function(e){
     if((e.key === "`" || e.key === "^" || e.code === "Backquote") && !/^(input|textarea)$/i.test((e.target.tagName||""))){
+      if(!devErlaubt()) return;
       e.preventDefault(); toggle();
     }
   });
-  try{ if(new URLSearchParams(location.search).get("dev")==="1"){ window.addEventListener("load", function(){ toggle(true); }); } }catch(e){}
+  try{ if(devErlaubt() && new URLSearchParams(location.search).get("dev")==="1"){ window.addEventListener("load", function(){ toggle(true); }); } }catch(e){}
 })();
 
 </script>
