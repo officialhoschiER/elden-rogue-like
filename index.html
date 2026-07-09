@@ -2365,11 +2365,13 @@
     var rate=idleRate(_idle).rate;
     var pending = rate>0 ? Math.floor((Date.now()-_idle.lastTs)/3600000*rate) : 0;   // seit letztem Commit live dazugekommen (Rate ist pro Stunde)
     var shown = idleSeelen() + pending;
-    var el=document.getElementById("idle-runen"); if(el){ var en=(typeof _menuIsEn==="function")?_menuIsEn():false; el.textContent=shown.toLocaleString(en?"en-US":"de-DE"); }
+    var en=(typeof _menuIsEn==="function")?_menuIsEn():false;
+    var el=document.getElementById("idle-runen"); if(el) el.textContent=shown.toLocaleString(en?"en-US":"de-DE");
+    var mb=document.getElementById("souls-badge-value"); if(mb) mb.textContent=shown.toLocaleString("de-DE");   // Menue-Seelen-Anzeige synchron mitziehen
     // Kauf-Karten live einfärben, sobald man sie sich leisten kann (ohne Neu-Render)
     document.querySelectorAll("#idle-body .idle-price.buy").forEach(function(p){ var k=parseInt(p.getAttribute("data-kosten")||"0",10); p.classList.toggle("poor", shown < k); });
   }
-  function idleStartTick(){ if(_idleTimer) clearInterval(_idleTimer); var ctr=0; _idleTimer=setInterval(function(){ var modal=document.getElementById("modal-idle"); if(!modal||!modal.classList.contains("open")||!_idle){ if(_idle) idleCommit(); clearInterval(_idleTimer); _idleTimer=null; return; } if(++ctr>=5){ ctr=0; idleCommit(); } idleUpdateBalance(); },1000); }
+  function idleStartTick(){ if(_idleTimer) clearInterval(_idleTimer); var ctr=0; _idleTimer=setInterval(function(){ var modal=document.getElementById("modal-idle"); if(!modal||!modal.classList.contains("open")||!_idle){ if(_idle) idleCommit(); if(window.updateShopButtonSouls) try{ updateShopButtonSouls(); }catch(e){} clearInterval(_idleTimer); _idleTimer=null; return; } if(++ctr>=5){ ctr=0; idleCommit(); } idleUpdateBalance(); },1000); }
   window.idleCard=idleCard; window.idleClearSlot=idleClearSlot; window.renderIdle=renderIdle;
 </script>
 
