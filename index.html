@@ -449,7 +449,7 @@
   <button class="sb-item" onclick="openModal('stats')"><span class="sb-ic">📊</span><span class="sb-label" id="sb-stats-label">Statistik</span></button>
   <button class="sb-item" onclick="openModal('eldendex')"><span class="sb-ic">📖</span><span class="sb-label" id="btn-dex-text">Eldendex</span></button>
   <button class="sb-item" onclick="openModal('unlocks')"><span class="sb-ic">🔓</span><span class="sb-label" id="sb-unlocks-label">Freischaltungen</span></button>
-  <button class="sb-item" onclick="openModal('idle')"><span class="sb-ic">⚔️</span><span class="sb-label" id="sb-idle-label">Gefolge</span></button>
+  <button class="sb-item" onclick="openModal('idle')"><span class="sb-ic">⚔️</span><span class="sb-label" id="sb-idle-label">Elden Idle</span></button>
   <button class="sb-item" onclick="openModal('patchnotes')"><span class="sb-ic">📜</span><span class="sb-label" id="sb-patch-label">Patch Notes</span></button>
   <div class="sb-spacer"></div>
   <div class="sb-brand">ELDEN ROGUE</div>
@@ -744,7 +744,7 @@
 <div class="modal-bg" id="modal-idle">
   <div class="modal-box" style="max-width:640px;">
     <button class="modal-close" onclick="closeModals()">&times;</button>
-    <div class="modal-title" id="idle-title">⚔️ Gefolge</div>
+    <div class="modal-title" id="idle-title">⚔️ Elden Idle</div>
     <div id="idle-body"></div>
   </div>
 </div>
@@ -1780,9 +1780,9 @@
       if (patchSel) patchSel.style.visibility = "hidden";   // Daily-Board gilt für den heutigen Seed, nicht pro Patch
     } else if (lbKategorie === "idle") {
       table.classList.add("lbmode-score");
-      thStage.innerText = _menuIsEn() ? "Retinue" : "Gefolge";   // Anzahl angeworbener Champions
-      thBosses.innerText = "/min";                               // aktuelle Runen-Rate
-      thScore.innerText = _menuIsEn() ? "Runes" : "Runen";       // erwirtschaftete Runen (Sortierung)
+      thStage.innerText = _menuIsEn() ? "Bosses" : "Bosse";      // Anzahl angeworbener Bosse
+      thBosses.innerText = "/min";                               // aktuelle Seelen-Rate
+      thScore.innerText = _menuIsEn() ? "Souls" : "Seelen";      // erwirtschaftete Seelen (Sortierung)
       if (patchSel) patchSel.style.visibility = "hidden";
     } else {
       table.classList.add("lbmode-score");
@@ -1810,14 +1810,14 @@
       return;
     }
 
-    // Gefolge-/Idle-Board: meiste erwirtschaftete Runen
+    // Elden-Idle-Board: meiste passiv erwirtschaftete Seelen
     if (lbKategorie === "idle") {
       lbPage = 0;
       ER.getIdleLeaderboard(50, function (rows, online) {
         if (!rows || rows.length === 0) {
           document.getElementById("lb-pagenav").style.visibility = "hidden";
           status.textContent = online
-            ? (_menuIsEn() ? "No Runes farmed yet — recruit your Retinue!" : "Noch keine Runen erwirtschaftet — wirb dein Gefolge an!")
+            ? (_menuIsEn() ? "No Souls farmed yet — set up your Elden Idle!" : "Noch keine Seelen erfarmt — leg dir dein Elden Idle an!")
             : (window.i18n ? t("lb_no_entries_local") : "Noch keine lokalen Läufe. Spiel eine Runde!");
           return;
         }
@@ -2256,7 +2256,8 @@
   wireDaily();
   document.addEventListener("languageChanged", wireDaily);
 
-  /* ===== Idle-Modus "Gefolge": besiegte Bosse farmen passiv Runen (nach Hard-Mode-Freischaltung) ===== */
+  /* ===== Elden Idle: besiegte Bosse (ab jetzt, Hard) farmen passiv SEELEN. Max 2 Std offline. ===== */
+  var IDLE_OFFLINE_MIN = 120;   // Offline-Kapazität in Minuten (2 Std) — belohnt auch Wenig-Spieler, ohne uferlos zu sein
   var IDLE_ROSTER = [
     { key:"Godrick, der Verpflanzte",             kurz:"Godrick",       rate:1,   kosten:0,     grp:"sturm",     img:"images/godrick.webp" },
     { key:"Sternengeißel Radahn",                 kurz:"Radahn",        rate:3,   kosten:40,    grp:"gestirn",   img:"images/radahn.webp" },
@@ -2278,10 +2279,14 @@
   // Ab jetzt zählen: ein Boss wird fürs Gefolge nur freigeschaltet, wenn man ihn AB SOFORT im Hard Mode legt (game.html -> meta.idleUnlocked). Kein rückwirkendes Freischalten.
   function idleBeaten(k){ try { return (ladeMeta().idleUnlocked||[]).indexOf(k) >= 0; } catch (e) { return false; } }
   function idleHardUnlocked(){ try { return !!(window.ER && ER.isUnlocked && ER.isUnlocked("hard_mode")); } catch (e) { return false; } }
-  function getIdle(){ var m=ladeMeta(); var d=m.idle||{}; return { runen:d.runen||0, earned:d.earned||0, owned:(d.owned||[]).slice(), slots:(d.slots||[null,null]).slice(), lastTs:d.lastTs||Date.now() }; }
-  function saveIdle(idle){ var m=ladeMeta(); m.idle={ runen:idle.runen, earned:idle.earned||0, rate:idleRate(idle).rate, owned:idle.owned, slots:idle.slots, lastTs:idle.lastTs }; speichereMeta(m); }
+  function getIdle(){ var m=ladeMeta(); var d=m.idle||{}; return { earned:d.earned||0, owned:(d.owned||[]).slice(), slots:(d.slots||[null,null]).slice(), lastTs:d.lastTs||Date.now() }; }
+  function saveIdle(idle){ var m=ladeMeta(); m.idle={ earned:idle.earned||0, rate:idleRate(idle).rate, owned:idle.owned, slots:idle.slots, lastTs:idle.lastTs }; speichereMeta(m); }
   function idleRate(idle){ var r=0, grps=[]; idle.slots.forEach(function(k){ if(!k) return; var b=idleRosterByKey(k); if(b){ r+=b.rate; grps.push(b.grp); } }); var syn=(grps.length===2 && grps[0]===grps[1]); return { rate:r*(syn?1.5:1), syn:syn }; }
-  function idleAccrue(idle){ var now=Date.now(); if(!idle.lastTs) idle.lastTs=now; var min=Math.min((now-idle.lastTs)/60000, 720); var g=min*idleRate(idle).rate; idle.runen+=g; idle.earned=(idle.earned||0)+g; idle.lastTs=now; return g; }
+  function idleSeelen(){ return Math.floor(ladeMeta().seelen||0); }
+  // Offline-Ertrag beim Öffnen gutschreiben -> direkt in die Seelen (max IDLE_OFFLINE_MIN Minuten)
+  function idleAccrue(idle){ var now=Date.now(); if(!idle.lastTs) idle.lastTs=now; var min=Math.min((now-idle.lastTs)/60000, IDLE_OFFLINE_MIN); var g=Math.floor(min*idleRate(idle).rate); idle.lastTs=now; idle.earned=(idle.earned||0)+g; var m=ladeMeta(); if(g>0) m.seelen=(m.seelen||0)+g; m.idle={ earned:idle.earned, rate:idleRate(idle).rate, owned:idle.owned, slots:idle.slots, lastTs:idle.lastTs }; speichereMeta(m); return g; }
+  // Live gutgeschriebene GANZE Seelen dauerhaft übernehmen (kein Verlust/Doppeln: lastTs exakt vorrücken)
+  function idleCommit(){ if(!_idle) return; var rate=idleRate(_idle).rate; if(rate<=0) return; var whole=Math.floor((Date.now()-_idle.lastTs)/60000*rate); if(whole<1) return; var m=ladeMeta(); m.seelen=(m.seelen||0)+whole; _idle.earned=(_idle.earned||0)+whole; _idle.lastTs+=whole/rate*60000; m.idle={ earned:_idle.earned, rate:rate, owned:_idle.owned, slots:_idle.slots, lastTs:_idle.lastTs }; speichereMeta(m); }
   function idleGrpName(g,en){ var m={sturm:en?"Storm":"Sturm",gestirn:en?"Stars":"Gestirn",mond:en?"Moon":"Mond",gott:en?"God-Eater":"Gottverschlinger",omen:"Omen",feuer:en?"Fire":"Feuer",klinge:en?"Blade":"Klinge",haligtree:"Haligtree",dlc:en?"Shadow":"Schatten",wahnsinn:en?"Frenzy":"Wahnsinn",aussen:en?"Outer Gods":"Äußere Götter"}; return m[g]||g; }
 
   var _idle=null, _idleTimer=null;
@@ -2289,11 +2294,11 @@
     var body=document.getElementById("idle-body"); if(!body) return;
     var en=(typeof _menuIsEn==="function")?_menuIsEn():false;
     if(!idleHardUnlocked()){
-      body.innerHTML='<div style="text-align:center;padding:16px 8px;font-family:sans-serif;"><div style="font-size:2.2rem;margin-bottom:8px;">🔒</div><p class="info-lead">'+(en?"The Retinue unlocks once you've finished the game and unlocked <b>Hard Mode</b>.":"Das Gefolge schaltet sich frei, sobald du das Spiel einmal durchgespielt und den <b>Hard Mode</b> freigeschaltet hast.")+'</p></div>';
+      body.innerHTML='<div style="text-align:center;padding:16px 8px;font-family:sans-serif;"><div style="font-size:2.2rem;margin-bottom:8px;">🔒</div><p class="info-lead">'+(en?"<b>Elden Idle</b> unlocks once you've finished the game and unlocked <b>Hard Mode</b>.":"<b>Elden Idle</b> schaltet sich frei, sobald du das Spiel einmal durchgespielt und den <b>Hard Mode</b> freigeschaltet hast.")+'</p></div>';
       return;
     }
     _idle=getIdle();
-    var gained=idleAccrue(_idle); saveIdle(_idle);
+    var gained=idleAccrue(_idle);
     renderIdleBody(gained>=1?gained:0);
     idleStartTick();
   }
@@ -2301,6 +2306,7 @@
     var body=document.getElementById("idle-body"); if(!body||!_idle) return;
     var en=(typeof _menuIsEn==="function")?_menuIsEn():false;
     var rt=idleRate(_idle);
+    var seelen=idleSeelen();
     function n(x){ return Math.floor(x).toLocaleString(en?"en-US":"de-DE"); }
     var slotsHtml="";
     for(var s=0;s<2;s++){
@@ -2318,26 +2324,29 @@
       if(slotted) action='<span class="idle-inslot">'+(en?"in slot":"im Slot")+'</span>';
       else if(owned) action='<button class="idle-slotbtn"'+(freeSlot?"":" disabled")+' onclick="idleToSlot(\''+b.key+'\')">'+(freeSlot?(en?"To slot":"In Slot"):(en?"slots full":"Slots voll"))+'</button>';
       else if(!beaten) action='<span class="idle-locked">🔒 '+(en?"not defeated":"nicht besiegt")+'</span>';
-      else action='<button class="idle-buy" data-kosten="'+b.kosten+'"'+(_idle.runen>=b.kosten?"":" disabled")+' onclick="idleBuy(\''+b.key+'\')">'+(b.kosten===0?(en?"Recruit (free)":"Anwerben (gratis)"):(en?"Recruit · ":"Anwerben · ")+n(b.kosten)+" 🪙")+'</button>';
-      return '<div class="idle-row'+(beaten||owned?"":" dim")+'"><img class="idle-row-img" src="'+b.img+'" onerror="this.style.display=\'none\'"><div class="idle-row-info"><div class="idle-row-nm">'+b.kurz+'</div><div class="idle-row-rt">'+b.rate+' Runen/min · '+idleGrpName(b.grp,en)+'</div></div><div class="idle-row-act">'+action+'</div></div>';
+      else action='<button class="idle-buy" data-kosten="'+b.kosten+'"'+(seelen>=b.kosten?"":" disabled")+' onclick="idleBuy(\''+b.key+'\')">'+(b.kosten===0?(en?"Recruit (free)":"Anwerben (gratis)"):(en?"Recruit · ":"Anwerben · ")+n(b.kosten)+" 🪙")+'</button>';
+      return '<div class="idle-row'+(beaten||owned?"":" dim")+'"><img class="idle-row-img" src="'+b.img+'" onerror="this.style.display=\'none\'"><div class="idle-row-info"><div class="idle-row-nm">'+b.kurz+'</div><div class="idle-row-rt">'+b.rate+(en?' Souls/min · ':' Seelen/min · ')+idleGrpName(b.grp,en)+'</div></div><div class="idle-row-act">'+action+'</div></div>';
     }).join("");
     body.innerHTML=
-      (gained?'<div class="idle-away">'+(en?"While you were away: ":"Während du weg warst: ")+'<b>+'+n(gained)+' 🪙</b></div>':'')+
-      '<div class="idle-top"><div class="idle-runen-box">🪙 <span id="idle-runen">'+n(_idle.runen)+'</span> <span class="idle-runen-lbl">'+(en?"Runes":"Runen")+'</span></div>'+
+      (gained?'<div class="idle-away">'+(en?"While you were away: ":"Während du weg warst: ")+'<b>+'+n(gained)+(en?' Souls':' Seelen')+'</b></div>':'')+
+      '<div class="idle-top"><div class="idle-runen-box">🪙 <span id="idle-runen">'+n(seelen)+'</span> <span class="idle-runen-lbl">'+(en?"Souls":"Seelen")+'</span></div>'+
         '<div class="idle-rate-box">'+n(rt.rate)+' /min'+(rt.syn?' <span class="idle-syn">'+(en?"synergy +50%":"Synergie +50%")+'</span>':'')+'</div></div>'+
       '<div class="idle-slots">'+slotsHtml+'</div>'+
-      '<div class="idle-hint">'+(en?"Place two champions in the slots — they farm Runes even while you're away (max 12 h). Same faction = +50% synergy.":"Leg zwei Gefährten in die Slots — sie farmen Runen, auch wenn du weg bist (max. 12 Std). Gleiche Fraktion = +50% Synergie.")+'</div>'+
+      '<div class="idle-hint">'+(en?"Place two bosses in the slots — they farm Souls passively, even while you're away (max 2 h). Same faction = +50% synergy.":"Leg zwei Bosse in die Slots — sie farmen passiv Seelen, auch wenn du weg bist (max. 2 Std). Gleiche Fraktion = +50% Synergie.")+'</div>'+
       '<div class="idle-roster">'+rosterHtml+'</div>';
   }
-  function idleBuy(key){ if(!_idle) return; var b=idleRosterByKey(key); if(!b||!idleBeaten(key)||_idle.owned.indexOf(key)>=0||_idle.runen<b.kosten) return; _idle.runen-=b.kosten; _idle.owned.push(key); saveIdle(_idle); renderIdleBody(0); }
-  function idleToSlot(key){ if(!_idle||_idle.owned.indexOf(key)<0||_idle.slots.indexOf(key)>=0) return; var i=_idle.slots.indexOf(null); if(i<0) return; _idle.slots[i]=key; saveIdle(_idle); renderIdleBody(0); }
-  function idleClearSlot(i){ if(!_idle) return; _idle.slots[i]=null; saveIdle(_idle); renderIdleBody(0); }
-  function idleUpdateBalance(){ if(!_idle) return; var floor=Math.floor(_idle.runen);
-    var el=document.getElementById("idle-runen"); if(el){ var en=(typeof _menuIsEn==="function")?_menuIsEn():false; el.textContent=floor.toLocaleString(en?"en-US":"de-DE"); }
-    // Kauf-Buttons live mit-freischalten, sobald man genug Runen hat (ohne Neu-Render)
-    document.querySelectorAll("#idle-body .idle-buy").forEach(function(btn){ var k=parseInt(btn.getAttribute("data-kosten")||"0",10); btn.disabled = floor < k; });
+  function idleBuy(key){ if(!_idle) return; var b=idleRosterByKey(key); if(!b||!idleBeaten(key)||_idle.owned.indexOf(key)>=0) return; idleCommit(); var m=ladeMeta(); if((m.seelen||0)<b.kosten) return; m.seelen-=b.kosten; _idle.owned.push(key); m.idle={ earned:_idle.earned, rate:idleRate(_idle).rate, owned:_idle.owned, slots:_idle.slots, lastTs:_idle.lastTs }; speichereMeta(m); renderIdleBody(0); }
+  function idleToSlot(key){ if(!_idle||_idle.owned.indexOf(key)<0||_idle.slots.indexOf(key)>=0) return; idleCommit(); var i=_idle.slots.indexOf(null); if(i<0) return; _idle.slots[i]=key; saveIdle(_idle); renderIdleBody(0); }
+  function idleClearSlot(i){ if(!_idle) return; idleCommit(); _idle.slots[i]=null; saveIdle(_idle); renderIdleBody(0); }
+  function idleUpdateBalance(){ if(!_idle) return;
+    var rate=idleRate(_idle).rate;
+    var pending = rate>0 ? Math.floor((Date.now()-_idle.lastTs)/60000*rate) : 0;   // seit letztem Commit live dazugekommen
+    var shown = idleSeelen() + pending;
+    var el=document.getElementById("idle-runen"); if(el){ var en=(typeof _menuIsEn==="function")?_menuIsEn():false; el.textContent=shown.toLocaleString(en?"en-US":"de-DE"); }
+    // Kauf-Buttons live mit-freischalten, sobald man genug Seelen hat (ohne Neu-Render)
+    document.querySelectorAll("#idle-body .idle-buy").forEach(function(btn){ var k=parseInt(btn.getAttribute("data-kosten")||"0",10); btn.disabled = shown < k; });
   }
-  function idleStartTick(){ if(_idleTimer) clearInterval(_idleTimer); var saveCtr=0; _idleTimer=setInterval(function(){ var modal=document.getElementById("modal-idle"); if(!modal||!modal.classList.contains("open")||!_idle){ if(_idle) saveIdle(_idle); clearInterval(_idleTimer); _idleTimer=null; return; } var _tr=idleRate(_idle).rate/60; _idle.runen+=_tr; _idle.earned=(_idle.earned||0)+_tr; _idle.lastTs=Date.now(); idleUpdateBalance(); if(++saveCtr>=5){ saveCtr=0; saveIdle(_idle); } },1000); }
+  function idleStartTick(){ if(_idleTimer) clearInterval(_idleTimer); var ctr=0; _idleTimer=setInterval(function(){ var modal=document.getElementById("modal-idle"); if(!modal||!modal.classList.contains("open")||!_idle){ if(_idle) idleCommit(); clearInterval(_idleTimer); _idleTimer=null; return; } if(++ctr>=5){ ctr=0; idleCommit(); } idleUpdateBalance(); },1000); }
   window.idleBuy=idleBuy; window.idleToSlot=idleToSlot; window.idleClearSlot=idleClearSlot; window.renderIdle=renderIdle;
 </script>
 
@@ -2602,8 +2611,8 @@ function localizeMenuExtras(){
   set("set-discord-label", "Discord verknüpfen", "Link Discord");
   set("set-discord-sub", "Rollen für deine Erfolge — automatisch", "Roles for your feats — automatic");
   set("set-discord-btn", "Code erzeugen", "Generate code");
-  set("sb-idle-label", "Gefolge", "Retinue");
-  set("idle-title", "⚔️ Gefolge", "⚔️ Retinue");
+  set("sb-idle-label", "Elden Idle", "Elden Idle");
+  set("idle-title", "⚔️ Elden Idle", "⚔️ Elden Idle");
   set("set-todo-label", "Erste-Schritte-Liste", "First-steps list");
   set("set-todo-sub", "Die To-Do-Karte im Hauptmenü wieder einblenden", "Show the to-do card in the main menu again");
   set("set-todo-btn", "Wieder anzeigen", "Show again");
