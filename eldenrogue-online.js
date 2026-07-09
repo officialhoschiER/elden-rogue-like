@@ -831,6 +831,13 @@
   ER.recordRunTime = function (ms) { var r = getRun(); r.timeMs = Math.round(ms || 0); saveRun(r); };
   ER.computeScore  = berechneScore;
   ER.isDevMode     = istDevUmgebung;   // dev/Test -> Läufe zählen nicht für die geteilte Bestenliste
+  // Manueller, dauerhafter Dev-Schalter pro Browser (schlaegt die Auto-Erkennung) — z.B. ER.setDevMode(true) auf der Test-Seite
+  ER.setDevMode = function (on) {
+    try { localStorage.setItem("er_devMode", on ? "1" : "0"); } catch (e) {}
+    try { if (!on) { var b = document.getElementById("er-dev-badge"); if (b) b.remove(); } else if (typeof zeigeDevBadge === "function") zeigeDevBadge(); } catch (e) {}
+    try { console.log("%c[ER] Dev-Modus manuell " + (on ? "AN (Laeufe zaehlen NICHT)" : "AUS (Laeufe zaehlen wieder)"), "color:#c080ff;font-weight:bold;"); } catch (e) {}
+    return on;
+  };
 
   /* ====== 5d) TÄGLICHER SEED – eigene Rangliste (bester Score pro Tag) ====== */
   function heutigerDailyKey() {
@@ -1018,10 +1025,15 @@
      Live bleibt officialhoschier.github.io (oder eine echte Domain) unberührt. */
   function istDevUmgebung() {
     try {
+      // Manueller Override (pro Browser, dauerhaft): ER.setDevMode(true/false) -> schlaegt die Auto-Erkennung
+      var f = null; try { f = localStorage.getItem("er_devMode"); } catch (e) {}
+      if (f === "1") return true;
+      if (f === "0") return false;
       if (location.protocol === "file:") return true;
-      var h = location.hostname || "";
-      if (h === "localhost" || h === "127.0.0.1" || h === "0.0.0.0") return true;
-      if (/\.pages\.dev$/i.test(h)) return true;   // Cloudflare-Pages Test-Deploy
+      var h = (location.hostname || "").toLowerCase();
+      if (h === "localhost" || h === "127.0.0.1" || h === "0.0.0.0" || h === "") return true;
+      if (/\.pages\.dev$/i.test(h)) return true;      // Cloudflare-Pages Test-Deploy (auch Preview-Subdomains)
+      if (/^192\.168\.|^10\.|\.local$/i.test(h)) return true;   // lokales Netz / mDNS
       return false;
     } catch (e) { return false; }
   }
@@ -1032,6 +1044,13 @@
     "furthestStageNormal", "furthestStageHard", "lb",
     "bestTimeMs", "bestTimeMeta", "dailyBest",
     "idleRunen", "idleOwned", "idleRate", "allAchDate", "allAchCount"
+  ];
+  // Diese Felder INNERHALB von stats.* speisen die Ranglisten (lb wird daraus rekonstruiert) -> auf dev ebenfalls nicht hochladen.
+  var LB_STATS_FELDER = [
+    "patchBest", "bestScore", "bestScoreNormal", "bestScoreHard",
+    "bestRunBosses", "bestRunBossesNormal", "bestRunBossesHard",
+    "furthestStage", "furthestStageNormal", "furthestStageHard",
+    "bestTimeMs", "bestTimeMeta", "dailyBest", "allAchDate", "allAchCount"
   ];
   function zeigeDevBadge() {
     if (!istDevUmgebung() || typeof document === "undefined") return;
@@ -1093,8 +1112,12 @@
       try { var us = localStorage.getItem("eldenRogueSeenUnlocks"); if (us) doc.seenStr = us; } catch (e) {}
       try { doc.runStr = localStorage.getItem("eldenRogueSave") || ""; } catch (e) {}   // "" = kein aktiver Run (löscht beendete Runs auch in der Cloud)
     }
-    // Dev-/Test-Umgebung: Ranglisten-Felder NICHT schreiben (merge lässt evtl. echte Live-Werte unberührt)
-    if (istDevUmgebung()) LB_CLOUD_FELDER.forEach(function (k) { delete doc[k]; });
+    // Dev-/Test-Umgebung: Ranglisten-Felder NICHT schreiben (merge lässt evtl. echte Live-Werte unberührt).
+    // Auch die QUELLEN in stats.* entfernen, sonst laesst sich lb spaeter daraus rekonstruieren.
+    if (istDevUmgebung()) {
+      LB_CLOUD_FELDER.forEach(function (k) { delete doc[k]; });
+      if (doc.stats && typeof doc.stats === "object") { var sc = Object.assign({}, doc.stats); LB_STATS_FELDER.forEach(function (k) { delete sc[k]; }); doc.stats = sc; }
+    }
     try { fbDB.collection("users").doc(currentUser.uid).set(doc, { merge: true }); } catch (e) { console.warn("[ER] cloudPush:", e); }
   }
 
