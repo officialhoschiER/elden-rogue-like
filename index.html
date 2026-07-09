@@ -2350,9 +2350,10 @@
       '<div class="idle-hint">'+(en?"Place two bosses in the slots — they passively produce Souls, even while you're away (up to 2 h). Tap a boss to recruit or slot them.":"Setz zwei Bosse in die Slots — sie produzieren passiv Seelen, auch wenn du weg bist (bis zu 2 Std). Tipp einen Boss an zum Anwerben oder Einsetzen.")+'</div>'+
       '<div class="idle-roster">'+rosterHtml+'</div>';
   }
-  // Ein Klick auf eine Boss-Karte: kaufen / in Slot / (aktiv = nichts)
+  // Ein Klick auf eine Boss-Karte schaltet um: aktiv -> raus, besitzt -> rein, sonst kaufen
   function idleCard(key){ if(!_idle) return; var b=idleRosterByKey(key); if(!b) return;
-    if(_idle.slots.indexOf(key)>=0) return;                         // schon aktiv -> Entfernen nur über ✕ oben
+    var si=_idle.slots.indexOf(key);
+    if(si>=0){ idleClearSlot(si); return; }                         // schon aktiv -> aus dem Slot nehmen
     if(_idle.owned.indexOf(key)>=0){ idleToSlot(key); return; }     // besitzt -> in freien Slot
     if(!idleBeaten(key)) return;                                    // noch nicht besiegt
     idleBuy(key);                                                   // sonst kaufen
