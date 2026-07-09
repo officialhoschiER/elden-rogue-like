@@ -1320,7 +1320,15 @@ const bossResistenzen = {
   "Gideon Ofnir, der Allwissende":      { Normal: 0, Magie: -0.25, Feuer: 0, Heilig: 0.25 },
   "Godfrey, der Erste Eldenlord":       { Normal: 0.25, Magie: 0, Feuer: 0, Heilig: -0.25 },
   "Radagon von der Goldenen Ordnung":   { Normal: -0.25, Magie: -0.25, Feuer: 0, Heilig: 0.25 },
-  "Eldenbiest":                     { Normal: -0.25, Magie: -0.25, Feuer: 0, Heilig: 0.25 }
+  "Eldenbiest":                     { Normal: -0.25, Magie: -0.25, Feuer: 0, Heilig: 0.25 },
+  // --- DLC: Land des Schattens — boss-eigene Profile (überschreiben das Gebiet, zeigen sich im Eldendex) ---
+  "Göttliches Tanzlöwenbiest":          { Normal: -0.20, Magie: 0, Feuer: 0.10, Heilig: 0.20 },   // Sturm/Blitz-Bestie: schwach gegen Heilig, trotzt rohem Stahl
+  "Rellana, Ritterin der Zwillingsmonde": { Normal: 0.20, Magie: -0.25, Feuer: -0.20, Heilig: 0 }, // Zwillingsmonde (Magie+Feuer) -> resistent dagegen, roher Stahl wirkt
+  "Midra, Herr der Wahnsinnigen Flamme":  { Normal: 0, Magie: 0, Feuer: -0.30, Heilig: 0.25 },     // Wahnsinnige Flamme fürchtet das Heilige, trotzt Feuer
+  "Romina, Heilige der Knospe":         { Normal: 0, Magie: -0.20, Feuer: 0.25, Heilig: 0 },       // Scharlachfäule brennt weg -> Feuer, Magie prallt ab
+  "Metyr, Mutter der Finger":           { Normal: 0.20, Magie: -0.25, Feuer: 0, Heilig: 0.10 },    // Sternen-Botin: resistent gegen Magie, verwundbar durch Stahl/Heilig
+  "Verheißener Gemahl Radahn":          { Normal: 0.15, Magie: 0, Feuer: 0.10, Heilig: -0.30 },    // badet in heiligem Licht -> Heilig prallt ab
+  "Radahn, Gemahl Miquellas":           { Normal: 0.15, Magie: 0, Feuer: 0.10, Heilig: -0.30 }     // Phase 2: identisches Profil
 };
 
 // Gebiets-Schadensprofil: gilt für ALLE Gegner einer Region (namentliche Bosse überschreiben via bossResistenzen).
@@ -1337,10 +1345,12 @@ const gebietsResistenzen = {
   AshenCapital: { Magie: 0.20, Feuer: -0.30, Normal: -0.10 },
   Haligtree:    { Feuer: 0.25, Heilig: -0.25, Magie: -0.15 },
   // --- DLC: Land des Schattens ---
+  Gravesite:    { Normal: 0.10, Heilig: 0.15, Magie: -0.15 },  // erstes Schatten-Gebiet: noch relativ offen, Heilig wirkt gut
   CastleEnsis:  { Normal: 0.15, Magie: -0.25 },              // Karianische Magier trotzen der Magie — roher Stahl wirkt
   AbyssalWoods: { Heilig: 0.25, Feuer: -0.25 },              // die Wahnsinnige Flamme fürchtet das Heilige
   Rauh:         { Feuer: 0.20, Magie: -0.20 },               // die Scharlachfäule brennt weg — Feuer wirkt, Magie prallt ab
-  EnirIlim:     { Feuer: 0.15, Heilig: -0.25 }               // der Verheißene Gemahl badet in heiligem Licht
+  EnirIlim:     { Feuer: 0.15, Heilig: -0.25 },              // der Verheißene Gemahl badet in heiligem Licht
+  Fingerruinen: { Normal: 0.15, Feuer: 0.10, Magie: -0.25 }  // Reich der Äußeren Götter — Sternenmagie prallt ab
 };
 // Aktuelles Schadensprofil des Gegners: namentlicher Boss/Festung > Gebiets-Profil. Dungeons: keins.
 function gibSchadensProfilTabelle() {
