@@ -120,7 +120,7 @@
     .btn-daily:hover { background: rgba(58,90,104,0.5); color: #d3e8f0; border-color: #5a8296; box-shadow: 0 0 14px rgba(58,90,104,0.4); transform: translateY(-1px); }
     #daily-label { font-weight: bold; }
     /* ===== Elden Idle ===== */
-    #modal-idle .modal-box { max-width: 820px; width: 95vw; }
+    #modal-idle .modal-box { max-width: 1040px; width: 96vw; }
     .idle-away { text-align:center; background:rgba(46,204,113,0.12); border:1px solid rgba(46,204,113,0.4); color:#8fe6b0; border-radius:6px; padding:9px; margin-bottom:14px; font-family:sans-serif; font-size:0.9rem; }
     .idle-top { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:14px; }
     .idle-runen-box { font-family:'Cinzel',serif; color:var(--gold); font-size:1.7rem; }
@@ -129,7 +129,8 @@
     /* zwei aktive Slots oben (die farmenden Bosse) */
     .idle-slots { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:14px; }
     .idle-slot { position:relative; min-height:128px; border:2px dashed #4a4335; border-radius:12px; background:rgba(0,0,0,0.3); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:12px; }
-    .idle-slot.filled { border-style:solid; border-color:var(--gold); background:rgba(30,24,14,0.55); box-shadow:inset 0 0 16px rgba(205,163,79,0.22); }
+    .idle-slot.filled { border-style:solid; border-color:var(--gold); background:rgba(30,24,14,0.55); box-shadow:inset 0 0 16px rgba(205,163,79,0.22); cursor:pointer; }
+    .idle-slot.filled:hover { border-color:#e74c3c; background:rgba(40,16,16,0.5); }
     .idle-slot img { width:72px; height:72px; object-fit:cover; border-radius:50%; border:2px solid var(--gold-dark); }
     .idle-slot.filled img { border-color:var(--gold); box-shadow:0 0 14px rgba(205,163,79,0.55); }
     .idle-slot-nm { font-family:sans-serif; font-weight:bold; color:#ede6d4; font-size:0.98rem; margin-top:8px; }
@@ -137,9 +138,17 @@
     .idle-slot-empty { color:#6a6250; font-family:sans-serif; font-size:0.95rem; }
     .idle-x { position:absolute; top:6px; right:9px; background:none; border:none; color:#8a7f68; cursor:pointer; font-size:1rem; z-index:2; }
     .idle-x:hover { color:#e74c3c; }
-    .idle-hint { font-family:sans-serif; color:#8a7f68; font-size:0.8rem; text-align:center; margin-bottom:14px; }
-    /* scrollfreies Boss-Grid mit Preis unten auf dem Bild */
-    .idle-roster { display:grid; grid-template-columns:repeat(5, 1fr); gap:11px; }
+    .idle-hint { font-family:sans-serif; color:#8a7f68; font-size:0.8rem; text-align:center; margin-bottom:12px; }
+    /* Offline-Kapazitaets-Ausbau (relativ teuer) */
+    .idle-cap { display:flex; align-items:center; justify-content:space-between; gap:12px; background:rgba(20,16,28,0.6); border:1px solid #3a3350; border-radius:8px; padding:9px 14px; margin-bottom:14px; font-family:sans-serif; }
+    .idle-cap-info { color:#c9bfe0; font-size:0.86rem; }
+    .idle-cap-info b { color:#d9b3ff; }
+    .idle-cap-buy { background:#241a34; color:#d9b3ff; border:1px solid #6a4a9a; border-radius:6px; padding:7px 14px; font-family:sans-serif; font-size:0.82rem; font-weight:bold; cursor:pointer; white-space:nowrap; }
+    .idle-cap-buy:hover:not(:disabled) { background:#6a4a9a; color:#fff; }
+    .idle-cap-buy:disabled { opacity:0.4; cursor:not-allowed; }
+    .idle-cap-max { color:#8a7f68; font-size:0.82rem; font-style:italic; }
+    /* scrollfreies Boss-Grid mit Preis unten auf dem Bild — passt sich der Fensterbreite an */
+    .idle-roster { display:grid; grid-template-columns:repeat(auto-fill, minmax(112px, 1fr)); gap:11px; }
     .idle-card { position:relative; border:1px solid var(--border-color); border-radius:10px; background:#0f0f0f; overflow:hidden; cursor:pointer; transition:border-color .15s, transform .15s, box-shadow .15s; }
     .idle-card:hover:not(.locked) { transform:translateY(-2px); border-color:var(--gold-dark); }
     .idle-card.locked { opacity:0.45; cursor:default; }
@@ -657,7 +666,8 @@
   <div class="modal-box">
     <button class="modal-close" onclick="closeModals()">&times;</button>
     <div class="modal-title" id="lb-title">Bestenliste</div>
-    <div style="display:flex; justify-content:flex-end; margin:-4px 0 8px;">
+    <div style="display:flex; justify-content:flex-end; gap:8px; margin:-4px 0 8px;">
+      <select id="lb-date" onchange="ladeBestenliste()" style="display:none; background:#111; color:var(--gold); border:1px solid var(--gold-dark); padding:3px 10px; font-family:'Cinzel',serif; font-size:0.7rem; letter-spacing:1px; border-radius:3px; cursor:pointer;"></select>
       <select id="lb-patch" onchange="ladeBestenliste()" style="background:#111; color:var(--gold); border:1px solid var(--gold-dark); padding:3px 10px; font-family:'Cinzel',serif; font-size:0.7rem; letter-spacing:1px; border-radius:3px; cursor:pointer;"><option value="1.5" selected>PATCH v1.5</option><option value="1.4">PATCH v1.4</option><option value="1.3">PATCH v1.3</option></select>
     </div>
     <div id="lb-cat-tabs" class="lb-tabs"></div>
@@ -749,7 +759,7 @@
 </div>
 
 <div class="modal-bg" id="modal-idle">
-  <div class="modal-box" style="max-width:820px;">
+  <div class="modal-box" style="max-width:1040px;">
     <button class="modal-close" onclick="closeModals()">&times;</button>
     <div class="modal-title" id="idle-title">⚔️ Elden Idle</div>
     <div id="idle-body"></div>
@@ -1767,6 +1777,7 @@
 
     // Spaltenkonfiguration je Board-Typ
     var thStage = document.getElementById("th-stage"), thBosses = document.getElementById("th-bosses"), thScore = document.getElementById("th-score");
+    var dateSel = document.getElementById("lb-date"); if (dateSel) dateSel.style.display = "none";   // Tages-Dropdown nur beim Daily-Board
     table.classList.remove("lbmode-speedrun", "lbmode-completionist", "lbmode-score");
     if (lbKategorie === "speedrun") {
       table.classList.add("lbmode-speedrun");
@@ -1783,7 +1794,8 @@
       thStage.innerText = t("lb_th_stage");
       thBosses.innerText = t("lb_th_bosses");
       thScore.innerText = t("lb_th_score");
-      if (patchSel) patchSel.style.visibility = "hidden";   // Daily-Board gilt für den heutigen Seed, nicht pro Patch
+      if (patchSel) patchSel.style.visibility = "hidden";   // Daily-Board gilt pro Tag, nicht pro Patch
+      if (dateSel) { fuelleDailyDaten(dateSel); dateSel.style.display = ""; }   // Tages-Auswahl einblenden
     } else if (lbKategorie === "idle") {
       table.classList.add("lbmode-score");
       thStage.innerText = _menuIsEn() ? "Bosses" : "Bosse";      // Anzahl angeworbener Bosse
@@ -1799,20 +1811,25 @@
       if (patchSel) patchSel.style.visibility = "visible";
     }
 
-    // Täglicher-Seed-Board: eigener Abruf (heutiger Seed, datums-basiert)
+    // Täglicher-Seed-Board: eigener Abruf für den gewählten Tag (Standard = heute)
     if (lbKategorie === "daily") {
       lbPage = 0;
+      var heuteKey = (ER.dailyKey ? ER.dailyKey() : dailyKeyFor(new Date()));
+      var dk = (dateSel && dateSel.value) ? dateSel.value : heuteKey;
+      var seedDay = dailySeedFor(dk);
       ER.getDailyLeaderboard(50, function (rows, online) {
         if (!rows || rows.length === 0) {
           document.getElementById("lb-pagenav").style.visibility = "hidden";
           status.textContent = online
-            ? (_menuIsEn() ? "No one has played today's seed yet — be the first! (🎲 " + dailySeedStr() + ")" : "Heute hat den Seed noch niemand gespielt — sei der Erste! (🎲 " + dailySeedStr() + ")")
+            ? (dk === heuteKey
+                ? (_menuIsEn() ? "No one has played today's seed yet — be the first! (🎲 " + seedDay + ")" : "Heute hat den Seed noch niemand gespielt — sei der Erste! (🎲 " + seedDay + ")")
+                : (_menuIsEn() ? "No entries for this day (🎲 " + seedDay + ")" : "Keine Einträge für diesen Tag (🎲 " + seedDay + ")"))
             : (window.i18n ? t("lb_no_entries_local") : "Noch keine lokalen Läufe. Spiel eine Runde!");
           return;
         }
         _lbRows = rows; renderLbPage();
         status.classList.add("hidden"); table.classList.remove("hidden");
-      });
+      }, dk);
       return;
     }
 
@@ -2240,14 +2257,24 @@
   renderTodo();
 
   /* ===== Täglicher Seed (weltweit gleich, datums-basiert) ===== */
-  function dailySeedStr() {
-    var d = new Date();
-    var key = "" + d.getUTCFullYear() + String(d.getUTCMonth() + 1).padStart(2, "0") + String(d.getUTCDate()).padStart(2, "0");
+  function dailyKeyFor(d) { return "" + d.getUTCFullYear() + String(d.getUTCMonth() + 1).padStart(2, "0") + String(d.getUTCDate()).padStart(2, "0"); }
+  function dailySeedFor(key) {
     var h = 1779033703 ^ key.length;
     for (var i = 0; i < key.length; i++) { h = Math.imul(h ^ key.charCodeAt(i), 3432918353); h = (h << 13) | (h >>> 19); }
     var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", s = "";
     for (var j = 0; j < 6; j++) { h = Math.imul(h ^ (h >>> 16), 2246822507); h >>>= 0; s += chars[h % 36]; }
     return s;
+  }
+  function dailySeedStr() { return dailySeedFor(dailyKeyFor(new Date())); }
+  // Tages-Dropdown des Daily-Boards mit den letzten 14 Tagen (Datum + Seed) füllen
+  function fuelleDailyDaten(sel) {
+    if (!sel) return; var en = (typeof _menuIsEn === "function") ? _menuIsEn() : false; var cur = sel.value; var html = "";
+    for (var i = 0; i < 14; i++) {
+      var d = new Date(Date.now() - i * 86400000); var key = dailyKeyFor(d);
+      var label = (i === 0) ? (en ? "Today" : "Heute") : (i === 1) ? (en ? "Yesterday" : "Gestern") : d.toLocaleDateString(en ? "en-US" : "de-DE", { day: "2-digit", month: "2-digit" });
+      html += '<option value="' + key + '">🎲 ' + label + " · " + dailySeedFor(key) + '</option>';
+    }
+    sel.innerHTML = html; if (cur) sel.value = cur;
   }
   function wireDaily() {
     var btn = document.getElementById("btn-daily"); if (!btn) return;
@@ -2266,35 +2293,41 @@
   var IDLE_OFFLINE_MIN = 120;   // Offline-Kapazität in Minuten (2 Std) — belohnt auch Wenig-Spieler, ohne uferlos zu sein
   // rate = Seelen pro STUNDE (bewusst wenig — reine passive Nebeneinnahme). Keine Synergien mehr.
   var IDLE_ROSTER = [
-    { key:"Godrick, der Verpflanzte",             kurz:"Godrick",       rate:3,   kosten:0,     img:"images/godrick.webp" },
-    { key:"Sternengeißel Radahn",                 kurz:"Radahn",        rate:6,   kosten:40,    img:"images/radahn.webp" },
-    { key:"Rennala, Königin des Vollmonds",       kurz:"Rennala",       rate:9,   kosten:80,    img:"images/bosse/rennala.jpg" },
-    { key:"Rykard, Herr der Blasphemie",          kurz:"Rykard",        rate:12,  kosten:160,   img:"images/bosse/rykardp1.jpg" },
-    { key:"Morgott, der Omenkönig",               kurz:"Morgott",       rate:16,  kosten:320,   img:"images/Morgott.webp" },
-    { key:"Feuerriese",                           kurz:"Feuerriese",    rate:20,  kosten:600,   img:"images/firegiant.avif" },
-    { key:"Maliketh, die Schwarze Klinge",        kurz:"Maliketh",      rate:26,  kosten:1000,  img:"images/maliketh.jpg" },
-    { key:"Mohg, Fürst des Blutes",               kurz:"Mohg",          rate:32,  kosten:1600,  img:"images/bosse/Titel-8-fc80008000ffff_1920x1080.avif" },
-    { key:"Malenia, Blade of Miquella",           kurz:"Malenia",       rate:40,  kosten:2600,  img:"images/maleniap1.webp" },
-    { key:"Göttliches Tanzlöwenbiest",            kurz:"Tanzlöwe",      rate:50,  kosten:4500,  img:"images/bosse/tanzloewe.jpg" },
-    { key:"Rellana, Ritterin der Zwillingsmonde", kurz:"Rellana",       rate:62,  kosten:7500,  img:"images/bosse/rellana.png" },
-    { key:"Midra, Herr der Wahnsinnigen Flamme",  kurz:"Midra",         rate:75,  kosten:12000, img:"images/bosse/midra.png" },
-    { key:"Romina, Heilige der Knospe",           kurz:"Romina",        rate:90,  kosten:20000, img:"images/bosse/romina.png" },
-    { key:"Radahn, Gemahl Miquellas",             kurz:"Gemahl Radahn", rate:110, kosten:40000, img:"images/bosse/pcr.webp" },
-    { key:"Metyr, Mutter der Finger",             kurz:"Metyr",         rate:140, kosten:90000, img:"images/bosse/metyr.png" }
+    { key:"Godrick, der Verpflanzte",             kurz:"Godrick",       rate:2,   kosten:0,     img:"images/godrick.webp" },
+    { key:"Sternengeißel Radahn",                 kurz:"Radahn",        rate:5,   kosten:40,    img:"images/radahn.webp" },
+    { key:"Rennala, Königin des Vollmonds",       kurz:"Rennala",       rate:8,   kosten:80,    img:"images/bosse/rennala.jpg" },
+    { key:"Rykard, Herr der Blasphemie",          kurz:"Rykard",        rate:10,  kosten:160,   img:"images/bosse/rykardp1.jpg" },
+    { key:"Morgott, der Omenkönig",               kurz:"Morgott",       rate:14,  kosten:320,   img:"images/Morgott.webp" },
+    { key:"Feuerriese",                           kurz:"Feuerriese",    rate:17,  kosten:600,   img:"images/firegiant.avif" },
+    { key:"Maliketh, die Schwarze Klinge",        kurz:"Maliketh",      rate:22,  kosten:1000,  img:"images/maliketh.jpg" },
+    { key:"Mohg, Fürst des Blutes",               kurz:"Mohg",          rate:27,  kosten:1600,  img:"images/bosse/Titel-8-fc80008000ffff_1920x1080.avif" },
+    { key:"Malenia, Blade of Miquella",           kurz:"Malenia",       rate:34,  kosten:2600,  img:"images/maleniap1.webp" },
+    { key:"Göttliches Tanzlöwenbiest",            kurz:"Tanzlöwe",      rate:42,  kosten:4500,  img:"images/bosse/tanzloewe.jpg" },
+    { key:"Rellana, Ritterin der Zwillingsmonde", kurz:"Rellana",       rate:52,  kosten:7500,  img:"images/bosse/rellana.png" },
+    { key:"Midra, Herr der Wahnsinnigen Flamme",  kurz:"Midra",         rate:64,  kosten:12000, img:"images/bosse/midra.png" },
+    { key:"Romina, Heilige der Knospe",           kurz:"Romina",        rate:76,  kosten:20000, img:"images/bosse/romina.png" },
+    { key:"Radahn, Gemahl Miquellas",             kurz:"Gemahl Radahn", rate:94,  kosten:40000, img:"images/bosse/pcr.webp" },
+    { key:"Metyr, Mutter der Finger",             kurz:"Metyr",         rate:120, kosten:90000, img:"images/bosse/metyr.png" }
   ];
+  // Offline-Kapazitaets-Ausbau (relativ teuer): Stufe 0=2h (Basis), dann 4h/8h/12h
+  var IDLE_CAP_TIERS = [ {std:2, kosten:0}, {std:4, kosten:8000}, {std:8, kosten:25000}, {std:12, kosten:60000} ];
+  function idleCapLevel(){ try { var l=(ladeMeta().idle||{}).capLevel||0; return Math.max(0, Math.min(IDLE_CAP_TIERS.length-1, l)); } catch(e){ return 0; } }
+  function idleCapMin(){ return IDLE_CAP_TIERS[idleCapLevel()].std * 60; }   // aktuelle Offline-Kapazitaet in Minuten
   function idleRosterByKey(k){ for (var i=0;i<IDLE_ROSTER.length;i++) if (IDLE_ROSTER[i].key===k) return IDLE_ROSTER[i]; return null; }
   // Ab jetzt zählen: ein Boss wird fürs Gefolge nur freigeschaltet, wenn man ihn AB SOFORT im Hard Mode legt (game.html -> meta.idleUnlocked). Kein rückwirkendes Freischalten.
   function idleBeaten(k){ try { return (ladeMeta().idleUnlocked||[]).indexOf(k) >= 0; } catch (e) { return false; } }
   function idleHardUnlocked(){ try { return !!(window.ER && ER.isUnlocked && ER.isUnlocked("hard_mode")); } catch (e) { return false; } }
-  function getIdle(){ var m=ladeMeta(); var d=m.idle||{}; return { earned:d.earned||0, owned:(d.owned||[]).slice(), slots:(d.slots||[null,null]).slice(), lastTs:d.lastTs||Date.now() }; }
-  function saveIdle(idle){ var m=ladeMeta(); m.idle={ earned:idle.earned||0, rate:idleRate(idle).rate, owned:idle.owned, slots:idle.slots, lastTs:idle.lastTs }; speichereMeta(m); }
+  function getIdle(){ var m=ladeMeta(); var d=m.idle||{}; return { earned:d.earned||0, owned:(d.owned||[]).slice(), slots:(d.slots||[null,null]).slice(), lastTs:d.lastTs||Date.now(), capLevel:d.capLevel||0 }; }
+  function saveIdle(idle){ var m=ladeMeta(); m.idle={ earned:idle.earned||0, rate:idleRate(idle).rate, owned:idle.owned, slots:idle.slots, lastTs:idle.lastTs, capLevel:idle.capLevel||0 }; speichereMeta(m); }
   // Rate = Seelen pro STUNDE, einfach die Summe der beiden Slots (keine Synergie mehr)
   function idleRate(idle){ var r=0; idle.slots.forEach(function(k){ if(!k) return; var b=idleRosterByKey(k); if(b) r+=b.rate; }); return { rate:r, syn:false }; }
   function idleSeelen(){ return Math.floor(ladeMeta().seelen||0); }
-  // Offline-Ertrag beim Öffnen gutschreiben -> direkt in die Seelen (max IDLE_OFFLINE_MIN Minuten, Rate ist pro Stunde)
-  function idleAccrue(idle){ var now=Date.now(); if(!idle.lastTs) idle.lastTs=now; var min=Math.min((now-idle.lastTs)/60000, IDLE_OFFLINE_MIN); var g=Math.max(0, Math.floor(min/60*idleRate(idle).rate)); idle.lastTs=now; idle.earned=(idle.earned||0)+g; var m=ladeMeta(); m.seelen=(m.seelen||0)+g; m.idle={ earned:idle.earned, rate:idleRate(idle).rate, owned:idle.owned, slots:idle.slots, lastTs:idle.lastTs }; speichereMeta(m); return g; }   // liest die BESTEHENDEN Seelen frisch und ADDIERT nur (g>=0) — nie ueberschreiben/senken
+  // Offline-Ertrag beim Öffnen gutschreiben -> direkt in die Seelen (Kappung = ausgebaute Offline-Kapazität, Rate ist pro Stunde)
+  function idleAccrue(idle){ var now=Date.now(); if(!idle.lastTs) idle.lastTs=now; var capMin=IDLE_CAP_TIERS[Math.max(0,Math.min(IDLE_CAP_TIERS.length-1, idle.capLevel||0))].std*60; var min=Math.min((now-idle.lastTs)/60000, capMin); var g=Math.max(0, Math.floor(min/60*idleRate(idle).rate)); idle.lastTs=now; idle.earned=(idle.earned||0)+g; var m=ladeMeta(); m.seelen=(m.seelen||0)+g; m.idle={ earned:idle.earned, rate:idleRate(idle).rate, owned:idle.owned, slots:idle.slots, lastTs:idle.lastTs, capLevel:idle.capLevel||0 }; speichereMeta(m); return g; }   // liest die BESTEHENDEN Seelen frisch und ADDIERT nur (g>=0) — nie ueberschreiben/senken
   // Live gutgeschriebene GANZE Seelen dauerhaft übernehmen (kein Verlust/Doppeln: lastTs exakt vorrücken)
-  function idleCommit(){ if(!_idle) return; var rate=idleRate(_idle).rate; if(rate<=0) return; var whole=Math.floor((Date.now()-_idle.lastTs)/3600000*rate); if(whole<1) return; var m=ladeMeta(); m.seelen=(m.seelen||0)+whole; _idle.earned=(_idle.earned||0)+whole; _idle.lastTs+=whole/rate*3600000; m.idle={ earned:_idle.earned, rate:rate, owned:_idle.owned, slots:_idle.slots, lastTs:_idle.lastTs }; speichereMeta(m); }
+  function idleCommit(){ if(!_idle) return; var rate=idleRate(_idle).rate; if(rate<=0) return; var whole=Math.floor((Date.now()-_idle.lastTs)/3600000*rate); if(whole<1) return; var m=ladeMeta(); m.seelen=(m.seelen||0)+whole; _idle.earned=(_idle.earned||0)+whole; _idle.lastTs+=whole/rate*3600000; m.idle={ earned:_idle.earned, rate:rate, owned:_idle.owned, slots:_idle.slots, lastTs:_idle.lastTs, capLevel:_idle.capLevel||0 }; speichereMeta(m); }
+  // Offline-Kapazität ausbauen (relativ teuer, mit Seelen)
+  function idleBuyCap(){ if(!_idle) return; var lvl=idleCapLevel(); if(lvl>=IDLE_CAP_TIERS.length-1) return; var next=IDLE_CAP_TIERS[lvl+1]; idleCommit(); var m=ladeMeta(); if((m.seelen||0)<next.kosten) return; m.seelen-=next.kosten; _idle.capLevel=lvl+1; m.idle={ earned:_idle.earned, rate:idleRate(_idle).rate, owned:_idle.owned, slots:_idle.slots, lastTs:_idle.lastTs, capLevel:_idle.capLevel }; speichereMeta(m); renderIdleBody(0); }
   function idleGrpName(g,en){ var m={sturm:en?"Storm":"Sturm",gestirn:en?"Stars":"Gestirn",mond:en?"Moon":"Mond",gott:en?"God-Eater":"Gottverschlinger",omen:"Omen",feuer:en?"Fire":"Feuer",klinge:en?"Blade":"Klinge",haligtree:"Haligtree",dlc:en?"Shadow":"Schatten",wahnsinn:en?"Frenzy":"Wahnsinn",aussen:en?"Outer Gods":"Äußere Götter"}; return m[g]||g; }
 
   var _idle=null, _idleTimer=null;
@@ -2318,14 +2351,23 @@
     function n(x){ return Math.floor(x).toLocaleString(en?"en-US":"de-DE"); }
     var perStd=en?" /h":" /Std";
     var soulIc='<img src="images/icons/lords-rune-tools-elden-ring-wiki-guide.png" class="idle-soul-ic" alt="" onerror="this.replaceWith(document.createTextNode(\'◆\'))">';
-    // Oben: die beiden aktiven Slots (nur andeuten — kein Name, nur Bild)
+    // Oben: die beiden aktiven Slots (nur andeuten — kein Name, nur Bild). Klick auf einen belegten Slot nimmt den Boss raus.
     var slotsHtml="";
     for(var s=0;s<2;s++){
       var k=_idle.slots[s]; var b=k?idleRosterByKey(k):null;
-      slotsHtml+='<div class="idle-slot'+(b?" filled":"")+'">'+
-        (b? '<button class="idle-x" title="'+(en?"remove":"entfernen")+'" onclick="idleClearSlot('+s+')">✕</button><img src="'+b.img+'" onerror="this.style.display=\'none\'"><div class="idle-slot-rt">'+b.rate+perStd+'</div>'
+      slotsHtml+='<div class="idle-slot'+(b?" filled":"")+'"'+(b?' title="'+(en?"remove":"entfernen")+'" onclick="idleClearSlot('+s+')"':'')+'>'+
+        (b? '<button class="idle-x" tabindex="-1">✕</button><img src="'+b.img+'" onerror="this.style.display=\'none\'"><div class="idle-slot-rt">'+b.rate+perStd+'</div>'
            : '<div class="idle-slot-empty">'+(en?"empty slot":"leerer Slot")+'</div>')+
         '</div>';
+    }
+    // Offline-Kapazitäts-Ausbau (relativ teuer)
+    var capLvl=idleCapLevel(), curCap=IDLE_CAP_TIERS[capLvl].std, capHtml;
+    if(capLvl>=IDLE_CAP_TIERS.length-1){
+      capHtml='<div class="idle-cap"><div class="idle-cap-info">'+(en?"Offline capacity: ":"Offline-Kapazität: ")+'<b>'+curCap+(en?" h":" Std")+'</b></div><span class="idle-cap-max">'+(en?"fully upgraded":"voll ausgebaut")+'</span></div>';
+    } else {
+      var nextCap=IDLE_CAP_TIERS[capLvl+1];
+      capHtml='<div class="idle-cap"><div class="idle-cap-info">'+(en?"Offline capacity: ":"Offline-Kapazität: ")+'<b>'+curCap+(en?" h":" Std")+'</b> — '+(en?"longer = more passive Souls while away":"länger = mehr passive Seelen, während du weg bist")+'</div>'+
+        '<button class="idle-cap-buy" id="idle-cap-buy" data-kosten="'+nextCap.kosten+'"'+(seelen>=nextCap.kosten?"":" disabled")+' onclick="idleBuyCap()">'+(en?"Expand to ":"Ausbau auf ")+nextCap.std+(en?" h · ":" Std · ")+soulIc+" "+n(nextCap.kosten)+'</button></div>';
     }
     // Darunter: scrollfreies Boss-Grid, Preis unten auf dem Bild (keine Namen — nur das Bild deutet an)
     var rosterHtml=IDLE_ROSTER.map(function(b){
@@ -2347,7 +2389,8 @@
       '<div class="idle-top"><div class="idle-runen-box">'+soulIc+' <span id="idle-runen">'+n(seelen)+'</span> <span class="idle-runen-lbl">'+(en?"Souls":"Seelen")+'</span></div>'+
         '<div class="idle-rate-box">+'+n(rt.rate)+perStd+'</div></div>'+
       '<div class="idle-slots">'+slotsHtml+'</div>'+
-      '<div class="idle-hint">'+(en?"Place two bosses in the slots — they passively produce Souls, even while you're away (up to 2 h). Tap a boss to recruit or slot them.":"Setz zwei Bosse in die Slots — sie produzieren passiv Seelen, auch wenn du weg bist (bis zu 2 Std). Tipp einen Boss an zum Anwerben oder Einsetzen.")+'</div>'+
+      capHtml+
+      '<div class="idle-hint">'+(en?"Place two bosses in the slots — they passively produce Souls, even while you're away (up to your offline capacity). Tap a boss to recruit or slot; tap a slotted boss to remove.":"Setz zwei Bosse in die Slots — sie produzieren passiv Seelen, auch wenn du weg bist (bis zu deiner Offline-Kapazität). Tipp einen Boss an zum Anwerben/Einsetzen; tipp einen aktiven Boss an zum Entfernen.")+'</div>'+
       '<div class="idle-roster">'+rosterHtml+'</div>';
   }
   // Ein Klick auf eine Boss-Karte schaltet um: aktiv -> raus, besitzt -> rein, sonst kaufen
@@ -2358,7 +2401,7 @@
     if(!idleBeaten(key)) return;                                    // noch nicht besiegt
     idleBuy(key);                                                   // sonst kaufen
   }
-  function idleBuy(key){ if(!_idle) return; var b=idleRosterByKey(key); if(!b||!idleBeaten(key)||_idle.owned.indexOf(key)>=0) return; idleCommit(); var m=ladeMeta(); if((m.seelen||0)<b.kosten) return; m.seelen-=b.kosten; _idle.owned.push(key); m.idle={ earned:_idle.earned, rate:idleRate(_idle).rate, owned:_idle.owned, slots:_idle.slots, lastTs:_idle.lastTs }; speichereMeta(m); renderIdleBody(0); }
+  function idleBuy(key){ if(!_idle) return; var b=idleRosterByKey(key); if(!b||!idleBeaten(key)||_idle.owned.indexOf(key)>=0) return; idleCommit(); var m=ladeMeta(); if((m.seelen||0)<b.kosten) return; m.seelen-=b.kosten; _idle.owned.push(key); m.idle={ earned:_idle.earned, rate:idleRate(_idle).rate, owned:_idle.owned, slots:_idle.slots, lastTs:_idle.lastTs, capLevel:_idle.capLevel||0 }; speichereMeta(m); renderIdleBody(0); }
   function idleToSlot(key){ if(!_idle||_idle.owned.indexOf(key)<0||_idle.slots.indexOf(key)>=0) return; idleCommit(); var i=_idle.slots.indexOf(null); if(i<0) return; _idle.slots[i]=key; saveIdle(_idle); renderIdleBody(0); }
   function idleClearSlot(i){ if(!_idle) return; idleCommit(); _idle.slots[i]=null; saveIdle(_idle); renderIdleBody(0); }
   function idleUpdateBalance(){ if(!_idle) return;
@@ -2370,9 +2413,10 @@
     var mb=document.getElementById("souls-badge-value"); if(mb) mb.textContent=shown.toLocaleString("de-DE");   // Menue-Seelen-Anzeige synchron mitziehen
     // Kauf-Karten live einfärben, sobald man sie sich leisten kann (ohne Neu-Render)
     document.querySelectorAll("#idle-body .idle-price.buy").forEach(function(p){ var k=parseInt(p.getAttribute("data-kosten")||"0",10); p.classList.toggle("poor", shown < k); });
+    var cb=document.getElementById("idle-cap-buy"); if(cb){ cb.disabled = shown < parseInt(cb.getAttribute("data-kosten")||"0",10); }
   }
   function idleStartTick(){ if(_idleTimer) clearInterval(_idleTimer); var ctr=0; _idleTimer=setInterval(function(){ var modal=document.getElementById("modal-idle"); if(!modal||!modal.classList.contains("open")||!_idle){ if(_idle) idleCommit(); if(window.updateShopButtonSouls) try{ updateShopButtonSouls(); }catch(e){} clearInterval(_idleTimer); _idleTimer=null; return; } if(++ctr>=5){ ctr=0; idleCommit(); } idleUpdateBalance(); },1000); }
-  window.idleCard=idleCard; window.idleClearSlot=idleClearSlot; window.renderIdle=renderIdle;
+  window.idleCard=idleCard; window.idleClearSlot=idleClearSlot; window.idleBuyCap=idleBuyCap; window.renderIdle=renderIdle;
 </script>
 
 <script>
