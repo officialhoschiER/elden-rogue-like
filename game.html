@@ -4249,6 +4249,26 @@ function zeigeRotToast(rot) {
   setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 3200);
 }
 
+// Ist der Spieler mit Google angemeldet? (nur eingeloggt zählt für Cloud/Rangliste/Achievements)
+function istEingeloggt() { try { return !!(window.ER && ER.currentUser && ER.currentUser()); } catch (e) { return false; } }
+// Warn-Box für Ergebnis-Screens, wenn NICHT eingeloggt — sonst leer.
+function loginWarnungHtml() {
+  if (istEingeloggt()) return "";
+  return '<div style="background:rgba(120,30,30,0.28); border:1px solid #b04a4a; border-radius:6px; padding:11px 13px; margin:14px 0; font-family:sans-serif; font-size:0.86rem; color:#f0b8b8; line-height:1.5; text-transform:none;">'
+    + '⚠️ <b>' + L("Nicht angemeldet", "Not signed in") + '</b> — '
+    + L("dieser Abschluss zählt <b>nicht</b> für Rangliste & Achievements und wird nicht in der Cloud gespeichert.", "this run does <b>not</b> count for the leaderboard &amp; achievements and won't be saved to the cloud.")
+    + '<button onclick="loginVomErgebnis(this)" style="display:block; margin-top:9px; background:#2c2214; color:var(--gold); border:1px solid var(--gold-dark); border-radius:5px; padding:7px 14px; font-family:sans-serif; font-size:0.82rem; cursor:pointer;">🔑 ' + L("Jetzt mit Google anmelden", "Sign in with Google now") + '</button>'
+    + '</div>';
+}
+// Login direkt vom Ergebnis-Screen — der Run wurde lokal bereits gezählt, Login synct ihn in die Cloud.
+function loginVomErgebnis(btn) {
+  if (!window.ER || !ER.signInWithGoogle) return;
+  btn.disabled = true; btn.textContent = L("Anmelden…", "Signing in…");
+  ER.signInWithGoogle().then(function () {
+    try { if (ER.syncNow) ER.syncNow(true); } catch (e) {}
+    btn.parentNode.innerHTML = '<div style="color:#8fe6b0; font-family:sans-serif; font-size:0.88rem;">✓ ' + L("Angemeldet — dein Fortschritt wird jetzt gespeichert.", "Signed in — your progress is now saved.") + '</div>';
+  }).catch(function () { btn.disabled = false; btn.textContent = L("🔑 Erneut versuchen", "🔑 Try again"); });
+}
 function oeffneAbschlussPopup(titel, text) {
   loescheRunSave(); // abgeschlossener Run wird nicht mehr gespeichert/fortgesetzt
   let __s = belohneSeelen(true);
@@ -4257,6 +4277,7 @@ function oeffneAbschlussPopup(titel, text) {
     <h3 style="color: var(--gold); font-size:1.6rem; margin-top:0; letter-spacing:2px; font-family: 'Mantinia', serif;">${titel}</h3>
     <p style="color:#ddd; font-size:0.95rem; font-family: sans-serif; white-space: pre-line; line-height:1.5;">${text}</p>
     <div style="color:#cda34f;font-weight:bold;font-family:sans-serif;margin:14px 0;font-size:1.05rem;">✨ +${__s} ${L("Seelen erbeutet","Souls earned")}</div>
+    ${loginWarnungHtml()}
     <button class="btn-modal-action" onclick="teileErgebnis(true, this)">${t("share_result")}</button>
     <a href="index.html" class="btn-modal-action" style="display:inline-block; text-decoration:none;" onclick="loescheRunSave()">${t("btn_main_menu")}</a>
   `;

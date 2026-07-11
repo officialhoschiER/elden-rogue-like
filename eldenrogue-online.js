@@ -1118,7 +1118,15 @@
       LB_CLOUD_FELDER.forEach(function (k) { delete doc[k]; });
       if (doc.stats && typeof doc.stats === "object") { var sc = Object.assign({}, doc.stats); LB_STATS_FELDER.forEach(function (k) { delete sc[k]; }); doc.stats = sc; }
     }
-    try { fbDB.collection("users").doc(currentUser.uid).set(doc, { merge: true }); } catch (e) { console.warn("[ER] cloudPush:", e); }
+    // Schreiben mit EINEM Retry: schlägt der erste Push fehl (Netz/Token-Hänger), nach 4s nochmal —
+    // sonst ginge z.B. ein frischer Spiel-Abschluss still verloren (nur console.warn, kein erneuter Versuch).
+    try {
+      var ref = fbDB.collection("users").doc(currentUser.uid);
+      ref.set(doc, { merge: true }).catch(function (e) {
+        console.warn("[ER] cloudPush (1. Versuch):", e);
+        setTimeout(function () { try { if (currentUser) ref.set(doc, { merge: true }).catch(function (e2) { console.warn("[ER] cloudPush (Retry):", e2); }); } catch (_) {} }, 4000);
+      });
+    } catch (e) { console.warn("[ER] cloudPush:", e); }
   }
 
   function cloudSyncOnLogin() {
