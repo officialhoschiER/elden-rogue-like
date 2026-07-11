@@ -580,6 +580,7 @@ h1, h2, h3, .btn-menu, .btn-combat, .btn-social, .game-author-tag, #region-displ
   <div id="death-screen">
     <div class="death-text" id="ui-death-title">DU BIST GESTORBEN</div>
     <div class="death-souls" id="death-souls-line" style="color:#cda34f; font-family:sans-serif; margin:6px 0 14px; font-size:1rem; font-weight:bold;"></div>
+    <div id="death-login-warn" style="max-width:420px; margin:0 auto 12px;"></div>
     <div class="death-actions">
       <button class="death-btn" id="ui-btn-new-run-death" onclick="direktNeustarten()">Neuen Run starten</button>
       <button class="death-btn" id="ui-btn-share-death" onclick="teileErgebnis(false, this)">Ergebnis kopieren</button>
@@ -1916,6 +1917,7 @@ function zeigeTodesBildschirm(endgueltig) {
   let __sl = document.getElementById("death-souls-line");
   if (__sl) __sl.innerHTML = ICO("lords-rune-tools-elden-ring-wiki-guide.png", "margin-right:5px;") + "+" + __s + " " + L("Seelen erbeutet","Souls earned");
   if (window.ER) ER.death();
+  let __lw = document.getElementById("death-login-warn"); if (__lw) __lw.innerHTML = loginWarnungHtml();
   let __sb = document.getElementById("ui-btn-share-death"); if (__sb) __sb.innerText = t('share_result');
   let ds = document.getElementById("death-screen");
   if (ds) ds.classList.add("show");
