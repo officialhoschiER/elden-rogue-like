@@ -28,64 +28,40 @@
 
 ## B) NEUE VISION (Hoschis Redesign)
 
-**Kernidee:** Hitless-Gate raus. Die **Torbögen** werden das echte Geheim-Gate und öffnen einen großen neuen Mittelteil über **Blaidd → Waldgebiet → Messmer**.
+**Kernidee (bewusst simpel gehalten — Details kommen später):** Die **3 Tore** auf der Gräberebene entscheiden über das Mittelgebiet. Beide Mittelgebiete münden **immer** in **Messmers Festung**; danach freie Wahl zwischen **Metyr** und **Enir-Ilim**.
 
 ```
-① Gräberebene ──── Boss: Tanzlöwenbiest
-        └─ durch die TORBÖGEN gesprungen? → setzt Flag "Blaidd-Invasion"
-② Castle Ensis ─── Boss: Rellana   (HITLESS-Mechanik ENTFERNT)
-        ├─ Flag gesetzt → BLAIDD-INVASION (siehe unten) → Waldgebiet
-        └─ kein Flag   → direkt zu den Ruinen von Rauh   [ANNAHME – bestätigen]
+① Gräberebene (mit Toren) ── Boss: Tanzlöwenbiest
+② Castle Ensis ───────────── Boss: Rellana
+      ├─ 3 Tore gemacht → ③A Waldgebiet  (mit Blaidds Hilfe)
+      └─ sonst          → ③B Gruselwald
+④ Festung von Messmer ─────── Boss: Messmer        ← BEIDE Wege münden IMMER hier
+      ├─ Weg "Finger" → Fingerruinen ─ Boss: Metyr ────────────────── 🏆 Ende
+      └─ Weg "Ruinen" → Ruinen v. Rauh (Romina) → Enir-Ilim (Gemahl Radahn) → 🏆 Ende
 ```
 
-### Blaidd-Invasion (nach Rellana, nur mit Tor-Flag)
-- **Invasion von Blaidd.** **Keine Heilung** möglich. Etwas **leichter** als der Rellana-Fight.
-- Sieg → Blaidd zeigt den **geheimen Weg zum „Beschwörer der Schlangen"**.
-  Flavor-Gag im Text: *„…keine Angst, es ist nicht B4ronyx" (lacht)*.
+### Die Etappen
+- **① Gräberebene** — durch die **3 Tore** springen entscheidet, welches Mittelgebiet kommt (Waldgebiet vs. Gruselwald).
+- **② Castle Ensis (Rellana)** — danach die Verzweigung. *(Hitless-Mechanik entfällt.)*
+- **③A Waldgebiet** *(3 Tore gemacht)* — **Blaidd** hilft dir hinein. → weiter zu Messmer.
+- **③B Gruselwald** *(Tore nicht gemacht)* — Katakomben-Horror. → weiter zu Messmer.
+- **④ Festung von Messmer** — **immer**, Boss = **Messmer**. Danach die 2 Endwege:
+  - **Weg „Finger"** → Fingerruinen → Boss **Metyr** → **Ende**.
+  - **Weg „Ruinen"** → Ruinen von Rauh (Romina) → **Enir-Ilim** → Boss **Gemahl Radahn** → **Ende**.
 
-### ③ Waldgebiet (NEU)
-- „Hier warten quasi **alle Bären** des Spiels" (Runenbären & Co.).
-- **Boss: Bären-NPC mit Krallen** (= evtl. der „Beschwörer der Schlangen"?).
-- **Sub-Route „Gruselwald"** (über Katakomben im Waldgebiet):
-  1. Katakombe im Waldgebiet betreten → Boss → **tiefere Ebene** (Gegner plötzlich **DLC-Niveau**, deutlich stärker)
-  2. → **noch eine Ebene**
-  3. → **Gruselwald** → Boss besiegen
-  4. → **Shortcut:** man kommt **direkt vor dem Waldgebiet-Boss** (dem Bären-NPC) raus.
-- Bären-NPC besiegt → **Festung von Messmer**.
-
-### ④ Festung von Messmer (NEU)
-- **Boss: Messmer.**
-- Sieg → **Ruinen von Rauh**.
-
-### ⑤ Ruinen von Rauh → ⑥ Enir-Ilim
-- Wie gehabt: Romina (Scharlachfäule) → Enir-Ilim → Gemahl Radahn → Haupt-Ende.
-- **Fingerruinen/Metyr** (Geheim-Ende) via Rauh-Gold-Pfad — **Status: bleibt? [bestätigen]**
-
-### Neuer Gesamtfluss (Vision)
-```
-Mohg → Gräberebene(Tore?) → Castle Ensis (Rellana)
-   ├─ MIT Tor-Flag:  Blaidd-Invasion → Waldgebiet (Bären + Gruselwald-Katakomben)
-   │                 → Bären-NPC → Festung Messmer → Ruinen v. Rauh → Enir-Ilim
-   └─ OHNE Tor-Flag: Ruinen v. Rauh → Enir-Ilim
-Enir-Ilim (Gemahl Radahn) → Haupt-Ende      |  Rauh-Gold-Pfad → Fingerruinen (Metyr) → Geheim-Ende
-```
+### Was sich ggü. der alten Fassung ändert
+- Blaidd ist jetzt einfach der **Türöffner ins Waldgebiet** (keine separate Invasion-Kette mehr).
+- **Waldgebiet & Gruselwald** sind die zwei Mittel-Alternativen (nicht mehr verschachtelt).
+- **Messmer immer danach.**
+- **Fingerruinen/Metyr** ist jetzt ein **direkter Wahl-Weg** nach Messmer (kein Rauh-Gold-Pfad-Geheimnis mehr).
+- Der alte **Abgrundwald** entfällt.
 
 ---
 
-## C) OFFENE FRAGEN / LÜCKEN (zu klären)
+## C) OFFENE PUNKTE (klein halten)
 
-1. **Was wird aus Midra / Abgrundwald?** Der Hitless-Weg ist raus → Midra ist aktuell verwaist.
-   → Optionen: **(a)** Midra = Gruselwald-Boss (Wahnsinn passt thematisch top), **(b)** anders gaten, **(c)** streichen.
-2. **Weg ohne Tore:** Rellana → direkt Rauh? (Annahme oben) — bestätigen.
-3. **„Beschwörer der Schlangen" = Bären-NPC** (Fake-Out-Gag) oder zwei verschiedene NPCs?
-4. **Belohnungen** für die neuen Bosse (Blaidd, Bären-NPC, Messmer)? Aktuell keine definiert.
-5. **Gruselwald-Anreiz:** Wenn er nur zum selben Boss führt → braucht einen Grund (härter = bessere Beute? oder einziger Weg zu einem Extra?).
-6. **Balance der zwei Wege:** Tor-Zweig ist RIESIG (Blaidd→Waldgebiet→Messmer→Rauh→Enir), Nicht-Tor-Zweig kurz. Der lange Weg braucht ein dickes Reward (Messmers Große Rune?).
+1. **Bosse von Waldgebiet & Gruselwald?** Vorschlag: **Gruselwald = Midra** (Wahnsinn-Mechanik passt & rettet den Content), **Waldgebiet = Bären-NPC**.
+2. **Messmer-Belohnung?** (Große Rune?) — später.
+3. **Tanzlöwe/Rellana** bleiben als Bosse von Gräberebene/Ensis? (Annahme: ja.)
 
----
-
-## D) IDEEN zum Einarbeiten
-- **Midra rettet sich in den Gruselwald** → Wahnsinn-Mechanik + „alles dunkel" bleibt erhalten, kein Content verloren.
-- **Belohnungen:** Blaidd → Blaidd-Waffe/Rüstung · Bären-NPC → Krallen-Waffe · **Messmer → Große Rune** (+ Flammen-Buff) als Lohn für den langen Weg.
-- **„Keine Heilung"** als optionalen Härtegrad auch bei Bären-NPC/Messmer wiederverwenden.
-- **Torbögen sichtbarer machen:** dezenter Hinweis, dass sie etwas bewirken (sonst findet's keiner).
+*(Belohnungen, Feintuning, Flavor — alles „später", wie besprochen.)*
