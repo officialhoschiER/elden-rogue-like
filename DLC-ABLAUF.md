@@ -79,11 +79,22 @@
 - **Gruselwald:** **KEINE normalen Gegner.** Erbt die komplette **Abgrundwald-Mechanik**: getarnte/schwarze Icons, man muss den **exakten sicheren Pfad** kennen; Fehltritt → **Aging Untouchable** (unbesiegbar, losreißen) → **+25% Wahnsinn**, bei **100%** ist der Run vorbei. Boss: **Midra** *(`bosse/midra.png`)*. Hintergrund: erbt **`abyssalwoods.jpg`**.
 - **Garten-Boss:** **Gaius** *(Bild vorhanden: `bosse/Gauis.png`)*
 - **Messmer:** härtester Boss vor den Endbossen, **Feuer-Thema** *(`bosse/messmer.webp`)*
-- **Finger Mimic:** echtes **Rucksack-Item** *(`icons/finger_mimic.webp`)*. Rucksack voll → Auswahl, was weggeworfen wird. **Benutzen gibt +10% Schaden.**
+- **Finger Mimic:** echtes **Rucksack-Item** *(`icons/finger_mimic.webp`)*, Drop vom **Fingercreeper** (Waldgebiet). Rucksack voll → Auswahl, was weggeworfen wird.
+  ⚠️ **Es ist eine MIMIC — eine Falle:** wer sie **benutzt**, bekommt **10% Schaden** *(auf sich selbst)* und sie ist **weg** ⇒ **kein Metyr mehr**.
+  Ihr einziger echter Zweck: **im Garten einsetzen**, um das **Gebiet der Finger** (→ Metyr) zu öffnen.
 - **Alter Abgrundwald:** entfällt (`ABYSS_*`-Bilder werden **nicht** mehr gebraucht).
 - **Boss-Parität gelöst:** Ruinen (Romina) + Enir (Radahn) ↔ Garten (**Gaius**) + Gebiet der Finger (**Metyr**) = je 2 Bosse ✅
 
 ## D) NOCH OFFEN
-1. **Finger-Mimic-Trade-off:** Wenn man sie für **+10% Schaden benutzt** — ist sie dann **weg** (⇒ kein Metyr mehr)? Wäre eine geile Gier-Falle, muss aber gewollt sein.
+- **Design: nichts mehr** — alles entschieden. ✅
+- **Bilder** (Endung egal, Name muss stimmen): `icons/torbogen.*` · `bosse/romina.*` · `background/waldgebiet.*` · `background/messmer.*` · `background/rauh.*` · `background/enir.*` · je 3 Gegner für `ENSIS_*`, `RAUH_*`, `ENIR_*`.
+  *(Gruselwald braucht nichts — keine Gegner, erbt `abyssalwoods.jpg`.)*
+
+## E) BAU-REIHENFOLGE
+1. **Skelett:** neue Gebiete registrieren + Flow verdrahten (Tore → Wald/Gruselwald → Messmer → Garten/Ruinen → Finger/Metyr), Hitless + Abgrundwald raus.
+2. **Messmer:** Aufstieg → Schalter → Gebiet kippt → Abstieg (3-4-2-4-3) + **Statue** (beten → Garten frei) → Boss unten.
+3. **Waldgebiet:** alle Knoten-Icons = `baum.png`, Beschreibungen ehrlich, geheimer **Fingercreeper** → **Finger Mimic**.
+4. **Gebiet der Finger:** nur **Wurm-Gegner** + 30%-Immobilize-Spell (dodgebar) → Metyr.
+5. **Gruselwald:** Abgrund-Mechanik (sicherer Pfad + Untouchable + Wahnsinn) → Midra.
 
 *(Belohnungen, Feintuning, Flavor — „später".)*
