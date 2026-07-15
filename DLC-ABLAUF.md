@@ -90,11 +90,17 @@
 - **Bilder** (Endung egal, Name muss stimmen): `icons/torbogen.*` · `bosse/romina.*` · `background/waldgebiet.*` · `background/messmer.*` · `background/rauh.*` · `background/enir.*` · je 3 Gegner für `ENSIS_*`, `RAUH_*`, `ENIR_*`.
   *(Gruselwald braucht nichts — keine Gegner, erbt `abyssalwoods.jpg`.)*
 
-## E) BAU-REIHENFOLGE
-1. **Skelett:** neue Gebiete registrieren + Flow verdrahten (Tore → Wald/Gruselwald → Messmer → Garten/Ruinen → Finger/Metyr), Hitless + Abgrundwald raus.
-2. **Messmer:** Aufstieg → Schalter → Gebiet kippt → Abstieg (3-4-2-4-3) + **Statue** (beten → Garten frei) → Boss unten.
-3. **Waldgebiet:** alle Knoten-Icons = `baum.png`, Beschreibungen ehrlich, geheimer **Fingercreeper** → **Finger Mimic**.
-4. **Gebiet der Finger:** nur **Wurm-Gegner** + 30%-Immobilize-Spell (dodgebar) → Metyr.
-5. **Gruselwald:** Abgrund-Mechanik (sicherer Pfad + Untouchable + Wahnsinn) → Midra.
+## E) BAU-REIHENFOLGE — **fertig ✅**
+1. ✅ **Skelett:** Gebiete registriert + Flow verdrahtet (Tore → Wald/Gruselwald → Messmer → Garten/Ruinen → Finger/Metyr), Hitless + alter Abgrundwald raus.
+2. ✅ **Messmer:** Aufstieg → oben Schalter (Typ 23, kein Boss) → Festung kippt (Drehanimation + Sound) → Abstieg **3-4-2-4-3** + **Statue** (Typ 22, beten → Garten frei) → Messmer unten.
+3. ✅ **Waldgebiet:** alle Nicht-Boss-Icons = `baum.png`, Beschreibungen ehrlich, **genau ein** geheimer **Fingercreeper** (Typ 21) → **Finger Mimic**.
+4. ✅ **Gebiet der Finger:** nur **Fingerwürmer** (~22% der Kacheln, sichtbar & umgehbar) + **30%-Bannspell** statt Angriff, dodgebar mit der normalen Rollchance → Metyr.
+5. ✅ **Gruselwald:** erbt die komplette Abgrund-Mechanik über den internen Key `AbyssalWoods` (sicherer Pfad + Untouchable + Wahnsinn) → Midra.
+
+### Getestet
+Aufstieg 2-3-4-3-4-3-2-1 → Schalter → Abstieg 3-4-2-4-3-1 → Boss (alle Wege verbunden, keine Sackgassen) · Waldgebiet 40 Karten = immer exakt 1 Fingercreeper · Mimic: Drop, Wegwerf-Auswahl bei vollem Rucksack, Benutzen = −10% HP + weg · Bann: kostet die Aktion, Trank bleibt, dodgebar · Rellana/Messmer/Gaius-Verzweigungen alle korrekt.
+
+### Balance-Notiz
+Der Fingerwurm liegt bewusst **unter** Elite-Niveau (Basis 45 HP / 7,5 dmg). Mit dem Bann-Spell wäre er sonst fast so gefährlich wie Metyr selbst (3800/195) — Metyr ist nicht schwierigkeitsskaliert, das Fußvolk schon.
 
 *(Belohnungen, Feintuning, Flavor — „später".)*
