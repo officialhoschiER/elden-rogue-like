@@ -75,15 +75,15 @@
 ---
 
 ## C) ENTSCHIEDEN ✅
-- **Waldgebiet-Boss:** 🌻 **Sonnenblume**
-- **Gruselwald-Boss:** **Midra** (+ Wahnsinn-Mechanik — rettet den Abgrundwald-Content)
-- **Messmer:** härtester Boss vor den Endbossen, **Feuer-Thema**
-- **Finger Mimic:** echtes **Rucksack-Item**. Rucksack voll → Auswahl, was weggeworfen wird.
-  **Benutzen gibt +10% Schaden.**
-- **Alter Abgrundwald:** entfällt (Gegner-Bilder `ABYSS_*` werden **nicht** mehr gebraucht).
+- **Waldgebiet-Boss:** 🌻 **Sonnenblume** *(`bosse/sonnenblume.png`)*
+- **Gruselwald:** **KEINE normalen Gegner.** Erbt die komplette **Abgrundwald-Mechanik**: getarnte/schwarze Icons, man muss den **exakten sicheren Pfad** kennen; Fehltritt → **Aging Untouchable** (unbesiegbar, losreißen) → **+25% Wahnsinn**, bei **100%** ist der Run vorbei. Boss: **Midra** *(`bosse/midra.png`)*. Hintergrund: erbt **`abyssalwoods.jpg`**.
+- **Garten-Boss:** **Gaius** *(Bild vorhanden: `bosse/Gauis.png`)*
+- **Messmer:** härtester Boss vor den Endbossen, **Feuer-Thema** *(`bosse/messmer.webp`)*
+- **Finger Mimic:** echtes **Rucksack-Item** *(`icons/finger_mimic.webp`)*. Rucksack voll → Auswahl, was weggeworfen wird. **Benutzen gibt +10% Schaden.**
+- **Alter Abgrundwald:** entfällt (`ABYSS_*`-Bilder werden **nicht** mehr gebraucht).
+- **Boss-Parität gelöst:** Ruinen (Romina) + Enir (Radahn) ↔ Garten (**Gaius**) + Gebiet der Finger (**Metyr**) = je 2 Bosse ✅
 
 ## D) NOCH OFFEN
-1. **Garten-Boss?** — Boss-Parität: Ruinen (**Romina**) + Enir (**Radahn**) = 2 Bosse, aber Garten (**?**) + Gebiet der Finger (**Metyr**) = nur 1. Kriegt der Garten einen eigenen Boss?
-2. **Finger-Mimic-Trade-off:** Wenn man sie für **+10% Schaden benutzt** — ist sie dann **weg** (⇒ kein Metyr mehr)? Das wäre eine geile Gier-Falle, muss aber gewollt sein.
+1. **Finger-Mimic-Trade-off:** Wenn man sie für **+10% Schaden benutzt** — ist sie dann **weg** (⇒ kein Metyr mehr)? Wäre eine geile Gier-Falle, muss aber gewollt sein.
 
 *(Belohnungen, Feintuning, Flavor — „später".)*
