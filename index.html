@@ -1415,6 +1415,9 @@
   function itemImgHtml(typ, item, size){ var src = typ==="waffe" ? weaponImg(item.name) : (ARMOR_IMG[item.name]||""); var fb = typ==="waffe" ? "🗡️" : "🛡️"; if(!src) return '<span style="font-size:'+size+'px;line-height:1;">'+fb+'</span>'; return '<img src="'+src+'" alt="" style="width:'+size+'px;height:'+size+'px;object-fit:contain;" onerror="imgFallback(this,&#39;'+fb+'&#39;,'+size+')">'; }
   var CHEST_COST = 300;   // Preis pro Truhe (Duplikat erstattet die Hälfte)
   var PITY_THRESHOLD = 4; // nach so vielen Duplikaten in Folge ist die nächste Truhe garantiert ein NEUES Item
+  var CHEST_BULK = 10;          // "10× öffnen"
+  var CHEST_BULK_RABATT = 0.10; // 10% Rabatt auf den Gesamtpreis beim 10er-Kauf
+  function chestBulkKosten(){ return Math.round(CHEST_COST * CHEST_BULK * (1 - CHEST_BULK_RABATT)); }
   function pityGet(m, typ){ if(!m.chestPity||typeof m.chestPity!=="object") m.chestPity={waffe:0,ruestung:0}; return m.chestPity[typ]||0; }
   function pitySet(m, typ, v){ if(!m.chestPity||typeof m.chestPity!=="object") m.chestPity={waffe:0,ruestung:0}; m.chestPity[typ]=v; }
   function lockedWeapons(m){ return ALL_WEAPONS.filter(function(w){ return m.unlockedWeapons.indexOf(w.name) < 0; }); }
@@ -1454,6 +1457,69 @@
     chestReveal(typ, item, owned, refund, pityAktiv);
   }
   window.oeffneTruhe = oeffneTruhe;
+
+  // 10 Truhen auf einmal — 10% Rabatt auf den Gesamtpreis. Pech-Schutz zählt pro Zug ganz normal weiter.
+  function oeffneTruhe10(typ) {
+    var m = ladeMeta();
+    var kosten = chestBulkKosten();
+    if (m.seelen < kosten) return;
+    var all = typ === "waffe" ? ALL_WEAPONS : ALL_ARMOR;
+    var liste = typ === "waffe" ? m.unlockedWeapons : (m.unlockedArmor = m.unlockedArmor || []);
+    if (all.filter(function (x) { return liste.indexOf(x.name) < 0; }).length === 0) return;   // schon komplett
+    m.seelen -= kosten;
+    var res = [], refundGesamt = 0;
+    for (var i = 0; i < CHEST_BULK; i++) {
+      var locked = all.filter(function (x) { return liste.indexOf(x.name) < 0; });
+      var pity = pityGet(m, typ);
+      var pityAktiv = pity >= PITY_THRESHOLD && locked.length > 0;
+      var item;
+      if (pityAktiv) {
+        var lp = locked.filter(function (x) { return x.rarity === rollRaritaet(); });
+        if (!lp.length) lp = locked;
+        item = lp[Math.floor(Math.random() * lp.length)];
+      } else {
+        var pool = all.filter(function (x) { return x.rarity === rollRaritaet(); });
+        if (!pool.length) pool = all;
+        item = pool[Math.floor(Math.random() * pool.length)];
+      }
+      var owned = liste.indexOf(item.name) >= 0;
+      var refund = 0;
+      if (owned) { refund = Math.floor(CHEST_COST / 2); m.seelen += refund; refundGesamt += refund; pitySet(m, typ, Math.min(PITY_THRESHOLD, pity + 1)); }
+      else { liste.push(item.name); pitySet(m, typ, 0); }
+      res.push({ item: item, dup: owned, pity: pityAktiv });
+    }
+    speichereMeta(m);
+    chestReveal10(typ, res, refundGesamt, kosten);
+  }
+  window.oeffneTruhe10 = oeffneTruhe10;
+
+  function chestReveal10(typ, res, refundGesamt, kosten) {
+    var body = document.getElementById("shop-body"); if (!body) return;
+    updateShopButtonSouls();
+    body.innerHTML = '<div style="text-align:center;padding:24px 0;">'
+      + '<img src="' + CHEST_IMG + '" alt="" style="width:160px;display:inline-block;animation:chestShake 0.5s ease-in-out 3;">'
+      + '<div style="color:#cda34f;font-family:sans-serif;margin-top:8px;letter-spacing:1px;">' + shopL("10 Truhen öffnen sich…", "10 chests open…") + '</div></div>';
+    setTimeout(function () {
+      var neu = res.filter(function (r) { return !r.dup; }).length;
+      var cards = res.map(function (r) {
+        var col = RARITY_COL[r.item.rarity];
+        return '<div style="background:#0f0f0f;border:1px solid ' + (r.dup ? '#333' : col) + ';border-radius:8px;padding:7px 4px;text-align:center;' + (r.dup ? 'opacity:0.5;' : 'box-shadow:0 0 10px ' + col + '55;') + '">'
+          + '<div style="filter:drop-shadow(0 0 6px ' + col + ');">' + itemImgHtml(typ, r.item, 42) + '</div>'
+          + '<div style="color:' + col + ';font-size:0.66rem;font-family:Georgia,serif;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + r.item.name + '</div>'
+          + '<div style="font-size:0.58rem;font-weight:bold;letter-spacing:0.5px;color:' + (r.dup ? '#8a7f68' : '#7fe0a4') + ';">' + (r.dup ? shopL("Duplikat", "Dupe") : shopL("NEU", "NEW")) + '</div>'
+          + '</div>';
+      }).join("");
+      body.innerHTML = '<div style="padding:12px 0;">'
+        + '<div style="text-align:center;color:#cda34f;font-family:Cinzel,serif;letter-spacing:2px;font-size:1.1rem;">10× ' + shopL("geöffnet", "opened") + '</div>'
+        + '<div style="text-align:center;color:#9aa0a6;font-family:sans-serif;font-size:0.8rem;margin:4px 0 12px;">'
+          + '<b style="color:#7fe0a4;">' + neu + '</b> ' + shopL("neu", "new") + ' · <b>' + (res.length - neu) + '</b> ' + shopL("Duplikate", "dupes")
+          + (refundGesamt > 0 ? ' · <b style="color:#cda34f;">+' + refundGesamt + '</b> ' + shopL("erstattet", "refunded") : '')
+          + ' · ' + shopL("Kosten", "Cost") + ': <b>' + kosten + '</b> <span style="color:#7fe0a4;">(−10%)</span></div>'
+        + '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:7px;">' + cards + '</div>'
+        + '<div style="text-align:center;"><button class="btn-modal-action" style="margin-top:14px;" onclick="renderShop()">' + shopL("Weiter", "Continue") + '</button></div>'
+        + '</div>';
+    }, 1650);
+  }
 
   function chestReveal(typ, item, dup, refund, pityWar) {
     var body = document.getElementById("shop-body"); if (!body) return;
@@ -1642,7 +1708,20 @@
     var inner = '<img src="' + CHEST_IMG + '" alt="" style="width:58px;height:46px;object-fit:contain;flex-shrink:0;">'
       + '<div style="flex:1;"><strong style="color:#ede6d4;">' + titel + '</strong><br>'
       + '<span style="color:#9aa0a6;font-size:0.78rem;">' + (leer ? shopL("Alle gesammelt","All collected") : shopL("Zufälliges Item","Random item")) + ' · ' + frei + '/' + gesamt + '</span></div>' + rechts;
-    return zeile(inner, { click: ok?("oeffneTruhe('"+typ+"')"):null, dim: !ok&&!leer, border: leer?'#4a6':'#333' }) + pityBarHtml(typ, m);
+    return zeile(inner, { click: ok?("oeffneTruhe('"+typ+"')"):null, dim: !ok&&!leer, border: leer?'#4a6':'#333' }) + truheBulkBtn(typ, m) + pityBarHtml(typ, m);
+  }
+
+  // "10× öffnen" mit 10% Rabatt — nur solange es noch was zu sammeln gibt
+  function truheBulkBtn(typ, m) {
+    var pool = typ === "waffe" ? lockedWeapons(m) : lockedArmor(m);
+    if (pool.length === 0) return "";
+    var kosten = chestBulkKosten(), voll = CHEST_COST * CHEST_BULK, ok = m.seelen >= kosten;
+    return '<button ' + (ok ? 'onclick="oeffneTruhe10(\'' + typ + '\')"' : 'disabled') + ' style="width:100%;margin:6px 0 2px;background:#1b1b1b;border:1px solid ' + (ok ? '#5a4a2a' : '#2c2c2c') + ';border-radius:6px;padding:7px 10px;color:' + (ok ? '#cda34f' : '#666') + ';font-family:sans-serif;font-size:0.8rem;cursor:' + (ok ? 'pointer' : 'not-allowed') + ';display:flex;align-items:center;justify-content:center;gap:8px;">'
+      + '<b>10× ' + shopL("öffnen", "open") + '</b>'
+      + '<span style="text-decoration:line-through;color:#6b6b6b;font-size:0.74rem;">' + voll + '</span>'
+      + '<span style="font-weight:bold;">' + kosten + '</span>'
+      + '<span style="background:rgba(46,204,113,0.18);border:1px solid rgba(46,204,113,0.5);color:#7fe0a4;border-radius:10px;padding:1px 7px;font-size:0.7rem;font-weight:bold;">−10%</span>'
+      + '</button>';
   }
 
   function renderShop() {
