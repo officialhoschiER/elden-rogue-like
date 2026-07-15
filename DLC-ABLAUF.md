@@ -43,16 +43,17 @@
       ├─ Ruinen v. Rauh (Romina) → Enir-Ilim → Gemahl Radahn ────────── 🏆 Haupt-Ende
       └─ Garten (nur wenn an Statue gebetet)
              └─ am Ende: FINGER MIMIC vorhanden?
-                   ├─ ja  → Metyr ─────────────────────────────────── 🏆 Geheim-Ende
+                   ├─ ja  → Gebiet der Finger (Wurm-Gegner) → Metyr ── 🏆 Geheim-Ende
                    └─ nein → "hier ist nichts" → Enir-Ilim (→ Radahn)
 ```
+*Beide Wege sind damit gleich lang: Ruinen+Enir ↔ Garten+Gebiet der Finger.*
 
 > 🖐 **Metyr braucht 3 Schlösser:** (1) **3 Tore** → Waldgebiet → **Fingercreeper** → **Finger Mimic**, (2) an der **Statue** in Messmers Abstieg **beten** → Garten frei, (3) im **Garten** die Finger benutzen. Fehlt eins → man landet in Enir-Ilim.
 
 ### Die Etappen
 - **① Gräberebene** — durch die **3 Tore** springen entscheidet das Mittelgebiet.
 - **② Castle Ensis (Rellana)** — danach die Verzweigung. *(Hitless-Mechanik entfällt.)*
-- **③A Waldgebiet** *(3 Tore)* — Blaidd hilft rein. **Alle Knoten sehen gleich aus (Bäume — gleiche Vorschau UND Beschreibung).** Einer ist heimlich der **Fingercreeper** → dropt die **Finger Mimic** (Pflicht für Metyr). Region-Boss am Ende: *offen (Bären-NPC?)* → Messmer.
+- **③A Waldgebiet** *(3 Tore)* — Blaidd hilft rein. **Alle Knoten-ICONS sind Bäume** (optische Tarnung) — die **Beschreibungen bleiben ehrlich** und sagen, was dahinter steckt (wer liest, findet's). Einer ist heimlich der **Fingercreeper** → dropt die **Finger Mimic** (Pflicht für Metyr). Region-Boss am Ende: *offen (Bären-NPC?)* → Messmer.
 - **③B Gruselwald** *(keine Tore)* — Katakomben-Horror → Messmer.
 - **④ Festung von Messmer (NEU — Gebiet kippt):**
   - Erst normaler **Aufstieg** — aber oben **kein Boss**, sondern ein **Schalter**.
@@ -61,8 +62,9 @@
   - Unten: **Boss Messmer**.
 - **Nach Messmer — 2 Wege:**
   - **Ruinen** → Rauh (Romina) → **Enir-Ilim** → **Gemahl Radahn** → Haupt-Ende.
-  - **Garten** *(nur wenn an Statue gebetet — Gebiet rechts oben im DLC, „alles normal")* → am Ende **Finger Mimic benutzen** → **Metyr** (Geheim-Ende). **Ohne** Finger Mimic: „hier ist nichts" → man kommt auch nach **Enir-Ilim**.
-- **Ziel:** beide Endbosse **gleich lang** — der Garten-Weg soll so lang sein wie Ruinen→Enir.
+  - **Garten** *(nur wenn an Statue gebetet — Gebiet rechts oben im DLC, „alles normal")* → am Ende **Finger Mimic benutzen** → **Gebiet der Finger** → **Metyr** (Geheim-Ende). **Ohne** Finger Mimic: „hier ist nichts" → man kommt auch nach **Enir-Ilim**.
+- **⑥ Gebiet der Finger (NEU):** **jeder** Gegner ist der **Wurm-Gegner**. Neue Mechanik: **30% Chance, einen Spell zu casten, der dich 1 Runde bewegungsunfähig macht** — per normaler Ausweich-Chance dodgebar (wie im echten Spiel). Am Ende: **Metyr**.
+- **Ziel erreicht:** beide Wege gleich lang — **Ruinen + Enir** ↔ **Garten + Gebiet der Finger**.
 
 ### Was sich ggü. der alten Fassung ändert
 - Blaidd = **Türöffner ins Waldgebiet**. Waldgebiet & Gruselwald = die zwei Mittel-Alternativen.
@@ -72,11 +74,20 @@
 
 ---
 
-## C) OFFENE PUNKTE (klein halten)
+## C) OFFENE PUNKTE — blockiert den Bau
 
-1. **Länge Metyr-Weg:** Garten allein vs. Ruinen+Enir (2 Gebiete). Damit's gleich lang ist → Garten ein **volles** Gebiet, evtl. **Garten → (Finger) → Fingerruinen-Puzzle → Metyr** (parallel zu Ruinen→Enir→Radahn)? — deine Entscheidung.
-2. **Bosse:** Gruselwald = **Midra**? · Waldgebiet-Region-Boss = **Bären-NPC**? *(Fingercreeper = geheimer Node, nicht der Region-Boss.)*
-3. **Garten ohne Finger Mimic** endet in Enir-Ilim = gleiches Ergebnis wie Ruinen — okay, oder kriegt der Garten ein kleines eigenes Reward?
-4. **Messmer/Statue-Belohnung** & wie auffällig die Statue/das Geräusch sein soll — später.
+**🔴 Muss geklärt sein, sonst rate ich:**
+1. **Gruselwald ist komplett leer.** Das ist der Weg für JEDEN, der die Tore nicht macht (= die Mehrheit!). Was steckt drin — Boss? Mechanik? → Vorschlag: **Midra** + Wahnsinn (rettet den Abgrundwald-Content).
+2. **Boss-Parität stimmt nicht:**
+   - Ruinen (**Romina**) + Enir (**Radahn**) = **2 Bosse**
+   - Garten (**?**) + Gebiet der Finger (**Metyr**) = **1 Boss**
+   → Braucht der **Garten einen eigenen Boss**? Sonst ist der Metyr-Weg zwar gleich lang, aber ein Boss ärmer.
+3. **Waldgebiet-Region-Boss?** (Bären-NPC?) — der Fingercreeper ist ja nur der geheime Node.
+4. **Messmer**: HP/Schaden/Schwäche? (Vorschlag: härtester Boss vor den Endbossen, Feuer-Thema)
 
-*(Belohnungen, Feintuning, Flavor — alles „später".)*
+**🟡 Klein / später:**
+5. **Finger Mimic**: echtes Item im Rucksack oder nur ein Run-Flag?
+6. **Garten ohne Finger Mimic** → Enir-Ilim (= gleiches Ende wie Ruinen). Okay, oder eigenes Mini-Reward?
+7. **Bilder fehlen komplett:** Fingercreeper, Wurm-Gegner, Messmer, Statue-Icon, Hintergründe (Waldgebiet, Gruselwald, Festung, Garten, Gebiet der Finger).
+
+*(Belohnungen, Feintuning, Flavor — „später".)*
