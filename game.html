@@ -941,6 +941,8 @@ let fingerPos = 90;                // aktuelle Position im 10×10-Gitter (Start 
 let fingerGeblasen = [];           // Indizes der bereits geblasenen Finger
 let fingerNodes = [];              // die 3 Finger-Knoten — pro Run an ZUFÄLLIGEN Orten (im Save gehalten)
 let fingerPfad = [90];             // besuchte Felder (Einbahn: nur hoch/rechts, kein Zurück)
+let hatFingerMimic = false;        // Drop des Fingercreepers (Waldgebiet) — Pflicht, um im Garten das Gebiet der Finger zu öffnen
+let hatGebetet = false;            // an der Statue in Messmers Abstieg gebetet -> schaltet den Garten frei
 const FINGER_START = 90;           // unten links
 const FINGER_METYR = 9;            // oben rechts (Metyr)
 
@@ -970,7 +972,7 @@ function speichereRun() {
     v: 1, hardMode: hardMode, challenge: activeChallenge, ts: Date.now(), runPlayMs: runPlayMs,
     runSeed, seedIsCustom, seedRngCalls, runEbeneMax, runBosseGelegt,
     torbogenSpruenge, wolfsgeheulGehoert, wahnsinn, untouchableRunden, rellanaGetroffen, scharlachRot, dlcWahlOffen,
-    rauhGeheimIntakt, inFingerruinen, fingerPos, fingerGeblasen, fingerNodes, fingerPfad,
+    rauhGeheimIntakt, inFingerruinen, fingerPos, fingerGeblasen, fingerNodes, fingerPfad, hatFingerMimic, hatGebetet,
     spielerHp, spielerMaxHp, spielerFlasks, maxKlassenFlasks, estusHeilProzent,
     gewaehlteKlasse, basisAusweichChance, playerImageStr,
     waffenName, waffenSchaden, waffenUpgrade, waffenRaritaet, waffenSchadensarten,
@@ -1013,7 +1015,7 @@ function ladeGespeichertenRun() {
     if (window.ER && ER.setSeedRun) ER.setSeedRun(seedIsCustom);
     setTimeout(aktualisiereSeedAnzeige, 0);
     torbogenSpruenge = d.torbogenSpruenge || 0; wolfsgeheulGehoert = !!d.wolfsgeheulGehoert; wahnsinn = d.wahnsinn || 0; untouchableRunden = d.untouchableRunden || 0; rellanaGetroffen = !!d.rellanaGetroffen; scharlachRot = !!d.scharlachRot; dlcWahlOffen = !!d.dlcWahlOffen;
-    rauhGeheimIntakt = d.rauhGeheimIntakt !== false; inFingerruinen = !!d.inFingerruinen; fingerPos = (typeof d.fingerPos === "number") ? d.fingerPos : 90; fingerGeblasen = d.fingerGeblasen || []; fingerNodes = d.fingerNodes || []; fingerPfad = (d.fingerPfad && d.fingerPfad.length) ? d.fingerPfad : [fingerPos];
+    rauhGeheimIntakt = d.rauhGeheimIntakt !== false; inFingerruinen = !!d.inFingerruinen; fingerPos = (typeof d.fingerPos === "number") ? d.fingerPos : 90; fingerGeblasen = d.fingerGeblasen || []; fingerNodes = d.fingerNodes || []; fingerPfad = (d.fingerPfad && d.fingerPfad.length) ? d.fingerPfad : [fingerPos]; hatFingerMimic = !!d.hatFingerMimic; hatGebetet = !!d.hatGebetet;
     setTimeout(aktualisiereWahnsinnAnzeige, 0);
     if (dlcWahlOffen) setTimeout(oeffneMohgDlcWahl, 100);   // Wahl-Popup übersteht einen Reload
     towerEtage=d.towerEtage||0;
@@ -1088,7 +1090,7 @@ function speichereMeta(m) { try { localStorage.setItem(META_KEY, JSON.stringify(
 function markiereGefolgeBoss(name) { try { if (!hardMode || !name || seedIsCustom) return; let m = ladeMeta(); m.idleUnlocked = m.idleUnlocked || []; if (m.idleUnlocked.indexOf(name) < 0) { m.idleUnlocked.push(name); speichereMeta(m); } } catch (e) {} }
 function L(de, en) { return (window.i18n && window.i18n.getLang && window.i18n.getLang() === "en") ? en : de; }
 
-const SEELEN_REGION_TIEFE = { Limgrave:0, Caelid:1, Leyndell:2, Mountaintops:3, FarumAzula:4, AshenCapital:5, EldenThrone:6, Haligtree:6, Gravesite:7, CastleEnsis:8, AbyssalWoods:9, Rauh:9, EnirIlim:10 };
+const SEELEN_REGION_TIEFE = { Limgrave:0, Caelid:1, Leyndell:2, Mountaintops:3, FarumAzula:4, AshenCapital:5, EldenThrone:6, Haligtree:6, Gravesite:7, CastleEnsis:8, Waldgebiet:9, AbyssalWoods:9, FestungMessmer:10, Rauh:11, Garten:11, EnirIlim:12 };
 function belohneSeelen(gewonnen) {
   // Seed-Run: keine Seelen (sonst Lucky-Seed-Farming) — AUSSER in der Dev-/Test-Umgebung, damit man dort vernünftig testen kann
   if (seedIsCustom && !(window.ER && ER.isDevMode && ER.isDevMode())) { letzteRunSeelen = 0; return 0; }
@@ -1323,6 +1325,9 @@ const bossResistenzen = {
   "Radagon von der Goldenen Ordnung":   { Normal: -0.25, Magie: -0.25, Feuer: 0, Heilig: 0.25 },
   "Eldenbiest":                     { Normal: -0.25, Magie: -0.25, Feuer: 0, Heilig: 0.25 },
   // --- DLC: Land des Schattens — boss-eigene Profile (überschreiben das Gebiet, zeigen sich im Eldendex) ---
+  "Sonnenblume":                        { Normal: 0, Magie: -0.20, Feuer: 0.30, Heilig: 0 },      // Pflanze: Feuer frisst sie, Magie nährt sie nur
+  "Messmer der Pfähler":                { Normal: 0, Magie: 0.20, Feuer: -0.35, Heilig: 0 },      // Flammen-Fürst: Feuer prallt ab, Magie wirkt
+  "Gaius":                              { Normal: -0.15, Magie: 0.25, Feuer: 0.10, Heilig: 0 },   // gepanzerter Reiter: Stahl prallt ab, Magie durchschlägt
   "Göttliches Tanzlöwenbiest":          { Normal: -0.20, Magie: 0, Feuer: 0.10, Heilig: 0.20 },   // Sturm/Blitz-Bestie: schwach gegen Heilig, trotzt rohem Stahl
   "Rellana, Ritterin der Zwillingsmonde": { Normal: 0.20, Magie: -0.25, Feuer: -0.20, Heilig: 0 }, // Zwillingsmonde (Magie+Feuer) -> resistent dagegen, roher Stahl wirkt
   "Midra, Herr der Wahnsinnigen Flamme":  { Normal: 0, Magie: 0, Feuer: -0.30, Heilig: 0.25 },     // Wahnsinnige Flamme fürchtet das Heilige, trotzt Feuer
@@ -1348,7 +1353,10 @@ const gebietsResistenzen = {
   // --- DLC: Land des Schattens ---
   Gravesite:    { Normal: 0.10, Heilig: 0.15, Magie: -0.15 },  // erstes Schatten-Gebiet: noch relativ offen, Heilig wirkt gut
   CastleEnsis:  { Normal: 0.15, Magie: -0.25 },              // Karianische Magier trotzen der Magie — roher Stahl wirkt
-  AbyssalWoods: { Heilig: 0.25, Feuer: -0.25 },              // die Wahnsinnige Flamme fürchtet das Heilige
+  Waldgebiet:   { Feuer: 0.25, Normal: 0.10, Magie: -0.15 }, // dichter Wald: Feuer frisst sich durch das Dickicht
+  AbyssalWoods: { Heilig: 0.25, Feuer: -0.25 },              // GRUSELWALD: die Wahnsinnige Flamme fürchtet das Heilige
+  FestungMessmer: { Magie: 0.20, Feuer: -0.30 },             // Messmers Flammen-Festung: Feuer prallt ab, Magie wirkt
+  Garten:       { Feuer: 0.20, Heilig: -0.15 },              // wuchernder Garten — Feuer wirkt, Heilig verpufft
   Rauh:         { Feuer: 0.20, Magie: -0.20 },               // die Scharlachfäule brennt weg — Feuer wirkt, Magie prallt ab
   EnirIlim:     { Feuer: 0.15, Heilig: -0.25 },              // der Verheißene Gemahl badet in heiligem Licht
   Fingerruinen: { Normal: 0.15, Feuer: 0.10, Magie: -0.25 }  // Reich der Äußeren Götter — Sternenmagie prallt ab
@@ -1410,7 +1418,10 @@ function regionBossName(region, ebene) {
   if (region === "Mohgwyn") return "Mohg, Fürst des Blutes";
   if (region === "Gravesite") return "Göttliches Tanzlöwenbiest";
   if (region === "CastleEnsis") return "Rellana, Ritterin der Zwillingsmonde";
-  if (region === "AbyssalWoods") return "Midra, Herr der Wahnsinnigen Flamme";
+  if (region === "Waldgebiet") return "Sonnenblume";
+  if (region === "AbyssalWoods") return "Midra, Herr der Wahnsinnigen Flamme";   // = Gruselwald
+  if (region === "FestungMessmer") return "Messmer der Pfähler";
+  if (region === "Garten") return "Gaius";
   if (region === "Rauh") return "Romina, Heilige der Knospe";
   if (region === "EnirIlim") return "Verheißener Gemahl Radahn";
   return "";
@@ -1427,7 +1438,8 @@ function bossSchwaecheText(bossName) {
   return lines.join("\n");
 }
 
-const regionStufe = { Limgrave:1, Liurnia:2, Caelid:2, Leyndell:3, Gelmir:3, Mountaintops:4, FarumAzula:5, AshenCapital:6, EldenThrone:7, Haligtree:8, Mohgwyn:8, Gravesite:9, CastleEnsis:10, AbyssalWoods:11, Rauh:11, EnirIlim:12 };
+// DLC-Kette: Gravesite 9 → Ensis 10 → Waldgebiet/Gruselwald(=AbyssalWoods) 11 → Festung Messmer 12 → Rauh/Garten 13 → Enir-Ilim 14
+const regionStufe = { Limgrave:1, Liurnia:2, Caelid:2, Leyndell:3, Gelmir:3, Mountaintops:4, FarumAzula:5, AshenCapital:6, EldenThrone:7, Haligtree:8, Mohgwyn:8, Gravesite:9, CastleEnsis:10, Waldgebiet:11, AbyssalWoods:11, FestungMessmer:12, Rauh:13, Garten:13, EnirIlim:14 };
 function gibStageNummer(){ return inSubDungeon ? 1 : (regionStufe[aktuelleRegion] || 1); }
 function gibTalismanTier(){ return Math.min(Math.max(gibStageNummer() - 1, 0), 3); }
 function tierSuffix(tier){ return tier > 0 ? " +" + tier : ""; }
@@ -1552,7 +1564,11 @@ const gebietsGegnerKonfig = {
   // --- DLC: Land des Schattens (Bilder in images/Gegner/ nachlegen — Fallback greift bis dahin) ---
   Gravesite: { elite: "images/Gegner/GRAVESITE_ELITE.jpg", waechter: "images/Gegner/GRAVESITE_WAECHTER.png", invader: "images/Gegner/GRAVESITE_INVADER.webp", eliteName: "Geisterflammen-Drache", waechterName: "Lamenter", invaderName: "Schwertmeister Onze" },
   CastleEnsis: { elite: "images/Gegner/ENSIS_ELITE.jpg", waechter: "images/Gegner/ENSIS_WAECHTER.jpg", invader: "images/Gegner/ENSIS_INVADER.jpg", eliteName: "Karianischer Ritter", waechterName: "Kampfmagier von Ensis", invaderName: "Zwillingsmond-Adept" },
+  Waldgebiet: { elite: "images/Gegner/WALD_ELITE.webp", waechter: "images/Gegner/WALD_WAECHTER.jpg", invader: "images/Gegner/WALD_INVADER.jpg", eliteName: "Runenbär", waechterName: "Schwarzklingen-Runenbär", invaderName: "Verirrter Jäger" },
+  // GRUSELWALD (interner Schlüssel bleibt AbyssalWoods — erbt sicherer-Pfad/Untouchable/Wahnsinn). Hat KEINE normalen Gegner.
   AbyssalWoods: { elite: "images/Gegner/ABYSS_ELITE.jpg", waechter: "images/Gegner/ABYSS_WAECHTER.jpg", invader: "images/Gegner/ABYSS_INVADER.jpg", eliteName: "Erblindeter Wahnsinniger", waechterName: "Winterlaterne", invaderName: "Anhänger der Wahnsinnigen Flamme" },
+  FestungMessmer: { elite: "images/Gegner/MESSMER_ELITE.png", waechter: "images/Gegner/MESSMER_WAECHTER.webp", invader: "images/Gegner/MESSMER_INVADER.webp", eliteName: "Messmers Speerträger", waechterName: "Flammenritter", invaderName: "Anhänger Messmers" },
+  Garten: { elite: "images/Gegner/GARTEN_ELITE.jpg", waechter: "images/Gegner/GARTEN_WAECHTER.png", invader: "images/Gegner/GARTEN_INVADER.jpg", eliteName: "Blütenwächter", waechterName: "Steinerner Hüter", invaderName: "Pilger des Gartens" },
   Rauh: { elite: "images/Gegner/RAUH_ELITE.jpg", waechter: "images/Gegner/RAUH_WAECHTER.jpg", invader: "images/Gegner/RAUH_INVADER.jpg", eliteName: "Ulkerbestie", waechterName: "Roter Wolf des Champions", invaderName: "Rakshasa" },
   EnirIlim: { elite: "images/Gegner/ENIR_ELITE.jpg", waechter: "images/Gegner/ENIR_WAECHTER.jpg", invader: "images/Gegner/ENIR_INVADER.jpg", eliteName: "Wächter von Enir-Ilim", waechterName: "Hornbewehrter Wächter", invaderName: "Anhänger Miquellas" },
   Mountaintops: { elite: "images/MOUNTAINTOPS_ELITE.jpg", waechter: "images/MOUNTAINTOPS_WAECHTER.jpg", invader: "images/MOUNTAINTOPS_INVADER.jpg", eliteName: "Feuermönch", waechterName: "Troll", invaderName: "Okina" },
@@ -1565,8 +1581,11 @@ const bilderDatenbankBosse = {
   "Göttliches Tanzlöwenbiest": "images/bosse/tanzloewe.jpg",
   "Rellana, Ritterin der Zwillingsmonde": "images/bosse/rellana.png",
   "Midra, Herr der Wahnsinnigen Flamme": "images/bosse/midra.png",
+  "Sonnenblume": "images/bosse/sonnenblume.png",
+  "Messmer der Pfähler": "images/bosse/messmer.webp",
+  "Gaius": "images/bosse/Gauis.png",
   "Romina, Heilige der Knospe": "images/bosse/romina.png",
-  "Metyr, Mutter der Finger": "images/bosse/metyr.png",
+  "Metyr, Mutter der Finger": "images/bosse/metyr.webp",
   "Verheißener Gemahl Radahn": "images/bosse/pcr.webp",
   "Aging Untouchable": "images/icons/4026614_full.webp",
   "Loretta, Knight of the Haligtree": "images/loretta-knight-of-haligtree.jpg",
@@ -1986,7 +2005,7 @@ function direktNeustarten() {
   playerHitsOnEnemy = 0; enemyIsStaggered = false; staggerVisualActive = false; nextHitBonusDamage = false;
   currentAffinity = "Keine"; affinityHits = 0; completedDungeonsCount = 0;
   backpackItems = [null, null, null]; activeBuffs = []; inSubDungeon = false; inSewers = false; mainMapState = null; towerEtage = 0;
-  torbogenSpruenge = 0; wolfsgeheulGehoert = false; wahnsinn = 0; untouchableRunden = 0; rellanaGetroffen = false; scharlachRot = false; dlcWahlOffen = false; rauhGeheimIntakt = true; inFingerruinen = false; fingerPos = 90; fingerGeblasen = []; fingerNodes = []; fingerPfad = [90]; aktualisiereWahnsinnAnzeige();
+  torbogenSpruenge = 0; wolfsgeheulGehoert = false; wahnsinn = 0; untouchableRunden = 0; rellanaGetroffen = false; scharlachRot = false; dlcWahlOffen = false; rauhGeheimIntakt = true; inFingerruinen = false; fingerPos = 90; fingerGeblasen = []; fingerNodes = []; fingerPfad = [90]; hatFingerMimic = false; hatGebetet = false; aktualisiereWahnsinnAnzeige();
   // Seed-Run (geteilter Seed): derselbe Seed bleibt für den Retry — normaler Run: frisch würfeln
   setzeSeed(seedIsCustom ? runSeed : zufallsSeed(), seedIsCustom);
   oeffneKlassenAuswahl();
@@ -2048,7 +2067,10 @@ function baueKarteHTML() {
     if (aktuelleRegion === "Mohgwyn") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(35,5,8,0.75), rgba(10,2,3,0.95)), url('images/background/mohgwyn.avif')";
     if (aktuelleRegion === "Gravesite") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(20,18,10,0.78), rgba(8,8,5,0.92)), url('images/background/gravesite.jpg')";
     if (aktuelleRegion === "CastleEnsis") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(10,12,28,0.78), rgba(4,5,14,0.92)), url('images/background/castleensis.webp')";
-    if (aktuelleRegion === "AbyssalWoods") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(4,4,6,0.92), rgba(2,2,3,0.985)), url('images/background/abyssalwoods.jpg')";
+    if (aktuelleRegion === "Waldgebiet") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(8,20,10,0.78), rgba(4,10,5,0.92)), url('images/background/waldgebiet.jpg')";
+    if (aktuelleRegion === "AbyssalWoods") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(4,4,6,0.92), rgba(2,2,3,0.985)), url('images/background/abyssalwoods.jpg')";   // Gruselwald
+    if (aktuelleRegion === "FestungMessmer") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(30,8,4,0.78), rgba(12,4,2,0.92)), url('images/background/messmer.jpg')";
+    if (aktuelleRegion === "Garten") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(10,18,12,0.7), rgba(5,9,6,0.88)), url('images/background/garten.webp')";
     if (aktuelleRegion === "Rauh") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(24,6,8,0.78), rgba(10,4,4,0.92)), url('images/background/rauh.jpg')";
     if (aktuelleRegion === "EnirIlim") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(28,22,6,0.78), rgba(8,6,3,0.94)), url('images/background/enir.jpg')";
   }
@@ -2079,7 +2101,10 @@ function baueKarteHTML() {
           else if (aktuelleRegion === "Mohgwyn") imgTag.src = "images/bosse/Titel-8-fc80008000ffff_1920x1080.avif";
           else if (aktuelleRegion === "Gravesite") imgTag.src = "images/bosse/tanzloewe.jpg";
           else if (aktuelleRegion === "CastleEnsis") imgTag.src = "images/bosse/rellana.png";
-          else if (aktuelleRegion === "AbyssalWoods") imgTag.src = "images/bosse/midra.png";
+          else if (aktuelleRegion === "Waldgebiet") imgTag.src = "images/bosse/sonnenblume.png";
+          else if (aktuelleRegion === "AbyssalWoods") imgTag.src = "images/bosse/midra.png";   // Gruselwald
+          else if (aktuelleRegion === "FestungMessmer") imgTag.src = "images/bosse/messmer.webp";
+          else if (aktuelleRegion === "Garten") imgTag.src = "images/bosse/Gauis.png";
           else if (aktuelleRegion === "Rauh") imgTag.src = "images/bosse/romina.png";
           else if (aktuelleRegion === "EnirIlim") imgTag.src = "images/bosse/pcr.webp";
         }
@@ -2324,7 +2349,8 @@ function updateUI() {
   let areaText = inSubDungeon ? t("region_catacombs") : aktuelleRegion; 
   if (!inSubDungeon) {
     if (areaText === "FarumAzula") areaText = "Farum Azula"; if (areaText === "Haligtree") areaText = "Haligtree"; if (areaText === "AshenCapital") areaText = "Aschehauptstadt"; if (areaText === "EldenThrone") areaText = "Eldenthron";
-    if (areaText === "Gravesite") areaText = L("Gräberebene", "Gravesite Plain"); if (areaText === "CastleEnsis") areaText = "Castle Ensis"; if (areaText === "AbyssalWoods") areaText = L("Abgrundwald", "Abyssal Woods");
+    if (areaText === "Gravesite") areaText = L("Gräberebene", "Gravesite Plain"); if (areaText === "CastleEnsis") areaText = "Castle Ensis"; if (areaText === "AbyssalWoods") areaText = L("Gruselwald", "Eerie Woods");
+    if (areaText === "Waldgebiet") areaText = L("Waldgebiet", "Woodlands"); if (areaText === "FestungMessmer") areaText = L("Festung von Messmer", "Messmer's Fortress"); if (areaText === "Garten") areaText = L("Der Garten", "The Garden");
     if (areaText === "Rauh") areaText = L("Ruinen von Rauh", "Ruins of Rauh"); if (areaText === "EnirIlim") areaText = "Enir-Ilim";
   }
   document.getElementById("region-display-name").innerText = areaText;
@@ -2388,7 +2414,10 @@ function updateUI() {
       else if (aktuelleRegion === "Gelmir") arenaView.style.backgroundImage = "linear-gradient(to bottom, rgba(30,8,4,0.5), rgba(12,4,2,0.85)), url('images/background/gelmir.webp')";
       else if (aktuelleRegion === "Gravesite") arenaView.style.backgroundImage = "linear-gradient(to bottom, rgba(20,18,10,0.6), rgba(8,8,5,0.9)), url('images/background/gravesite.jpg')";
       else if (aktuelleRegion === "CastleEnsis") arenaView.style.backgroundImage = "linear-gradient(to bottom, rgba(10,12,28,0.6), rgba(4,5,14,0.9)), url('images/background/castleensis.webp')";
-      else if (aktuelleRegion === "AbyssalWoods") arenaView.style.backgroundImage = "linear-gradient(to bottom, rgba(4,4,6,0.8), rgba(2,2,3,0.95)), url('images/background/abyssalwoods.jpg')";
+      else if (aktuelleRegion === "Waldgebiet") arenaView.style.backgroundImage = "linear-gradient(to bottom, rgba(8,20,10,0.6), rgba(4,10,5,0.9)), url('images/background/waldgebiet.jpg')";
+      else if (aktuelleRegion === "AbyssalWoods") arenaView.style.backgroundImage = "linear-gradient(to bottom, rgba(4,4,6,0.8), rgba(2,2,3,0.95)), url('images/background/abyssalwoods.jpg')";   // Gruselwald
+      else if (aktuelleRegion === "FestungMessmer") arenaView.style.backgroundImage = "linear-gradient(to bottom, rgba(30,8,4,0.6), rgba(12,4,2,0.9)), url('images/background/messmer.jpg')";
+      else if (aktuelleRegion === "Garten") arenaView.style.backgroundImage = "linear-gradient(to bottom, rgba(10,18,12,0.55), rgba(5,9,6,0.88)), url('images/background/garten.webp')";
       else if (aktuelleRegion === "Rauh") arenaView.style.backgroundImage = "linear-gradient(to bottom, rgba(24,6,8,0.6), rgba(10,4,4,0.9)), url('images/background/rauh.jpg')";
       else if (aktuelleRegion === "EnirIlim") arenaView.style.backgroundImage = "linear-gradient(to bottom, rgba(28,22,6,0.55), rgba(8,6,3,0.92)), url('images/background/enir.jpg')";
       else arenaView.style.backgroundImage = `linear-gradient(to bottom, rgba(11,11,11,0.3), rgba(11,11,11,0.6)), url('images/background/${aktuelleRegion.toLowerCase()}.jpg')`;
@@ -2512,7 +2541,10 @@ function klickeKnoten(ebene, knoten) {
   // DLC: Land des Schattens — deutlich über allem im Basegame (soll eine echte Herausforderung sein)
   if (aktuelleRegion === "Gravesite") rMult = (hardMode ? 7.2*1.3 : 7.2) * 1.05;
   if (aktuelleRegion === "CastleEnsis") rMult = (hardMode ? 8.0*1.3 : 8.0) * 1.05;
-  if (aktuelleRegion === "AbyssalWoods") rMult = (hardMode ? 9.0*1.3 : 9.0) * 1.05;
+  if (aktuelleRegion === "Waldgebiet") rMult = (hardMode ? 9.0*1.3 : 9.0) * 1.05;
+  if (aktuelleRegion === "AbyssalWoods") rMult = (hardMode ? 9.0*1.3 : 9.0) * 1.05;   // Gruselwald
+  if (aktuelleRegion === "FestungMessmer") rMult = (hardMode ? 10.0*1.3 : 10.0) * 1.05;
+  if (aktuelleRegion === "Garten") rMult = (hardMode ? 11.0*1.3 : 11.0) * 1.05;
 
   if (gebietsGegnerKonfig[aktuelleRegion]) {
     let cfg = gebietsGegnerKonfig[aktuelleRegion];
@@ -2566,7 +2598,10 @@ function klickeKnoten(ebene, knoten) {
       // --- DLC: Land des Schattens — feste Werte, bewusst über allem im Basegame ---
       else if (aktuelleRegion === "Gravesite") { gegnerName = "Göttliches Tanzlöwenbiest"; gegnerMaxHp = 2400; gegnerSchaden = 150; }
       else if (aktuelleRegion === "CastleEnsis") { gegnerName = "Rellana, Ritterin der Zwillingsmonde"; gegnerMaxHp = 2700; gegnerSchaden = 160; }
-      else if (aktuelleRegion === "AbyssalWoods") { gegnerName = "Midra, Herr der Wahnsinnigen Flamme"; gegnerMaxHp = 3200; gegnerSchaden = 175; }
+      else if (aktuelleRegion === "Waldgebiet") { gegnerName = "Sonnenblume"; gegnerMaxHp = 3000; gegnerSchaden = 170; }
+      else if (aktuelleRegion === "AbyssalWoods") { gegnerName = "Midra, Herr der Wahnsinnigen Flamme"; gegnerMaxHp = 3200; gegnerSchaden = 175; }   // Gruselwald
+      else if (aktuelleRegion === "FestungMessmer") { gegnerName = "Messmer der Pfähler"; gegnerMaxHp = 3500; gegnerSchaden = 188; }   // haertester Boss vor den Endbossen
+      else if (aktuelleRegion === "Garten") { gegnerName = "Gaius"; gegnerMaxHp = 2900; gegnerSchaden = 165; }   // spiegelt Romina (paralleler Weg)
       else if (aktuelleRegion === "Rauh") { gegnerName = "Romina, Heilige der Knospe"; gegnerMaxHp = 2900; gegnerSchaden = 165; }
       else if (aktuelleRegion === "EnirIlim") { gegnerName = "Verheißener Gemahl Radahn"; gegnerMaxHp = 3800; gegnerSchaden = 195; }   // finaler DLC-Boss: bewusst der haerteste
       else if (aktuelleRegion === "EldenThrone") {
@@ -3608,25 +3643,35 @@ function kampfGewonnen() {
     return;
   }
   if (gegnerName === "Rellana, Ritterin der Zwillingsmonde") {
-    // Hitless (kein einziger Treffer kassiert) -> Wahl zwischen dem Abgrundwald und den Ruinen von Rauh.
-    // Wer getroffen wurde, nimmt den regulären Weg über die Ruinen von Rauh.
-    if (!rellanaGetroffen) { oeffneWegwahlEnsis(); return; }
-    starteRauh(true);
+    // Die 3 Torbögen auf der Gräberebene entscheiden den Mittelweg:
+    // durchgesprungen -> Blaidd zeigt den Weg ins Waldgebiet; sonst geht es in den Gruselwald.
+    if (torbogenSpruenge >= 3) { starteWaldgebiet(); return; }
+    starteGruselwald();
+    return;
+  }
+  if (gegnerName === "Sonnenblume") {
+    starteFestungMessmer(L("Die Sonnenblume ist gefallen", "The Sunflower Has Fallen"),
+      L("Die riesige Blüte sinkt in sich zusammen, und der Wald wird still.\n\nZwischen den Stämmen ragt eine gewaltige Silhouette auf: die <b>Festung von Messmer</b>.", "The giant bloom collapses in on itself, and the woods fall silent.\n\nBetween the trunks a vast silhouette rises: <b>Messmer's Fortress</b>."));
     return;
   }
   if (gegnerName === "Midra, Herr der Wahnsinnigen Flamme") {
-    aktuelleRegion = "EnirIlim"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null; wahnsinn = 0; netzKarte = generiereRautenNetz("EnirIlim");
-    heileUndRegeneriereVoll(hardMode);
-    oeffneStatPopup(L("Der Wahnsinn erlischt", "The Frenzy Gutters Out"),
-      L("Midras Haupt sinkt herab, und die Wahnsinnige Flamme verglimmt.\n\nDu hast das finsterste Geheimnis des Schattenlands bezwungen — und stehst nun vor dem Aufgang nach <b>Enir-Ilim</b>, wo der Verheißene Gemahl auf dich wartet.", "Midra's head sinks low, and the Frenzied Flame gutters out.\n\nYou have conquered the Shadow Lands' darkest secret — and now stand before the ascent to <b>Enir-Ilim</b>, where the Promised Consort awaits."), 1);
+    wahnsinn = 0; aktualisiereWahnsinnAnzeige();
+    starteFestungMessmer(L("Der Wahnsinn erlischt", "The Frenzy Gutters Out"),
+      L("Midras Haupt sinkt herab, und die Wahnsinnige Flamme verglimmt. Der Gruselwald gibt dich frei.\n\nVor dir ragt die <b>Festung von Messmer</b> in den verhangenen Himmel.", "Midra's head sinks low, and the Frenzied Flame gutters out. The eerie woods release you.\n\nBefore you rises <b>Messmer's Fortress</b>, against the veiled sky."));
+    return;
+  }
+  if (gegnerName === "Messmer der Pfähler") { oeffneWegwahlMessmer(); return; }
+  if (gegnerName === "Gaius") {
+    if (hatFingerMimic) { starteFingerruinen(); return; }   // Finger benutzen -> Gebiet der Finger -> Metyr
+    // Ohne Finger Mimic: der Garten gibt nichts her -> regulärer Weg nach Enir-Ilim
+    starteEnirIlim(L("Hier ist einfach nichts", "There is simply nothing here"),
+      L("Gaius sinkt zu Boden, und am Ende des Gartens… ist nichts. Nur Wind in den Blüten.\n\nDir fehlt etwas, um diesen Ort zu öffnen. Du wendest dich ab — nach <b>Enir-Ilim</b>.", "Gaius falls, and at the end of the garden… there is nothing. Only wind in the blossoms.\n\nSomething is missing to open this place. You turn away — towards <b>Enir-Ilim</b>."));
     return;
   }
   if (gegnerName === "Romina, Heilige der Knospe") {
-    if (rauhGeheimIntakt) { oeffneWegwahlRauh(); return; }   // Gold-Pfad exakt gelaufen -> Wahl Fingerruinen / Enir-Ilim
-    aktuelleRegion = "EnirIlim"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null; scharlachRot = false; netzKarte = generiereRautenNetz("EnirIlim");
-    heileUndRegeneriereVoll(hardMode);
-    oeffneStatPopup(L("Romina ist gefallen", "Romina Has Fallen"),
-      L("Die Heilige der Knospe sinkt in ihre eigenen Ranken zurück, und die Scharlachfäule ebbt ab.\n\nVor dir ragt der Turm von <b>Enir-Ilim</b> in den verhangenen Himmel — am Ende des Aufstiegs wartet der Verheißene Gemahl.", "The Saint of the Bud sinks back into her own vines, and the Scarlet Rot recedes.\n\nBefore you, the tower of <b>Enir-Ilim</b> rises into the veiled sky — at the summit of the ascent waits the Promised Consort."), 1);
+    scharlachRot = false;
+    starteEnirIlim(L("Romina ist gefallen", "Romina Has Fallen"),
+      L("Die Heilige der Knospe sinkt in ihre eigenen Ranken zurück, und die Scharlachfäule ebbt ab.\n\nVor dir ragt der Turm von <b>Enir-Ilim</b> in den verhangenen Himmel — am Ende des Aufstiegs wartet der Verheißene Gemahl.", "The Saint of the Bud sinks back into her own vines, and the Scarlet Rot recedes.\n\nBefore you, the tower of <b>Enir-Ilim</b> rises into the veiled sky — at the summit of the ascent waits the Promised Consort."));
     return;
   }
   if (gegnerName === "Radahn, Gemahl Miquellas") {
@@ -4020,28 +4065,74 @@ function starteDLC() {
     L("Du berührst die verwelkte Hand — und die Welt zerfließt zu goldener Asche.\n\nAls du erwachst, liegt ein fremdes Land unter einem verhangenen Himmel vor dir: die <b>Gräberebene</b>. Steinerne Torbögen säumen die Gräber, und die Gegner hier sind von ganz anderer Härte.\n\n<b>Es gibt kein Zurück.</b>", "You touch the withered hand — and the world dissolves into golden ash.\n\nWhen you wake, a strange land lies before you beneath a veiled sky: the <b>Gravesite Plain</b>. Stone archways line the graves, and the enemies here are of a different caliber entirely.\n\n<b>There is no way back.</b>"), 1);
 }
 
-// Nach Rellana OHNE Treffer (hitless): geheime Wand -> JA in den Abgrundwald, NEIN regulärer Weg (Rauh)
-function oeffneWegwahlEnsis() {
-  let overlay = document.getElementById("popup-overlay"); let content = document.getElementById("popup-content");
-  content.innerHTML = `
-    <div style="color:#8a7f68; font-size:0.72rem; letter-spacing:2px; font-family:sans-serif; margin-bottom:2px; text-transform:none;">${L("Boah, ist der krass", "Whew, that was intense")}</div>
-    <h3 style="color: var(--gold); font-size:1.8rem; margin-top:0; letter-spacing:4px; font-family: 'Mantinia', serif;">HITLESS</h3>
-    <p style="color:#ddd; font-size:0.92rem; font-family: sans-serif; line-height:1.55;">${L("In ihrem letzten Atemzug zeigt Rellana auf eine geheime Wand — anders als bei einem richtig coolen Boss aus Dark Souls&nbsp;2 fällt sie einfach nur um.\n\nDu machst dich auf zum geheimen Weg! Er führt in den <b>Abgrundwald</b>!", "With her last breath, Rellana points at a secret wall — unlike a truly cool boss from Dark Souls&nbsp;2, it simply topples over.\n\nYou set off toward the secret path! It leads into the <b>Abyssal Woods</b>!")}</p>
-    <p style="color:#cdbfa3; font-size:0.95rem; font-family:sans-serif; margin:14px 0 8px;">${L("Möchtest du weitergehen?", "Do you want to go on?")}</p>
-    <button class="btn-modal-action" style="border-color:#27ae60; color:#2ecc71;" onclick="starteAbyssalWoods()">${L("JA", "YES")}</button>
-    <button class="btn-modal-action" style="border-color:#c0392b; color:#e74c3c;" onclick="starteRauh(false)">${L("NEIN", "NO")}</button>
-  `;
-  overlay.style.display = "flex";
+// --- DLC-Mittelweg: 3 Torbögen gesprungen -> Blaidd führt ins Waldgebiet ---
+function starteWaldgebiet() {
+  document.getElementById("popup-overlay").style.display = "none";
+  aktuelleRegion = "Waldgebiet"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null;
+  netzKarte = generiereRautenNetz("Waldgebiet");
+  heileUndRegeneriereVoll(hardMode);
+  speichereRun(); baueKarteHTML(); updateUI(); aktualisiereWahnsinnAnzeige();
+  oeffneStatPopup(L("Blaidd zeigt den Weg", "Blaidd Shows the Way"),
+    L("Ein Wolfsgeheul — und aus dem Dickicht tritt <b>Blaidd</b>. „Du hast durch die Tore gefunden. Dann folge mir.“\n\nEr führt dich auf einen verborgenen Pfad ins <b>Waldgebiet</b>. <i>„Keine Angst — es ist nicht B4ronyx“</i>, lacht er.\n\nHier sieht jeder Weg aus wie der nächste. Lies genau, was dich erwartet.", "A wolf's howl — and from the thicket steps <b>Blaidd</b>. “You found your way through the gates. Then follow me.”\n\nHe leads you down a hidden path into the <b>Woodlands</b>. <i>“Don't worry — it's not B4ronyx,”</i> he laughs.\n\nHere every path looks like the next. Read carefully what awaits you."), 1);
 }
 
-function starteAbyssalWoods() {
+// --- DLC-Mittelweg: keine Tore -> Gruselwald (erbt die Abgrund-Mechanik, interner Schluessel bleibt AbyssalWoods) ---
+function starteGruselwald() {
   document.getElementById("popup-overlay").style.display = "none";
   aktuelleRegion = "AbyssalWoods"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null;
   wahnsinn = 0; untouchableRunden = 0;
   netzKarte = generiereRautenNetz("AbyssalWoods");
   speichereRun(); baueKarteHTML(); updateUI(); aktualisiereWahnsinnAnzeige();
-  oeffneStatPopup(L("Der Abgrundwald", "The Abyssal Woods"),
-    L("Kein Licht. Kein Laut. Nur ein Wald aus schwarzen Stämmen unter einem Himmel, der keiner ist.\n\nAlle Wege sind pechschwarz — doch es gibt <b>einen richtigen Pfad</b>, der ganz sacht glimmt. Verlässt du ihn, deckt sich der Knoten auf und der <b>Aging Untouchable</b> ergreift dich: kein Schaden, aber <b>+25% Wahnsinn</b> je Griff. Bei 100% ist dein Geist verloren.\n\nSieh genau hin. Und geh leise.", "No light. No sound. Only a forest of black trunks beneath a sky that is no sky.\n\nEvery path is pitch-black — but there is <b>one right way</b> that glimmers ever so faintly. Stray from it and the node reveals itself as the <b>Aging Untouchable</b> seizes you: no damage, but <b>+25% madness</b> per grasp. At 100%, your mind is lost.\n\nLook closely. And tread quietly."), 1);
+  oeffneStatPopup(L("Der Gruselwald", "The Eerie Woods"),
+    L("Kein Licht. Kein Laut. Nur ein Wald aus schwarzen Stämmen unter einem Himmel, der keiner ist.\n\nAlle Wege sind pechschwarz — doch es gibt <b>einen richtigen Pfad</b>, der ganz sacht glimmt. Verlässt du ihn, deckt sich der Knoten auf und der <b>Aging Untouchable</b> ergreift dich: kein Schaden, aber <b>+25% Wahnsinn</b> je Griff. Bei 100% ist dein Geist verloren.\n\nAm Ende wartet <b>Midra</b>. Sieh genau hin. Und geh leise.", "No light. No sound. Only a forest of black trunks beneath a sky that is no sky.\n\nEvery path is pitch-black — but there is <b>one right way</b> that glimmers ever so faintly. Stray from it and the node reveals itself as the <b>Aging Untouchable</b> seizes you: no damage, but <b>+25% madness</b> per grasp. At 100%, your mind is lost.\n\nAt the end waits <b>Midra</b>. Look closely. And tread quietly."), 1);
+}
+
+// --- Beide Mittelwege muenden hier: die Festung von Messmer ---
+function starteFestungMessmer(titel, text) {
+  document.getElementById("popup-overlay").style.display = "none";
+  aktuelleRegion = "FestungMessmer"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null;
+  hatGebetet = false;
+  netzKarte = generiereRautenNetz("FestungMessmer");
+  heileUndRegeneriereVoll(hardMode);
+  speichereRun(); baueKarteHTML(); updateUI(); aktualisiereWahnsinnAnzeige();
+  oeffneStatPopup(titel, text, 1);
+}
+
+// --- Nach Messmer: Wahl zwischen den Ruinen (Enir-Weg) und dem Garten (Metyr-Weg, nur mit Gebet) ---
+function oeffneWegwahlMessmer() {
+  let overlay = document.getElementById("popup-overlay"); let content = document.getElementById("popup-content");
+  content.innerHTML =
+    '<div style="color:#8a7f68; font-size:0.72rem; letter-spacing:2px; font-family:sans-serif; margin-bottom:2px; text-transform:none;">' + L("Messmer ist gefallen", "Messmer has fallen") + '</div>' +
+    '<h3 style="color: var(--gold); font-size:1.6rem; margin-top:0; letter-spacing:2px; font-family:\'Mantinia\',serif;">' + L("ZWEI WEGE", "TWO PATHS") + '</h3>' +
+    '<p style="color:#ddd; font-size:0.92rem; font-family:sans-serif; line-height:1.55; white-space:pre-line;">' +
+      (hatGebetet
+        ? L("Die Flammen der Festung erlöschen. Vor dir teilt sich der Weg:\n\nNach Osten die <b>Ruinen von Rauh</b> — und dahinter Enir-Ilim.\nUnd da ist noch etwas: das <b>Geräusch</b>, das die Statue dir gezeigt hat. Es führt in den <b>Garten</b>.",
+             "The fortress flames die down. Before you the path splits:\n\nEast lie the <b>Ruins of Rauh</b> — and beyond them, Enir-Ilim.\nAnd there is something else: the <b>sound</b> the statue revealed to you. It leads to the <b>Garden</b>.")
+        : L("Die Flammen der Festung erlöschen. Vor dir liegen die <b>Ruinen von Rauh</b> — und dahinter Enir-Ilim.", "The fortress flames die down. Before you lie the <b>Ruins of Rauh</b> — and beyond them, Enir-Ilim.")) + '</p>' +
+    '<button class="btn-modal-action" onclick="starteRauh(false)">' + L("🩸 Zu den Ruinen von Rauh", "🩸 To the Ruins of Rauh") + '</button>' +
+    (hatGebetet ? '<button class="btn-modal-action" style="border-color:#5aa06a; color:#8fe6b0;" onclick="starteGarten()">' + L("🌿 Dem Geräusch folgen — in den Garten", "🌿 Follow the sound — to the Garden") + '</button>' : '');
+  overlay.style.display = "flex";
+}
+
+function starteGarten() {
+  document.getElementById("popup-overlay").style.display = "none";
+  aktuelleRegion = "Garten"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null;
+  netzKarte = generiereRautenNetz("Garten");
+  heileUndRegeneriereVoll(hardMode);
+  speichereRun(); baueKarteHTML(); updateUI(); aktualisiereWahnsinnAnzeige();
+  oeffneStatPopup(L("Der Garten", "The Garden"),
+    L("Hinter der Festung öffnet sich ein stiller, wuchernder <b>Garten</b> unter fahlem Licht. Nichts hier wirkt feindselig — und doch beobachtet dich etwas.\n\nAm Ende wacht <b>Gaius</b>. Und dahinter… liegt etwas, das nur mit dem richtigen Schlüssel erwacht.", "Behind the fortress opens a silent, overgrown <b>Garden</b> beneath pale light. Nothing here seems hostile — and yet something watches you.\n\nAt the end stands <b>Gaius</b>. And beyond… lies something that awakens only with the right key."), 1);
+}
+
+// --- Enir-Ilim betreten (Haupt-Endweg) ---
+function starteEnirIlim(titel, text) {
+  document.getElementById("popup-overlay").style.display = "none";
+  aktuelleRegion = "EnirIlim"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null;
+  wahnsinn = 0; scharlachRot = false;
+  netzKarte = generiereRautenNetz("EnirIlim");
+  heileUndRegeneriereVoll(hardMode);
+  speichereRun(); baueKarteHTML(); updateUI(); aktualisiereWahnsinnAnzeige();
+  oeffneStatPopup(titel, text, 1);
 }
 
 // Ruinen von Rauh betreten (regulärer Weg nach Rellana). hitless = kam über die makellose Wahl
@@ -4076,24 +4167,6 @@ function aktualisiereWahnsinnAnzeige() {
    Start unten links (Index 90), Ziel/Metyr oben rechts (9).
    Drei Finger (72/45/27) müssen "geblasen" werden -> Metyr erwacht.
    ============================================================ */
-function oeffneWegwahlRauh() {
-  let overlay = document.getElementById("popup-overlay"), content = document.getElementById("popup-content");
-  content.innerHTML =
-    '<div style="color:#8a7f68; font-size:0.72rem; letter-spacing:2px; font-family:sans-serif; margin-bottom:2px; text-transform:none;">' + L("Der Gold-Pfad glimmt weiter", "The golden path glimmers on") + '</div>' +
-    '<h3 style="color: var(--gold); font-size:1.7rem; margin-top:0; letter-spacing:3px; font-family: \'Mantinia\', serif;">' + L("GEHEIMER WEG", "SECRET PATH") + '</h3>' +
-    '<p style="color:#ddd; font-size:0.92rem; font-family: sans-serif; line-height:1.55;">' + L("Weil du Rauh <b>exakt</b> entlang des verborgenen Pfades durchschritten hast, tut sich am Fuß von Enir-Ilim ein zweiter Weg auf — hinab zu den <b>Ruinen der Finger</b>, wo <b>Metyr</b> auf jene lauert, die zu tief graben.", "Because you walked Rauh <b>exactly</b> along the hidden path, a second way opens at the foot of Enir-Ilim — down to the <b>Finger Ruins</b>, where <b>Metyr</b> waits for those who dig too deep.") + '</p>' +
-    '<p style="color:#cdbfa3; font-size:0.95rem; font-family:sans-serif; margin:14px 0 8px;">' + L("Wohin gehst du?", "Where do you go?") + '</p>' +
-    '<button class="btn-modal-action" style="border-color:#b8912f; color:var(--gold);" onclick="starteFingerruinen()">' + L("🖐 Zu den Fingerruinen", "🖐 To the Finger Ruins") + '</button>' +
-    '<button class="btn-modal-action" onclick="starteEnirNachRomina()">' + L("Weiter nach Enir-Ilim", "On to Enir-Ilim") + '</button>';
-  overlay.style.display = "flex";
-}
-function starteEnirNachRomina() {
-  document.getElementById("popup-overlay").style.display = "none";
-  aktuelleRegion = "EnirIlim"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null; scharlachRot = false;
-  netzKarte = generiereRautenNetz("EnirIlim"); heileUndRegeneriereVoll(hardMode); aktualisiereWahnsinnAnzeige();
-  oeffneStatPopup(L("Romina ist gefallen", "Romina Has Fallen"),
-    L("Die Heilige der Knospe sinkt in ihre eigenen Ranken zurück, und die Scharlachfäule ebbt ab.\n\nVor dir ragt der Turm von <b>Enir-Ilim</b> in den verhangenen Himmel — am Ende des Aufstiegs wartet der Verheißene Gemahl.", "The Saint of the Bud sinks back into her own vines, and the Scarlet Rot recedes.\n\nBefore you, the tower of <b>Enir-Ilim</b> rises into the veiled sky — at the summit of the ascent waits the Promised Consort."), 1);
-}
 function starteFingerruinen() {
   let ov = document.getElementById("popup-overlay"); ov.style.display = "none";
   aktuelleRegion = "Fingerruinen"; scharlachRot = false; inFingerruinen = true;
@@ -4440,7 +4513,7 @@ function bestaetigeStufe(naechsteEbene) { document.getElementById("popup-overlay
     activeChallenge = "";
     hatGodrickRune = hatRadahnRune = hatMorgottRune = true;
     aktuelleRegion = region; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null;
-    torbogenSpruenge = 0; wolfsgeheulGehoert = false; wahnsinn = 0; untouchableRunden = 0; rellanaGetroffen = false; rauhGeheimIntakt = true; inFingerruinen = false; fingerPos = 90; fingerGeblasen = []; fingerNodes = []; fingerPfad = [90];
+    torbogenSpruenge = 0; wolfsgeheulGehoert = false; wahnsinn = 0; untouchableRunden = 0; rellanaGetroffen = false; rauhGeheimIntakt = true; inFingerruinen = false; fingerPos = 90; fingerGeblasen = []; fingerNodes = []; fingerPfad = [90]; hatFingerMimic = false; hatGebetet = false;
     scharlachRot = (region === "Rauh");
     try { netzKarte = generiereRautenNetz(region); } catch(e){ console.warn(e); }
     devClosePopups(); devApply(); aktualisiereWahnsinnAnzeige();
@@ -4498,7 +4571,9 @@ function bestaetigeStufe(naechsteEbene) { document.getElementById("popup-overlay
     panel.appendChild(geheim2);
     panel.appendChild(b("🩸 Mohg-Kampf (DLC-Zugang testen)", devMohgFight, "#c0392b"));
     var dlcRow = row();
-    [["Grave","Gravesite"],["Ensis","CastleEnsis"],["Abyss","AbyssalWoods"],["Rauh","Rauh"],["Enir","EnirIlim"]].forEach(function(p){ dlcRow.appendChild(bSmall(p[0], function(){ devGotoDLC(p[1]); })); });
+    [["Grave","Gravesite"],["Ensis","CastleEnsis"],["Wald","Waldgebiet"],["Grusel","AbyssalWoods"],["Messmer","FestungMessmer"],["Garten","Garten"],["Rauh","Rauh"],["Enir","EnirIlim"]].forEach(function(p){ dlcRow.appendChild(bSmall(p[0], function(){ devGotoDLC(p[1]); })); });
+    dlcRow.appendChild(bSmall("🪤Mimic", function(){ hatFingerMimic = !hatFingerMimic; try{ speichereRun(); }catch(e){} alert("Finger Mimic: " + (hatFingerMimic ? "DA (Garten -> Metyr)" : "weg (Garten -> Enir-Ilim)")); }));
+    dlcRow.appendChild(bSmall("🙏Gebet", function(){ hatGebetet = !hatGebetet; try{ speichereRun(); }catch(e){} alert("Statue-Gebet: " + (hatGebetet ? "JA (Garten waehlbar)" : "nein")); }));
     dlcRow.appendChild(bSmall("🖐Finger", function(){ devEnsureRun(); activeChallenge=""; hatGodrickRune=hatRadahnRune=hatMorgottRune=true; devClosePopups(); starteFingerruinen(); }));
     panel.appendChild(dlcRow);
     panel.appendChild(b("🗼 Battle-Tower Etage…", devTowerFloor, "#9b8cff"));
