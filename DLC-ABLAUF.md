@@ -74,20 +74,16 @@
 
 ---
 
-## C) OFFENE PUNKTE — blockiert den Bau
+## C) ENTSCHIEDEN ✅
+- **Waldgebiet-Boss:** 🌻 **Sonnenblume**
+- **Gruselwald-Boss:** **Midra** (+ Wahnsinn-Mechanik — rettet den Abgrundwald-Content)
+- **Messmer:** härtester Boss vor den Endbossen, **Feuer-Thema**
+- **Finger Mimic:** echtes **Rucksack-Item**. Rucksack voll → Auswahl, was weggeworfen wird.
+  **Benutzen gibt +10% Schaden.**
+- **Alter Abgrundwald:** entfällt (Gegner-Bilder `ABYSS_*` werden **nicht** mehr gebraucht).
 
-**🔴 Muss geklärt sein, sonst rate ich:**
-1. **Gruselwald ist komplett leer.** Das ist der Weg für JEDEN, der die Tore nicht macht (= die Mehrheit!). Was steckt drin — Boss? Mechanik? → Vorschlag: **Midra** + Wahnsinn (rettet den Abgrundwald-Content).
-2. **Boss-Parität stimmt nicht:**
-   - Ruinen (**Romina**) + Enir (**Radahn**) = **2 Bosse**
-   - Garten (**?**) + Gebiet der Finger (**Metyr**) = **1 Boss**
-   → Braucht der **Garten einen eigenen Boss**? Sonst ist der Metyr-Weg zwar gleich lang, aber ein Boss ärmer.
-3. **Waldgebiet-Region-Boss?** (Bären-NPC?) — der Fingercreeper ist ja nur der geheime Node.
-4. **Messmer**: HP/Schaden/Schwäche? (Vorschlag: härtester Boss vor den Endbossen, Feuer-Thema)
-
-**🟡 Klein / später:**
-5. **Finger Mimic**: echtes Item im Rucksack oder nur ein Run-Flag?
-6. **Garten ohne Finger Mimic** → Enir-Ilim (= gleiches Ende wie Ruinen). Okay, oder eigenes Mini-Reward?
-7. **Bilder fehlen komplett:** Fingercreeper, Wurm-Gegner, Messmer, Statue-Icon, Hintergründe (Waldgebiet, Gruselwald, Festung, Garten, Gebiet der Finger).
+## D) NOCH OFFEN
+1. **Garten-Boss?** — Boss-Parität: Ruinen (**Romina**) + Enir (**Radahn**) = 2 Bosse, aber Garten (**?**) + Gebiet der Finger (**Metyr**) = nur 1. Kriegt der Garten einen eigenen Boss?
+2. **Finger-Mimic-Trade-off:** Wenn man sie für **+10% Schaden benutzt** — ist sie dann **weg** (⇒ kein Metyr mehr)? Das wäre eine geile Gier-Falle, muss aber gewollt sein.
 
 *(Belohnungen, Feintuning, Flavor — „später".)*
