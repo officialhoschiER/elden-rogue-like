@@ -482,6 +482,19 @@ h1, h2, h3, .btn-menu, .btn-combat, .btn-social, .game-author-tag, #region-displ
     .fr-cell.fr-metyr .fr-metyr-img { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.25) grayscale(0.6); }
     .fr-cell.fr-metyr.lit { border-color: #d16aff; box-shadow: 0 0 16px 4px rgba(180,90,240,0.85); animation: goldPuls 1.6s ease-in-out infinite; }
     .fr-cell.fr-metyr.lit .fr-metyr-img { filter: brightness(1); }
+    .fr-cell.fr-wurm { border-color: #4d6b3a; background: rgba(40,60,28,0.45); overflow: hidden; }
+    .fr-cell.fr-wurm .fr-wurm-img { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.75) saturate(0.8); }
+    .fr-cell.fr-wurm.fr-reach { box-shadow: 0 0 10px rgba(140,190,90,0.5); }
+    .fr-cell.fr-wurm.slain { filter: grayscale(1) brightness(0.45); border-color: #2c2c34; box-shadow: none; }
+    .enemy-casting { filter: drop-shadow(0 0 14px rgba(150,90,220,0.95)) brightness(1.25); transform: scale(1.06); transition: all 0.2s; }
+
+    /* ===== DLC: Festung von Messmer kippt (Schalter oben) ===== */
+    .festung-kippt { animation: festungDreht 1.4s cubic-bezier(0.6, 0, 0.35, 1) 1; transform-origin: center center; }
+    @keyframes festungDreht {
+      0%   { transform: rotate(0deg)   scale(1);    filter: none; }
+      45%  { transform: rotate(178deg) scale(0.72); filter: brightness(0.35) hue-rotate(-25deg); }
+      100% { transform: rotate(360deg) scale(1);    filter: none; }
+    }
     .fr-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 16px; }
     .fr-actions .fr-blow { border-color: #b8912f; color: var(--gold); }
     .fr-actions .fr-reset { border-color: #555; color: #bbb; }
@@ -941,8 +954,15 @@ let fingerPos = 90;                // aktuelle Position im 10×10-Gitter (Start 
 let fingerGeblasen = [];           // Indizes der bereits geblasenen Finger
 let fingerNodes = [];              // die 3 Finger-Knoten — pro Run an ZUFÄLLIGEN Orten (im Save gehalten)
 let fingerPfad = [90];             // besuchte Felder (Einbahn: nur hoch/rechts, kein Zurück)
-let hatFingerMimic = false;        // Drop des Fingercreepers (Waldgebiet) — Pflicht, um im Garten das Gebiet der Finger zu öffnen
 let hatGebetet = false;            // an der Statue in Messmers Abstieg gebetet -> schaltet den Garten frei
+let messmerGekippt = false;        // Schalter oben in der Festung gezogen -> Abstieg mit neuem Layout, Messmer unten
+let fingerWuermer = [];            // Gebiet der Finger: Kacheln mit einem Wurm-Gegner
+let fingerWuermerTot = [];         // davon bereits erschlagen
+let wurmBann = false;              // Wurm-Spell aktiv -> die naechste Aktion des Spielers faellt aus
+// Die Finger Mimic ist ein echtes RUCKSACK-Item (Drop des Fingercreepers im Waldgebiet).
+// Sie ist der Schlüssel zum Gebiet der Finger (Metyr) — wer sie benutzt/wegwirft, verliert ihn.
+const FINGER_MIMIC = { type: "fingermimic", name: "Finger Mimic", desc: "Ein zuckender, abgetrennter Finger. Er fühlt sich… erwartungsvoll an.", icon: "🖐", bild: "images/icons/finger_mimic.webp" };
+function besitztFingerMimic(){ return backpackItems.some(function(i){ return i && i.type === "fingermimic"; }); }
 const FINGER_START = 90;           // unten links
 const FINGER_METYR = 9;            // oben rechts (Metyr)
 
@@ -972,7 +992,7 @@ function speichereRun() {
     v: 1, hardMode: hardMode, challenge: activeChallenge, ts: Date.now(), runPlayMs: runPlayMs,
     runSeed, seedIsCustom, seedRngCalls, runEbeneMax, runBosseGelegt,
     torbogenSpruenge, wolfsgeheulGehoert, wahnsinn, untouchableRunden, rellanaGetroffen, scharlachRot, dlcWahlOffen,
-    rauhGeheimIntakt, inFingerruinen, fingerPos, fingerGeblasen, fingerNodes, fingerPfad, hatFingerMimic, hatGebetet,
+    rauhGeheimIntakt, inFingerruinen, fingerPos, fingerGeblasen, fingerNodes, fingerPfad, hatGebetet, messmerGekippt, fingerWuermer, fingerWuermerTot,
     spielerHp, spielerMaxHp, spielerFlasks, maxKlassenFlasks, estusHeilProzent,
     gewaehlteKlasse, basisAusweichChance, playerImageStr,
     waffenName, waffenSchaden, waffenUpgrade, waffenRaritaet, waffenSchadensarten,
@@ -1015,7 +1035,7 @@ function ladeGespeichertenRun() {
     if (window.ER && ER.setSeedRun) ER.setSeedRun(seedIsCustom);
     setTimeout(aktualisiereSeedAnzeige, 0);
     torbogenSpruenge = d.torbogenSpruenge || 0; wolfsgeheulGehoert = !!d.wolfsgeheulGehoert; wahnsinn = d.wahnsinn || 0; untouchableRunden = d.untouchableRunden || 0; rellanaGetroffen = !!d.rellanaGetroffen; scharlachRot = !!d.scharlachRot; dlcWahlOffen = !!d.dlcWahlOffen;
-    rauhGeheimIntakt = d.rauhGeheimIntakt !== false; inFingerruinen = !!d.inFingerruinen; fingerPos = (typeof d.fingerPos === "number") ? d.fingerPos : 90; fingerGeblasen = d.fingerGeblasen || []; fingerNodes = d.fingerNodes || []; fingerPfad = (d.fingerPfad && d.fingerPfad.length) ? d.fingerPfad : [fingerPos]; hatFingerMimic = !!d.hatFingerMimic; hatGebetet = !!d.hatGebetet;
+    rauhGeheimIntakt = d.rauhGeheimIntakt !== false; inFingerruinen = !!d.inFingerruinen; fingerPos = (typeof d.fingerPos === "number") ? d.fingerPos : 90; fingerGeblasen = d.fingerGeblasen || []; fingerNodes = d.fingerNodes || []; fingerPfad = (d.fingerPfad && d.fingerPfad.length) ? d.fingerPfad : [fingerPos]; hatGebetet = !!d.hatGebetet; messmerGekippt = !!d.messmerGekippt; fingerWuermer = d.fingerWuermer || []; fingerWuermerTot = d.fingerWuermerTot || []; wurmBann = false;
     setTimeout(aktualisiereWahnsinnAnzeige, 0);
     if (dlcWahlOffen) setTimeout(oeffneMohgDlcWahl, 100);   // Wahl-Popup übersteht einen Reload
     towerEtage=d.towerEtage||0;
@@ -1620,7 +1640,10 @@ const bDatenbankHTML = {
   17: "images/icons/ryas_necklace.png",
   18: "images/icons/rya.webp",
   19: "images/icons/Elden_Ring_Torrent_concept_art.png",
-  20: "images/icons/torbogen.png"   // DLC: Torbogen (Gräberebene) — Icon nachlegen, Fallback greift
+  20: "images/icons/torbogen.png",  // DLC: Torbogen (Gräberebene) — Icon nachlegen, Fallback greift
+  21: "images/Gegner/fingercreeper.jpg",   // DLC: Fingercreeper (Waldgebiet) — im Wald als Baum getarnt
+  22: "images/icons/statue.png",    // DLC: Statue (Festung Messmer) — davor beten öffnet den Garten
+  23: "images/icons/schalter.png"   // DLC: Schalter oben in der Festung — kippt das ganze Gebiet
 };
 
 const gewichteterPfadePool = [1, 1, 2, 2, 2, 3, 6, 9, 10, 14, 14];
@@ -1711,6 +1734,8 @@ function entferneBlaidd(karte) {
 function generiereRautenNetz(regionName) {
   let layout = [2, 3, 4, 3, 4, 3, 2, 1];
   if (regionName === "EldenThrone") { layout = [1, 1, 1]; }
+  // DLC Festung von Messmer: der Schalter oben KIPPT die Festung — der Abstieg hat ein völlig anderes Layout.
+  if (regionName === "FestungMessmer" && messmerGekippt) { layout = [3, 4, 2, 4, 3, 1]; }
   let temporaereKarte = [];
   let heilungEbene = Math.floor(srand() * 2) + 3; 
   let heilungKnotenIdx = -1;
@@ -1742,8 +1767,8 @@ function generiereRautenNetz(regionName) {
         if (ebeneNummer === 1) typ = 5; if (ebeneNummer === 2) typ = 4; if (ebeneNummer === 3) typ = 5;
       } else {
         if (ebeneNummer === 2 && k === 0 && (hatGodrickRune || hatRadahnRune || hatMorgottRune)) { typ = 8; }
-        else if (ebeneNummer === 7) { if (k === 0) { typ = 4; } }
-        else if (ebeneNummer === 8) { typ = 5; }
+        else if (ebeneNummer === layout.length - 1) { if (k === 0) { typ = 4; } }   // vorletzte Reihe: Gnade
+        else if (ebeneNummer === layout.length) { typ = 5; }                       // letzte Reihe: Boss
         else if (ebeneNummer === heilungEbene && k === heilungKnotenIdx) { typ = 7; }
       }
       
@@ -1757,6 +1782,10 @@ function generiereRautenNetz(regionName) {
         else if (anzahlKnoten === 2 && naechsteAnzahl === 2) { if (k === 0) verknuepfungen = [0]; if (k === 1) verknuepfungen = [1]; } 
         else if (anzahlKnoten === 2 && naechsteAnzahl === 1) { verknuepfungen = [0]; }
         else if (anzahlKnoten === 1 && naechsteAnzahl === 1) { verknuepfungen = [0]; }
+        // Messmer-Abstieg (3-4-2-4-3): die Engstelle in der Mitte und der Auslauf zum Boss
+        else if (anzahlKnoten === 4 && naechsteAnzahl === 2) { if (k === 0 || k === 1) verknuepfungen = [0]; else verknuepfungen = [1]; }
+        else if (anzahlKnoten === 2 && naechsteAnzahl === 4) { if (k === 0) verknuepfungen = [0, 1]; if (k === 1) verknuepfungen = [2, 3]; }
+        else if (anzahlKnoten === 3 && naechsteAnzahl === 1) { verknuepfungen = [0]; }
       }
       knotenArray.push({ id: regionName.substring(0,3) + "_" + ebeneNummer + "_" + k, index: k, typ: typ, wege: verknuepfungen });
     }
@@ -1785,6 +1814,42 @@ function generiereRautenNetz(regionName) {
       let kandidaten = zeile.knoten.filter(k => k.typ !== 4 && k.typ !== 5 && k.typ !== 7 && k.typ !== 8 && k.typ !== 10);
       if (zeile.knoten.length > 1 && kandidaten.length) kandidaten[Math.floor(srand() * kandidaten.length)].typ = 20;
     });
+  }
+
+  // DLC Waldgebiet: GENAU EIN Knoten ist heimlich der Fingercreeper (typ 21) — er dropt die Finger Mimic.
+  // Alle Icons sehen hier gleich aus (Baum); nur die Beschreibung verrät, was dahinter steckt.
+  if (regionName === "Waldgebiet") {
+    let reihen = [];
+    for (let e = 1; e < fertigeKarte.length - 1; e++) {   // weder Startreihe noch Boss-Reihe
+      let z = fertigeKarte[e];
+      if (z && z.knoten.some(k => k.typ !== 4 && k.typ !== 5)) reihen.push(e);
+    }
+    if (reihen.length) {
+      let z = fertigeKarte[reihen[Math.floor(srand() * reihen.length)]];
+      let kand = z.knoten.filter(k => k.typ !== 4 && k.typ !== 5);
+      if (kand.length) kand[Math.floor(srand() * kand.length)].typ = 21;
+    }
+  }
+
+  // DLC Festung von Messmer — zwei Gesichter:
+  //  Aufstieg: oben wartet KEIN Boss, sondern der SCHALTER (typ 23), der die Festung kippt.
+  //  Abstieg : ein STATUE-Knoten (typ 22) — davor beten schaltet den Garten frei; unten wartet Messmer.
+  if (regionName === "FestungMessmer") {
+    if (!messmerGekippt) {
+      let letzte = fertigeKarte[fertigeKarte.length - 1];
+      if (letzte) letzte.knoten.forEach(k => { if (k.typ === 5) k.typ = 23; });
+    } else {
+      let reihen = [];
+      for (let e = 1; e < fertigeKarte.length - 1; e++) {
+        let z = fertigeKarte[e];
+        if (z && z.knoten.some(k => k.typ !== 4 && k.typ !== 5)) reihen.push(e);
+      }
+      if (reihen.length) {
+        let z = fertigeKarte[reihen[Math.floor(srand() * reihen.length)]];
+        let kand = z.knoten.filter(k => k.typ !== 4 && k.typ !== 5);
+        if (kand.length) kand[Math.floor(srand() * kand.length)].typ = 22;
+      }
+    }
   }
 
   // DLC Abgrundwald: EIN fester, IMMER gleicher richtiger Pfad (unabhängig vom Seed — reines Trial & Error).
@@ -2005,7 +2070,7 @@ function direktNeustarten() {
   playerHitsOnEnemy = 0; enemyIsStaggered = false; staggerVisualActive = false; nextHitBonusDamage = false;
   currentAffinity = "Keine"; affinityHits = 0; completedDungeonsCount = 0;
   backpackItems = [null, null, null]; activeBuffs = []; inSubDungeon = false; inSewers = false; mainMapState = null; towerEtage = 0;
-  torbogenSpruenge = 0; wolfsgeheulGehoert = false; wahnsinn = 0; untouchableRunden = 0; rellanaGetroffen = false; scharlachRot = false; dlcWahlOffen = false; rauhGeheimIntakt = true; inFingerruinen = false; fingerPos = 90; fingerGeblasen = []; fingerNodes = []; fingerPfad = [90]; hatFingerMimic = false; hatGebetet = false; aktualisiereWahnsinnAnzeige();
+  torbogenSpruenge = 0; wolfsgeheulGehoert = false; wahnsinn = 0; untouchableRunden = 0; rellanaGetroffen = false; scharlachRot = false; dlcWahlOffen = false; rauhGeheimIntakt = true; inFingerruinen = false; fingerPos = 90; fingerGeblasen = []; fingerNodes = []; fingerPfad = [90]; hatGebetet = false; messmerGekippt = false; fingerWuermer = []; fingerWuermerTot = []; wurmBann = false; aktualisiereWahnsinnAnzeige();
   // Seed-Run (geteilter Seed): derselbe Seed bleibt für den Retry — normaler Run: frisch würfeln
   setzeSeed(seedIsCustom ? runSeed : zufallsSeed(), seedIsCustom);
   oeffneKlassenAuswahl();
@@ -2126,6 +2191,13 @@ function baueKarteHTML() {
         let iconPfad = bDatenbankHTML[knoten.typ] || "images/icon_loot.webp"; imgTag.src = iconPfad;
         imgTag.onerror = function(){ this.onerror = null; this.src = "images/icon_loot.webp"; };   // fehlendes Icon -> generisches Fallback
         if (!iconPfad.toLowerCase().endsWith(".png")) imgTag.classList.add("fullbleed");
+      }
+      // DLC Waldgebiet: TARNUNG — jeder Nicht-Boss-Knoten zeigt nur einen Baum. Die Beschreibung
+      // (Tooltip/Popup) bleibt ehrlich: wer liest, findet den versteckten Fingercreeper.
+      if (aktuelleRegion === "Waldgebiet" && !inSubDungeon && knoten.typ !== 5) {
+        imgTag.className = "map-node-img";
+        imgTag.src = "images/icons/baum.png";
+        imgTag.onerror = function(){ this.onerror = null; this.outerHTML = '<span style="font-size:1.7rem; pointer-events:none;">🌲</span>'; };
       }
       nodeDiv.appendChild(imgTag);
 
@@ -2391,6 +2463,8 @@ function updateUI() {
     } else { affInfo.style.display = "none"; }
 
     if (gegnerName === "Aging Untouchable") document.getElementById("enemy-img").src = "images/icons/4026614_full.webp";
+    else if (gegnerName === "Fingerwurm") document.getElementById("enemy-img").src = "images/Gegner/wurm.avif";
+    else if (gegnerName === "Fingercreeper") document.getElementById("enemy-img").src = "images/Gegner/fingercreeper.jpg";
     else if (aktuellerKnotenTyp === 15) document.getElementById("enemy-img").src = bilderDatenbankBosse[gegnerName] || "images/icons/fort-nightreign-full.jpg";
     else if (aktuellerKnotenTyp === 19) document.getElementById("enemy-img").src = bilderDatenbankBosse[gegnerName] || "";
     else if (aktuellerKnotenTyp === 9) document.getElementById("enemy-img").src = "images/blaidd.avif";
@@ -2443,8 +2517,49 @@ function waehleTurmRuneAusSidePanel(runeKey) {
 
 function useBackpackItem(slotIndex) {
   if (imKampf || !backpackItems[slotIndex]) return;
-  let item = backpackItems[slotIndex]; activeBuffs.push({ type: item.type, remaining: 10 }); backpackItems[slotIndex] = null; updateUI();
+  let item = backpackItems[slotIndex];
+  if (item.type === "fingermimic") { benutzeFingerMimic(slotIndex); return; }   // kein Buff — eine Falle
+  activeBuffs.push({ type: item.type, remaining: 10 }); backpackItems[slotIndex] = null; updateUI();
   oeffneStatPopup(t("item_used_title"), t("item_used_desc", { name: item.name }), aktuelleEbene);
+}
+
+// Die Finger Mimic ist eine MIMIC: benutzen kostet 10% HP und verbraucht sie -> Metyr ist damit verloren.
+function benutzeFingerMimic(slotIndex) {
+  backpackItems[slotIndex] = null;
+  let schaden = Math.max(1, Math.round(spielerMaxHp * 0.10));
+  spielerHp = Math.max(1, spielerHp - schaden);   // die Mimic verhöhnt dich, sie tötet dich nicht
+  updateUI(); speichereRun();
+  oeffneStatPopup(
+    L("Die Mimic beißt zu", "The Mimic Bites"),
+    L(`Du drückst den Finger — und er schnappt zu. Er bohrt sich in deine Hand, saugt <b>${schaden} HP</b> aus dir heraus und zerfällt zu Asche.\n\nEs war nie ein Geschenk. Es war eine Falle. Was auch immer der Finger dir hätte öffnen können — es bleibt jetzt für immer verschlossen.`,
+      `You squeeze the finger — and it snaps shut. It burrows into your hand, drains <b>${schaden} HP</b> out of you and crumbles to ash.\n\nIt was never a gift. It was a trap. Whatever the finger might have opened for you — it stays closed forever now.`),
+    aktuelleEbene);
+}
+
+// Drop des Fingercreepers (Waldgebiet). Rucksack voll -> der Spieler wählt, was er wegwirft.
+function fingerMimicDrop(naechsteEbene) {
+  let overlay = document.getElementById("popup-overlay"); let content = document.getElementById("popup-content");
+  let kopf = `<h3 style="color:#c9a227; font-size:1.5rem; margin-top:0; font-family:'Mantinia', serif;">${L("Kein Baum", "Not a Tree")}</h3>
+    <p style="color:#ddd; font-size:0.95rem; font-family:sans-serif; white-space:pre-line;">${L("Was du für einen Baum gehalten hast, entrollt sich zu einer Hand aus Fingern — und stirbt.\n\nZurück bleibt ein einzelner, noch zuckender Finger: die <b>Finger Mimic</b>.", "What you took for a tree unfurls into a hand made of fingers — and dies.\n\nLeft behind is a single, still-twitching finger: the <b>Finger Mimic</b>.")}</p>`;
+  let frei = backpackItems.indexOf(null);
+  if (frei !== -1) {
+    backpackItems[frei] = Object.assign({}, FINGER_MIMIC);
+    speichereRun(); updateUI();
+    content.innerHTML = kopf + `<button class="btn-modal-action" onclick="bestaetigeStufe(${naechsteEbene})">${L("Einstecken", "Take it")}</button>`;
+  } else {
+    content.innerHTML = kopf +
+      `<p style="color:#e74c3c; font-size:0.9rem; font-family:sans-serif;">${L("Dein Rucksack ist voll. Wähle, was du dafür wegwirfst:", "Your backpack is full. Choose what to throw away for it:")}</p>
+       <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin:10px 0;">` +
+      backpackItems.map(function (it, i) {
+        return `<button class="btn-modal-action" style="min-width:120px;" onclick="fingerMimicErsetze(${i}, ${naechsteEbene})">${it.icon} ${it.name}</button>`;
+      }).join("") +
+      `</div><button class="btn-modal-action" style="opacity:.65;" onclick="bestaetigeStufe(${naechsteEbene})">${L("Finger liegen lassen", "Leave the finger")}</button>`;
+  }
+  overlay.style.display = "flex";
+}
+function fingerMimicErsetze(slot, naechsteEbene) {
+  backpackItems[slot] = Object.assign({}, FINGER_MIMIC);
+  speichereRun(); updateUI(); bestaetigeStufe(naechsteEbene);
 }
 
 function klickeKnoten(ebene, knoten) {
@@ -2495,6 +2610,20 @@ function klickeKnoten(ebene, knoten) {
       speichereRun();
       oeffneStatPopup(L("Der Torbogen", "The Archway"),
         L("Ein uralter steinerner Torbogen, von Gräbern gesäumt. Du nimmst Anlauf und springst hindurch.\n\nDer Wind pfeift durch den alten Stein. Nichts geschieht… noch nicht.", "An ancient stone archway, lined with graves. You take a running start and leap through.\n\nThe wind whistles through the old stone. Nothing happens… yet."), ebene + 1);
+    }
+    return;
+  }
+
+  if (knoten.typ === 23) { kippeFestung(); return; }   // DLC: der Schalter oben — hier wartet KEIN Boss
+
+  if (knoten.typ === 22) {   // DLC Festung Messmer: die Statue — davor beten öffnet nach Messmer den Garten
+    if (!hatGebetet) {
+      hatGebetet = true; speichereRun();
+      oeffneStatPopup(L("Die Statue", "The Statue"),
+        L("Eine namenlose steinerne Statue, das Gesicht abgeschlagen. Du kniest nieder und betest.\n\nEin tiefes, fernes <b>Geräusch</b> antwortet — kein Laut dieser Welt. Es kommt von irgendwo hinter der Festung, und du weißt jetzt, wo du suchen musst.", "A nameless stone statue, its face struck off. You kneel and pray.\n\nA deep, distant <b>sound</b> answers — no noise of this world. It comes from somewhere behind the fortress, and now you know where to look."), ebene + 1);
+    } else {
+      oeffneStatPopup(L("Die Statue", "The Statue"),
+        L("Du kniest erneut nieder — doch die Statue schweigt. Das Geräusch hallt längst in dir nach.", "You kneel again — but the statue is silent. The sound already echoes within you."), ebene + 1);
     }
     return;
   }
@@ -2553,7 +2682,8 @@ function klickeKnoten(ebene, knoten) {
     else if (knoten.typ === 3) { gegnerName = cfg.invaderName; gegnerMaxHp = Math.round(60 * rMult); gegnerSchaden = Math.round(12 * rMult); }
   }
   
-  if (knoten.typ === 11) { gegnerName = "Dungeon Skelett"; gegnerMaxHp = Math.round(25 * rMult); gegnerSchaden = Math.round(5 * rMult); }
+  if (knoten.typ === 21) { gegnerName = "Fingercreeper"; gegnerMaxHp = Math.round(95 * rMult); gegnerSchaden = Math.round(17 * rMult); }   // DLC Waldgebiet: getarnter Geheim-Gegner -> dropt die Finger Mimic
+  else if (knoten.typ === 11) { gegnerName = "Dungeon Skelett"; gegnerMaxHp = Math.round(25 * rMult); gegnerSchaden = Math.round(5 * rMult); }
   else if (knoten.typ === 9) {
     if (activeChallenge === "noblaidd") { oeffneStatPopup(t("challenge_noblaidd_skip_title"), t("challenge_noblaidd_skip_desc"), ebene + 1); return; }
     gegnerName = "Blaidd, der Halbwolf";
@@ -2835,6 +2965,13 @@ function zeigeBurstEffekt(wrapper, affinity) {
 //    logSuccess / logFail / logStagger – i18n-Keys fuer die Logzeile
 //    cleanupDelay – ms bis Trefferanimation/Klassen entfernt werden
 // ============================================================
+// Ausweich-Chance an EINER Stelle: Basis + Talismane + Rune/Buffs, gedeckelt, minus Turm-Modifikator.
+function aktuelleAusweichChance(tStats) {
+  tStats = tStats || berechneTalismanStats();
+  let runeRollBonus = (aktiveRune === "godrick" ? 0.15 : 0.0) + CONFIG.buffBonusProStack * buffStacks("dodge");
+  return Math.min(diffVal(CONFIG.ausweichenCap), basisAusweichChance + tStats.extraRolle + runeRollBonus - (towerModifier && towerModifier.id === "benommen" ? 0.15 : 0));
+}
+
 async function gegnerKonter(opts) {
   let playerWrapper = document.getElementById("player-sprite-wrapper");
   let enemyWrapper  = document.getElementById("enemy-sprite-wrapper");
@@ -2876,8 +3013,30 @@ async function gegnerKonter(opts) {
   }
 
   let tStats = berechneTalismanStats();
-  let runeRollBonus = (aktiveRune === "godrick" ? 0.15 : 0.0) + CONFIG.buffBonusProStack * buffStacks("dodge");
-  let finaleAusweichChance = Math.min(diffVal(CONFIG.ausweichenCap), basisAusweichChance + tStats.extraRolle + runeRollBonus - (towerModifier && towerModifier.id === "benommen" ? 0.15 : 0));
+  let finaleAusweichChance = aktuelleAusweichChance(tStats);
+
+  // DLC Gebiet der Finger: der Wurm castet mit 30% einen Bannspell STATT anzugreifen.
+  // Trifft er, faellt die naechste Aktion des Spielers aus — ausweichen geht mit der normalen Rollchance.
+  if (gegnerName === "Fingerwurm" && !wurmBann && Math.random() < 0.30) {
+    enemyWrapper.classList.add("enemy-casting");
+    document.getElementById("battle-log").innerText = L("Der Wurm richtet sich auf und zischt eine fremde Formel…", "The worm rears up and hisses an alien formula…");
+    await wait(450);
+    enemyWrapper.classList.remove("enemy-casting");
+    if (Math.random() < finaleAusweichChance) {
+      playerWrapper.classList.add("player-rolling");
+      zeigeFloatingZahl(playerWrapper, t("float_dodged"), "dmg-dodge");
+      document.getElementById("battle-log").innerText += "\n" + L("Du rollst unter dem Spruch hindurch.", "You roll clear of the spell.");
+    } else {
+      wurmBann = true;
+      zeigeFloatingZahl(playerWrapper, L("GEBANNT", "BOUND"), "dmg-enemy");
+      document.getElementById("battle-log").innerText += "\n" + L("Der Spruch schließt sich um deine Glieder — du kannst dich eine Runde nicht rühren!", "The spell clamps around your limbs — you cannot move for one round!");
+    }
+    updateUI();
+    await wait(opts.cleanupDelay || 300);
+    playerWrapper.classList.remove("player-rolling");
+    return;
+  }
+
   let ausgewichen = Math.random() < finaleAusweichChance;
 
   if (ausgewichen) {
@@ -2916,8 +3075,22 @@ async function gegnerKonter(opts) {
   }
 }
 
+// Der Wurm-Bann: die Aktion des Spielers verpufft, der Gegner kontert frei. Danach ist der Bann vorbei.
+async function verbrauchteBannRunde() {
+  if (!wurmBann) return false;
+  wurmBann = false;
+  aktionsSperre = true; updateUI();
+  document.getElementById("battle-log").innerText = L("Du bist gebannt — deine Glieder gehorchen dir nicht.", "You are bound — your limbs will not obey.");
+  zeigeFloatingZahl(document.getElementById("player-sprite-wrapper"), L("GEBANNT", "BOUND"), "dmg-enemy");
+  await wait(500);
+  await gegnerKonter({ windup: true, dmgVariance: () => Math.floor(Math.random() * 4) - 1, logSuccess: "roll_success", logFail: "roll_fail", logStagger: "stagger_alert", cleanupDelay: 300 });
+  aktionsSperre = false; updateUI();
+  return true;
+}
+
 async function spielerAngriff() {
   if (!imKampf || spielerHp <= 0 || aktionsSperre) return;
+  if (await verbrauchteBannRunde()) return;
   staggerVisualActive = false;
   // Verhängnis "Scharlachfäule": −3% Max-HP pro Runde
   if (towerModifier && towerModifier.id === "faeulnis") {
@@ -2995,6 +3168,7 @@ async function spielerAngriff() {
 async function spielerHeilen() {
   if (!imKampf || spielerHp <= 0 || aktionsSperre) return;
   if (spielerFlasks <= 0) return;
+  if (await verbrauchteBannRunde()) return;
   aktionsSperre = true;
   let tStats = berechneTalismanStats();
   let finalMaxHp = berechneFinalMaxHp();
@@ -3662,7 +3836,11 @@ function kampfGewonnen() {
   }
   if (gegnerName === "Messmer der Pfähler") { oeffneWegwahlMessmer(); return; }
   if (gegnerName === "Gaius") {
-    if (hatFingerMimic) { starteFingerruinen(); return; }   // Finger benutzen -> Gebiet der Finger -> Metyr
+    if (besitztFingerMimic()) {   // Finger im Rucksack -> hier ist er RICHTIG eingesetzt: Gebiet der Finger -> Metyr
+      for (let i = 0; i < backpackItems.length; i++) if (backpackItems[i] && backpackItems[i].type === "fingermimic") backpackItems[i] = null;
+      updateUI();
+      starteFingerruinen(); return;
+    }
     // Ohne Finger Mimic: der Garten gibt nichts her -> regulärer Weg nach Enir-Ilim
     starteEnirIlim(L("Hier ist einfach nichts", "There is simply nothing here"),
       L("Gaius sinkt zu Boden, und am Ende des Gartens… ist nichts. Nur Wind in den Blüten.\n\nDir fehlt etwas, um diesen Ort zu öffnen. Du wendest dich ab — nach <b>Enir-Ilim</b>.", "Gaius falls, and at the end of the garden… there is nothing. Only wind in the blossoms.\n\nSomething is missing to open this place. You turn away — towards <b>Enir-Ilim</b>."));
@@ -3729,10 +3907,21 @@ function kampfGewonnen() {
 
   if (gegnerName === "Eldenbiest") { oeffneAbschlussPopup(t("elden_lord_title"), t("boss_beast_win")); return; }
 
+  if (gegnerName === "Fingercreeper") { fingerMimicDrop(naechsteEbene); return; }   // DLC: getarnter Wald-Gegner -> Finger Mimic
+
+  // DLC Gebiet der Finger: Wurm erschlagen -> zurück aufs Gitter (keine Ebenen-Logik hier)
+  if (gegnerName === "Fingerwurm") {
+    if (fingerWuermerTot.indexOf(fingerPos) < 0) fingerWuermerTot.push(fingerPos);
+    imKampf = false; aktionsSperre = false; wurmBann = false; aktuellerKnotenTyp = null;
+    document.getElementById("popup-overlay").style.display = "none";
+    speichereRun(); baueKarteHTML(); updateUI();
+    return;
+  }
+
   if (aktuellerKnotenTyp === 1) {
     let hpBonus = Math.round(spielerMaxHp * (hardMode ? 0.05 : 0.1)); spielerMaxHp += hpBonus; spielerHp += hpBonus;
     oeffneStatPopup(t("elite_title"), t("enemy_elite_win", { hp: hpBonus }), naechsteEbene); return;
-  } 
+  }
   if (aktuellerKnotenTyp === 11) { oeffneStatPopup(t("skeleton_title"), t("enemy_skeleton_win"), naechsteEbene); return; }
 }
 
@@ -4091,11 +4280,45 @@ function starteGruselwald() {
 function starteFestungMessmer(titel, text) {
   document.getElementById("popup-overlay").style.display = "none";
   aktuelleRegion = "FestungMessmer"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null;
-  hatGebetet = false;
+  hatGebetet = false; messmerGekippt = false;   // man beginnt IMMER mit dem Aufstieg
   netzKarte = generiereRautenNetz("FestungMessmer");
   heileUndRegeneriereVoll(hardMode);
   speichereRun(); baueKarteHTML(); updateUI(); aktualisiereWahnsinnAnzeige();
   oeffneStatPopup(titel, text, 1);
+}
+
+// Der Schalter ganz oben: die Festung kippt. Ab hier geht es hinab — neues Layout, Statue, unten Messmer.
+function kippeFestung() {
+  if (messmerGekippt) return;
+  messmerGekippt = true;
+  aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null;
+  netzKarte = generiereRautenNetz("FestungMessmer");   // 3-4-2-4-3 -> Boss
+  let mv = document.getElementById("map-scroll-area");
+  if (mv) {   // sichtbares Kippen: die Karte dreht sich einmal um sich selbst
+    mv.classList.add("festung-kippt");
+    setTimeout(function () { try { mv.classList.remove("festung-kippt"); } catch (e) {} }, 1400);
+  }
+  try { playKippSound(); } catch (e) {}
+  speichereRun(); baueKarteHTML(); updateUI();
+  oeffneStatPopup(
+    L("Die Festung kippt", "The Fortress Turns"),
+    L("Kein Thron, kein Boss — nur ein rostiger Hebel im Wind. Du legst dich hinein, und er gibt mit einem Knirschen nach.\n\nEin Beben läuft durch das Mauerwerk. Treppen, die eben noch hinaufführten, führen jetzt <b>hinab</b>. Die ganze Festung hat sich gedreht — und irgendwo tief unter dir, am Grund dessen, was eben noch der Himmel war, wartet <b>Messmer</b>.",
+      "No throne, no boss — just a rusted lever in the wind. You throw your weight into it, and it gives with a grinding groan.\n\nA tremor runs through the masonry. Stairs that led up a moment ago now lead <b>down</b>. The whole fortress has turned — and somewhere far beneath you, at the bottom of what was just the sky, <b>Messmer</b> waits."),
+    1);
+}
+function playKippSound() {
+  if (typeof _soundOn !== "undefined" && !_soundOn) return;
+  var AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+  var ac = new AC(); var o = ac.createOscillator(), g = ac.createGain();
+  o.type = "sawtooth";
+  o.frequency.setValueAtTime(180, ac.currentTime);
+  o.frequency.exponentialRampToValueAtTime(38, ac.currentTime + 1.3);   // die Welt dreht sich nach unten
+  g.gain.setValueAtTime(0.0001, ac.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.22, ac.currentTime + 0.12);
+  g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + 1.5);
+  o.connect(g); g.connect(ac.destination);
+  o.start(); o.stop(ac.currentTime + 1.6);
+  o.onended = function () { try { ac.close(); } catch (e) {} };
 }
 
 // --- Nach Messmer: Wahl zwischen den Ruinen (Enir-Weg) und dem Garten (Metyr-Weg, nur mit Gebet) ---
@@ -4171,6 +4394,7 @@ function starteFingerruinen() {
   let ov = document.getElementById("popup-overlay"); ov.style.display = "none";
   aktuelleRegion = "Fingerruinen"; scharlachRot = false; inFingerruinen = true;
   fingerPos = FINGER_START; fingerGeblasen = []; fingerNodes = wuerfleFinger(); fingerPfad = [FINGER_START];
+  fingerWuermer = wuerfleWuermer(); fingerWuermerTot = []; wurmBann = false;
   aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null; imKampf = false;
   heileUndRegeneriereVoll(hardMode);
   aktualisiereWahnsinnAnzeige(); speichereRun(); baueKarteHTML(); updateUI();
@@ -4207,6 +4431,16 @@ function wuerfleFinger() {
   return out;
 }
 // noch nicht geblasene Finger
+// Würmer besetzen ~22% der freien Kacheln (nie Start, nie Metyr, nie ein Finger).
+// Sie blockieren nichts — man kämpft NACH dem Zug, der Einbahn-Pfad bleibt also garantiert lösbar.
+function wuerfleWuermer() {
+  let out = [];
+  for (let i = 0; i < 100; i++) {
+    if (i === FINGER_START || i === FINGER_METYR || fingerNodes.indexOf(i) >= 0) continue;
+    if (Math.random() < 0.22) out.push(i);
+  }
+  return out;
+}
 function fingerOffen() { return fingerNodes.filter(i => fingerGeblasen.indexOf(i) < 0); }
 // Bleiben von (nr,nc) aus (per hoch/rechts) noch alle offenen Finger erreichbar?
 function fingerErreichbarVon(nr, nc) {
@@ -4236,6 +4470,11 @@ function renderFingerruinen(grid, mv) {
     else if (fingerPfad.indexOf(i) >= 0) cls += " fr-visited";   // schon durchquert — kein Zurück
     if (i === FINGER_METYR) { cls += " fr-metyr" + (allBlown ? " lit" : ""); inner = '<img class="fr-metyr-img" src="' + (bilderDatenbankBosse["Metyr, Mutter der Finger"] || "") + '" onerror="this.replaceWith(document.createTextNode(\'👁\'))">'; }
     else if (fingerNodes.indexOf(i) >= 0) { let blown = fingerGeblasen.indexOf(i) >= 0; cls += " fr-finger" + (blown ? " blown" : ""); inner = "🖐"; }
+    else if (fingerWuermer.indexOf(i) >= 0 && i !== fingerPos) {   // Wurm-Kachel — man sieht sie und kann sie umgehen
+      let tot = fingerWuermerTot.indexOf(i) >= 0;
+      cls += " fr-wurm" + (tot ? " slain" : "");
+      inner = '<img class="fr-wurm-img" src="images/Gegner/wurm.avif" onerror="this.replaceWith(document.createTextNode(\'🪱\'))">';
+    }
     cells += '<div class="' + cls + '" onclick="fingerKlick(' + i + ')">' + inner + '</div>';
   }
   let onFinger = fingerNodes.indexOf(fingerPos) >= 0 && fingerGeblasen.indexOf(fingerPos) < 0;
@@ -4258,7 +4497,23 @@ function fingerKlick(i) {
     return;
   }
   if (i === FINGER_METYR) { fingerPos = i; fingerPfad.push(i); speichereRun(); starteMetyr(); return; }
-  fingerPos = i; if (fingerPfad.indexOf(i) < 0) fingerPfad.push(i); speichereRun(); baueKarteHTML();
+  fingerPos = i; if (fingerPfad.indexOf(i) < 0) fingerPfad.push(i); speichereRun();
+  // Auf der Kachel sitzt ein Wurm -> Kampf. Der Zug ist bereits gemacht, ein Soft-Lock ist damit ausgeschlossen.
+  if (fingerWuermer.indexOf(i) >= 0 && fingerWuermerTot.indexOf(i) < 0) { starteFingerwurm(); return; }
+  baueKarteHTML();
+}
+
+// Im Gebiet der Finger ist JEDER Gegner der Wurm.
+function starteFingerwurm() {
+  // Bewusst unter einem Elite: der Wurm hat mit dem Bann-Spell schon genug Druck, und Metyr (3800/195)
+  // muss der harte Teil bleiben — sonst schlägt das Fußvolk fast so hart wie der Geheimboss.
+  let m = (hardMode ? 12.0 * 1.3 : 12.0) * 1.05;
+  gegnerName = "Fingerwurm"; gegnerMaxHp = Math.round(45 * m); gegnerHp = gegnerMaxHp; gegnerSchaden = Math.round(7.5 * m);
+  aktuellerKnotenTyp = 1; imKampf = true; aktionsSperre = false; wurmBann = false;
+  playerHitsOnEnemy = 0; enemyIsStaggered = false; staggerVisualActive = false; nextHitBonusDamage = false;
+  if (window.ER) try { ER.discover("Fingerwurm"); } catch (e) {}
+  document.getElementById("battle-log").innerText = L("Zwischen den Säulen schiebt sich ein bleicher Wurm hervor. Sein Maul formt Laute, die keine Zunge sprechen sollte.", "A pale worm pushes out from between the pillars. Its maw forms sounds no tongue should speak.");
+  speichereRun(); updateUI();
 }
 function fingerBlasen() {
   if (fingerNodes.indexOf(fingerPos) < 0 || fingerGeblasen.indexOf(fingerPos) >= 0) return;
@@ -4513,7 +4768,7 @@ function bestaetigeStufe(naechsteEbene) { document.getElementById("popup-overlay
     activeChallenge = "";
     hatGodrickRune = hatRadahnRune = hatMorgottRune = true;
     aktuelleRegion = region; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null;
-    torbogenSpruenge = 0; wolfsgeheulGehoert = false; wahnsinn = 0; untouchableRunden = 0; rellanaGetroffen = false; rauhGeheimIntakt = true; inFingerruinen = false; fingerPos = 90; fingerGeblasen = []; fingerNodes = []; fingerPfad = [90]; hatFingerMimic = false; hatGebetet = false;
+    torbogenSpruenge = 0; wolfsgeheulGehoert = false; wahnsinn = 0; untouchableRunden = 0; rellanaGetroffen = false; rauhGeheimIntakt = true; inFingerruinen = false; fingerPos = 90; fingerGeblasen = []; fingerNodes = []; fingerPfad = [90]; hatGebetet = false; messmerGekippt = false; fingerWuermer = []; fingerWuermerTot = []; wurmBann = false;
     scharlachRot = (region === "Rauh");
     try { netzKarte = generiereRautenNetz(region); } catch(e){ console.warn(e); }
     devClosePopups(); devApply(); aktualisiereWahnsinnAnzeige();
@@ -4572,7 +4827,13 @@ function bestaetigeStufe(naechsteEbene) { document.getElementById("popup-overlay
     panel.appendChild(b("🩸 Mohg-Kampf (DLC-Zugang testen)", devMohgFight, "#c0392b"));
     var dlcRow = row();
     [["Grave","Gravesite"],["Ensis","CastleEnsis"],["Wald","Waldgebiet"],["Grusel","AbyssalWoods"],["Messmer","FestungMessmer"],["Garten","Garten"],["Rauh","Rauh"],["Enir","EnirIlim"]].forEach(function(p){ dlcRow.appendChild(bSmall(p[0], function(){ devGotoDLC(p[1]); })); });
-    dlcRow.appendChild(bSmall("🪤Mimic", function(){ hatFingerMimic = !hatFingerMimic; try{ speichereRun(); }catch(e){} alert("Finger Mimic: " + (hatFingerMimic ? "DA (Garten -> Metyr)" : "weg (Garten -> Enir-Ilim)")); }));
+    dlcRow.appendChild(bSmall("🪤Mimic", function(){
+      devEnsureRun();
+      if (besitztFingerMimic()) { for (var i=0;i<backpackItems.length;i++) if (backpackItems[i] && backpackItems[i].type==="fingermimic") backpackItems[i]=null; }
+      else { var s = backpackItems.indexOf(null); if (s < 0) s = 0; backpackItems[s] = Object.assign({}, FINGER_MIMIC); }
+      try{ speichereRun(); updateUI(); }catch(e){}
+      alert("Finger Mimic: " + (besitztFingerMimic() ? "im Rucksack (Garten -> Metyr)" : "weg (Garten -> Enir-Ilim)"));
+    }));
     dlcRow.appendChild(bSmall("🙏Gebet", function(){ hatGebetet = !hatGebetet; try{ speichereRun(); }catch(e){} alert("Statue-Gebet: " + (hatGebetet ? "JA (Garten waehlbar)" : "nein")); }));
     dlcRow.appendChild(bSmall("🖐Finger", function(){ devEnsureRun(); activeChallenge=""; hatGodrickRune=hatRadahnRune=hatMorgottRune=true; devClosePopups(); starteFingerruinen(); }));
     panel.appendChild(dlcRow);
