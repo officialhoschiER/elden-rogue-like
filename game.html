@@ -4585,7 +4585,9 @@ function zeigeRotToast(rot) {
 // Ist der Spieler mit Google angemeldet? (nur eingeloggt zählt für Cloud/Rangliste/Achievements)
 function istEingeloggt() { try { return !!(window.ER && ER.currentUser && ER.currentUser()); } catch (e) { return false; } }
 // Warn-Box für Ergebnis-Screens, wenn NICHT eingeloggt — sonst leer.
+// Wichtig: NICHT anzeigen, solange Firebase den Login noch async wiederherstellt (sonst falsche Warnung trotz Login).
 function loginWarnungHtml() {
+  try { if (window.ER && ER.authReady && !ER.authReady()) return ""; } catch (e) {}
   if (istEingeloggt()) return "";
   return '<div style="background:rgba(120,30,30,0.28); border:1px solid #b04a4a; border-radius:6px; padding:11px 13px; margin:14px 0; font-family:sans-serif; font-size:0.86rem; color:#f0b8b8; line-height:1.5; text-transform:none;">'
     + '⚠️ <b>' + L("Nicht angemeldet", "Not signed in") + '</b> — '

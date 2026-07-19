@@ -29,6 +29,7 @@
   const ONLINE = !!FIREBASE_CONFIG.apiKey && typeof firebase !== "undefined";
   const PATCH = "1.5"; // aktuelle Spielversion – wird an neue Bestenlisten-Einträge angehängt
   let fbAuth = null, fbDB = null, currentUser = null;
+  let authReady = false;   // true, sobald Firebase den Login-Status EINMAL geliefert hat (verhindert falsche "nicht angemeldet"-Warnungen während der async-Wiederherstellung)
   const userListeners = [];
 
   if (ONLINE) {
@@ -38,11 +39,14 @@
       fbDB = firebase.firestore();
       fbAuth.onAuthStateChanged(function (u) {
         currentUser = u;
+        authReady = true;          // ab jetzt ist der Login-Status verlässlich
         initialSyncDone = false;   // erst wieder pushen, wenn der Cloud-Stand des (neuen) Kontos gemergt wurde
         if (u) cloudSyncOnLogin();
         userListeners.forEach(function (cb) { try { cb(u); } catch (e) {} });
       });
-    } catch (e) { console.warn("[ER] Firebase-Init fehlgeschlagen:", e); }
+    } catch (e) { console.warn("[ER] Firebase-Init fehlgeschlagen:", e); authReady = true; }
+  } else {
+    authReady = true;   // Offline-Modus: es gibt keinen async-Login, der Status ist sofort bekannt
   }
 
   /* ====== GLOBALE EVENTS (z.B. Doppel-Seelen-Wochenende) ======
@@ -733,6 +737,7 @@
 
     /* --- Auth --- */
     onUserChange: function (cb) { userListeners.push(cb); try { cb(currentUser); } catch (e) {} },
+    authReady: function () { return authReady; },   // hat Firebase den Login-Status schon geliefert?
     currentUser: function () { return currentUser; },
     signInWithGoogle: function () {
       if (!ONLINE) { alert("Online-Login ist noch nicht konfiguriert (Firebase fehlt). Siehe FIREBASE_SETUP.md."); return Promise.reject("offline"); }

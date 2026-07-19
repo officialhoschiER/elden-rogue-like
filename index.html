@@ -2453,7 +2453,7 @@
       var beaten=idleBeaten(b.key), owned=_idle.owned.indexOf(b.key)>=0, slotted=_idle.slots.indexOf(b.key)>=0;
       var cls, price;
       if(slotted){ cls="slotted"; price=en?"active":"aktiv"; }
-      else if(owned){ cls="owned"; price=en?"To slot":"In Slot"; }
+      else if(owned){ cls="owned"; price=en?"Available":"Verfügbar"; }
       else if(!beaten){ cls="locked"; price="🔒"; }
       else { cls="buy"+(seelen>=b.kosten?"":" poor"); price=(b.kosten===0?(en?"Free":"Gratis"):soulIc+" "+n(b.kosten)); }
       var cardCls="idle-card"+(slotted?" slotted":(owned?" owned":(!beaten?" locked":"")));
