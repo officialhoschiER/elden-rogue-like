@@ -1589,12 +1589,11 @@ const gebietsGegnerKonfig = {
   Gravesite: { elite: "images/Gegner/GRAVESITE_ELITE.jpg", waechter: "images/Gegner/GRAVESITE_WAECHTER.png", invader: "images/Gegner/GRAVESITE_INVADER.webp", eliteName: "Geisterflammen-Drache", waechterName: "Lamenter", invaderName: "Schwertmeister Onze" },
   CastleEnsis: { elite: "images/Gegner/ENSIS_ELITE.jpg", waechter: "images/Gegner/ENSIS_WAECHTER.jpg", invader: "images/Gegner/ENSIS_INVADER.jpg", eliteName: "Karianischer Ritter", waechterName: "Kampfmagier von Ensis", invaderName: "Zwillingsmond-Adept" },
   Waldgebiet: { elite: "images/Gegner/WALD_ELITE.webp", waechter: "images/Gegner/WALD_WAECHTER.jpg", invader: "images/Gegner/WALD_INVADER.jpg", eliteName: "Runenbär", waechterName: "Schwarzklingen-Runenbär", invaderName: "Verirrter Jäger" },
-  // GRUSELWALD (interner Schlüssel bleibt AbyssalWoods — erbt sicherer-Pfad/Untouchable/Wahnsinn). Hat KEINE normalen Gegner.
-  AbyssalWoods: { elite: "images/Gegner/ABYSS_ELITE.jpg", waechter: "images/Gegner/ABYSS_WAECHTER.jpg", invader: "images/Gegner/ABYSS_INVADER.jpg", eliteName: "Erblindeter Wahnsinniger", waechterName: "Winterlaterne", invaderName: "Anhänger der Wahnsinnigen Flamme" },
+  // GRUSELWALD (interner Schlüssel bleibt AbyssalWoods) erbt sicherer-Pfad/Untouchable/Wahnsinn und hat KEINE normalen Gegner -> keine Gegner-Config nötig.
   FestungMessmer: { elite: "images/Gegner/MESSMER_ELITE.png", waechter: "images/Gegner/MESSMER_WAECHTER.webp", invader: "images/Gegner/MESSMER_INVADER.webp", eliteName: "Messmers Speerträger", waechterName: "Flammenritter", invaderName: "Anhänger Messmers" },
   Garten: { elite: "images/Gegner/GARTEN_ELITE.jpg", waechter: "images/Gegner/GARTEN_WAECHTER.png", invader: "images/Gegner/GARTEN_INVADER.jpg", eliteName: "Blütenwächter", waechterName: "Steinerner Hüter", invaderName: "Pilger des Gartens" },
-  Rauh: { elite: "images/Gegner/RAUH_ELITE.jpg", waechter: "images/Gegner/RAUH_WAECHTER.jpg", invader: "images/Gegner/RAUH_INVADER.jpg", eliteName: "Ulkerbestie", waechterName: "Roter Wolf des Champions", invaderName: "Rakshasa" },
-  EnirIlim: { elite: "images/Gegner/ENIR_ELITE.jpg", waechter: "images/Gegner/ENIR_WAECHTER.jpg", invader: "images/Gegner/ENIR_INVADER.jpg", eliteName: "Wächter von Enir-Ilim", waechterName: "Hornbewehrter Wächter", invaderName: "Anhänger Miquellas" },
+  Rauh: { elite: "images/Gegner/rauh_Elite.png", waechter: "images/Gegner/rauh_Wächter.webp", invader: "images/Gegner/rauh_invader.jpg", eliteName: "Ulkerbestie", waechterName: "Roter Wolf des Champions", invaderName: "Rakshasa" },
+  EnirIlim: { elite: "images/Gegner/enir_elite.webp", waechter: "images/Gegner/enir_wächter.png", invader: "images/Gegner/enir_invader.png", eliteName: "Wächter von Enir-Ilim", waechterName: "Hornbewehrter Wächter", invaderName: "Anhänger Miquellas" },
   Mountaintops: { elite: "images/MOUNTAINTOPS_ELITE.jpg", waechter: "images/MOUNTAINTOPS_WAECHTER.jpg", invader: "images/MOUNTAINTOPS_INVADER.jpg", eliteName: "Feuermönch", waechterName: "Troll", invaderName: "Okina" },
   FarumAzula: { elite: "images/FARUMAZULA_ELITE.jpg", waechter: "images/FARUMAZULA_WAECHTER.jpg", invader: "images/FARUMAZULA_INVADER.jpg", eliteName: "Bestienmensch of Farum Azula", waechterName: "Farum Azula Drache", invaderName: "Anastasia" },
   AshenCapital: { elite: "images/ASHENCAPITAL_ELITE.jpg", waechter: "images/ASHENCAPITAL_WAECHTER.jpg", invader: "images/ASHENCAPITAL_INVADER.jpg", eliteName: "Page", waechterName: "Königlicher Revenant", invaderName: "Varre" }
@@ -2136,12 +2135,12 @@ function baueKarteHTML() {
     if (aktuelleRegion === "Mohgwyn") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(35,5,8,0.75), rgba(10,2,3,0.95)), url('images/background/mohgwyn.avif')";
     if (aktuelleRegion === "Gravesite") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(20,18,10,0.78), rgba(8,8,5,0.92)), url('images/background/gravesite.jpg')";
     if (aktuelleRegion === "CastleEnsis") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(10,12,28,0.78), rgba(4,5,14,0.92)), url('images/background/castleensis.webp')";
-    if (aktuelleRegion === "Waldgebiet") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(8,20,10,0.78), rgba(4,10,5,0.92)), url('images/background/waldgebiet.jpg')";
+    if (aktuelleRegion === "Waldgebiet") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(8,20,10,0.78), rgba(4,10,5,0.92)), url('images/background/waldgebiet.webp')";
     if (aktuelleRegion === "AbyssalWoods") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(4,4,6,0.92), rgba(2,2,3,0.985)), url('images/background/abyssalwoods.jpg')";   // Gruselwald
     if (aktuelleRegion === "FestungMessmer") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(30,8,4,0.78), rgba(12,4,2,0.92)), url('images/background/messmer.jpg')";
     if (aktuelleRegion === "Garten") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(10,18,12,0.7), rgba(5,9,6,0.88)), url('images/background/garten.webp')";
     if (aktuelleRegion === "Rauh") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(24,6,8,0.78), rgba(10,4,4,0.92)), url('images/background/rauh.jpg')";
-    if (aktuelleRegion === "EnirIlim") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(28,22,6,0.78), rgba(8,6,3,0.94)), url('images/background/enir.jpg')";
+    if (aktuelleRegion === "EnirIlim") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(28,22,6,0.78), rgba(8,6,3,0.94)), url('images/background/enirelim.webp')";
   }
   mapScrollArea.classList.toggle("abyss-fog", aktuelleRegion === "AbyssalWoods" && !inSubDungeon);
 
@@ -2492,12 +2491,12 @@ function updateUI() {
       else if (aktuelleRegion === "Gelmir") arenaView.style.backgroundImage = "linear-gradient(to bottom, rgba(30,8,4,0.5), rgba(12,4,2,0.85)), url('images/background/gelmir.webp')";
       else if (aktuelleRegion === "Gravesite") arenaView.style.backgroundImage = "linear-gradient(to bottom, rgba(20,18,10,0.6), rgba(8,8,5,0.9)), url('images/background/gravesite.jpg')";
       else if (aktuelleRegion === "CastleEnsis") arenaView.style.backgroundImage = "linear-gradient(to bottom, rgba(10,12,28,0.6), rgba(4,5,14,0.9)), url('images/background/castleensis.webp')";
-      else if (aktuelleRegion === "Waldgebiet") arenaView.style.backgroundImage = "linear-gradient(to bottom, rgba(8,20,10,0.6), rgba(4,10,5,0.9)), url('images/background/waldgebiet.jpg')";
+      else if (aktuelleRegion === "Waldgebiet") arenaView.style.backgroundImage = "linear-gradient(to bottom, rgba(8,20,10,0.6), rgba(4,10,5,0.9)), url('images/background/waldgebiet.webp')";
       else if (aktuelleRegion === "AbyssalWoods") arenaView.style.backgroundImage = "linear-gradient(to bottom, rgba(4,4,6,0.8), rgba(2,2,3,0.95)), url('images/background/abyssalwoods.jpg')";   // Gruselwald
       else if (aktuelleRegion === "FestungMessmer") arenaView.style.backgroundImage = "linear-gradient(to bottom, rgba(30,8,4,0.6), rgba(12,4,2,0.9)), url('images/background/messmer.jpg')";
       else if (aktuelleRegion === "Garten") arenaView.style.backgroundImage = "linear-gradient(to bottom, rgba(10,18,12,0.55), rgba(5,9,6,0.88)), url('images/background/garten.webp')";
       else if (aktuelleRegion === "Rauh") arenaView.style.backgroundImage = "linear-gradient(to bottom, rgba(24,6,8,0.6), rgba(10,4,4,0.9)), url('images/background/rauh.jpg')";
-      else if (aktuelleRegion === "EnirIlim") arenaView.style.backgroundImage = "linear-gradient(to bottom, rgba(28,22,6,0.55), rgba(8,6,3,0.92)), url('images/background/enir.jpg')";
+      else if (aktuelleRegion === "EnirIlim") arenaView.style.backgroundImage = "linear-gradient(to bottom, rgba(28,22,6,0.55), rgba(8,6,3,0.92)), url('images/background/enirelim.webp')";
       else arenaView.style.backgroundImage = `linear-gradient(to bottom, rgba(11,11,11,0.3), rgba(11,11,11,0.6)), url('images/background/${aktuelleRegion.toLowerCase()}.jpg')`;
     }
 
