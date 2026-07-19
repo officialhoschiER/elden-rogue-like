@@ -843,6 +843,28 @@
     try { console.log("%c[ER] Dev-Modus manuell " + (on ? "AN (Laeufe zaehlen NICHT)" : "AUS (Laeufe zaehlen wieder)"), "color:#c080ff;font-weight:bold;"); } catch (e) {}
     return on;
   };
+  // DEV-Reset: leert das lokale Testprofil komplett UND entfernt (falls eingeloggt) die
+  // Cloud-Ranglisten-Werte + Stats aus dem eigenen Firestore-Doc. Nur in der Dev-Umgebung.
+  ER.devResetProfile = function () {
+    if (!istDevUmgebung()) { try { console.warn("[ER] devResetProfile: nur in der DEV-Umgebung erlaubt."); } catch (e) {} return false; }
+    ["eldenRogueStats", "eldenRogueAchievements", "eldenRogueSeenUnlocks", "eldenRogueRun",
+     "eldenRogueSave", "eldenRogueMeta", "eldenRogueHallOfFame", "eldenRogueLocalBoard"
+    ].forEach(function (k) { try { localStorage.removeItem(k); } catch (e) {} });
+    var cloudGeleert = false;
+    if (ONLINE && fbDB && currentUser && firebase.firestore && firebase.firestore.FieldValue) {
+      try {
+        var del = firebase.firestore.FieldValue.delete();
+        var doc = { stats: del, achievements: del, metaStr: del, hofStr: del, seenStr: del, runStr: del,
+                    idleRunen: del, idleOwned: del, idleRate: del, allAchDate: del, allAchCount: del };
+        LB_CLOUD_FELDER.forEach(function (k) { doc[k] = del; });
+        fbDB.collection("users").doc(currentUser.uid).set(doc, { merge: true });
+        cloudGeleert = true;
+      } catch (e) { try { console.warn("[ER] devResetProfile Cloud:", e); } catch (_) {} }
+    }
+    initialSyncDone = false;   // beim naechsten Login sauber neu mergen
+    try { console.log("%c[ER] Testprofil zurueckgesetzt. Cloud geleert: " + cloudGeleert, "color:#c080ff;font-weight:bold;"); } catch (e) {}
+    return { lokal: true, cloud: cloudGeleert };
+  };
 
   /* ====== 5d) TÄGLICHER SEED – eigene Rangliste (bester Score pro Tag) ====== */
   function heutigerDailyKey() {

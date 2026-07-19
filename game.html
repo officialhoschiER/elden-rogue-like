@@ -4845,6 +4845,13 @@ function bestaetigeStufe(naechsteEbene) { document.getElementById("popup-overlay
     panel.appendChild(b("🗼 Battle-Tower Etage…", devTowerFloor, "#9b8cff"));
     panel.appendChild(b("🔄 Run neu starten", function(){ try{ direktNeustarten(); }catch(e){} devRefresh(); }, "#e67e22"));
     panel.appendChild(b("🧹 Lokalen Spielstand LÖSCHEN", function(){ window.location.href = "game.html?wipe=1"; }, "#e74c3c"));
+    panel.appendChild(b("♻ Testprofil zurücksetzen (lokal + Cloud-Rangliste)", function(){
+      if (!confirm("Testprofil komplett zurücksetzen?\n\n• Lokales Profil (Stats, Achievements, Unlocks, Seelen) wird geleert\n• Falls eingeloggt: deine Ranglisten-Werte werden aus der Cloud entfernt\n\nNur für Dev-Testen gedacht.")) return;
+      var r = (window.ER && ER.devResetProfile) ? ER.devResetProfile() : false;
+      if (!r) { alert("Reset nur in der Dev-Umgebung möglich."); return; }
+      alert("Testprofil zurückgesetzt.\nLokal: geleert\nCloud-Rangliste: " + (r.cloud ? "entfernt" : "(nicht eingeloggt – nichts in der Cloud)") + "\n\nSeite wird neu geladen.");
+      window.location.href = "index.html";
+    }, "#c0392b"));
 
     var hint = document.createElement("div");
     hint.style.cssText="margin-top:8px;font:9px sans-serif;color:#666;line-height:1.4;";
