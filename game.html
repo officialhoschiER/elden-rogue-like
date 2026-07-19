@@ -833,10 +833,14 @@ const CONFIG = {
   speedrunMarkMs: 5 * 60 * 1000,   // "Blitz"-Mark auf der Klassen-Tafel: Run schneller als diese Zeit abschließen
   // --- Tower-Modus (endloser Aufstieg, Score = höchste Etage) ---
   tower: {
-    hpBasis: 85,  hpProEtage: 0.32,  hpExpo: 1.07,    // Gegner-HP = hpBasis * (1 + hpProEtage*(etage-1)) * hpExpo^(etage-1)
-    dmgBasis: 12, dmgProEtage: 0.17, dmgExpo: 1.045,  // Gegner-Schaden analog
-    kleinScaleBasis: 1.045, kleinScaleCap: 2.3,        // zusätzliche Skalierung der kleinen Knoten je Etage
-    hardFaktor: 1.35,                                  // zusätzlicher Multiplikator im Hard-Modus
+    // "Deutlich haerter"-Rework: der 1.15-Globalboost traf den Turm nie, und Melinas Segen
+    // (alle 5 Etagen) wuchsen schneller als die alten Gegner -> Turm war "sehr einfach".
+    // Schaden ~verdoppelt, HP ~+60%, damit Mitte/Ende wirklich beissen. Endboss-Schaden
+    // bleibt durch das x1.15-Finalecap (statt x1.6) threatening, aber kein Instant-Kill.
+    hpBasis: 95,  hpProEtage: 0.40,  hpExpo: 1.085,   // Gegner-HP = hpBasis * (1 + hpProEtage*(etage-1)) * hpExpo^(etage-1)
+    dmgBasis: 14, dmgProEtage: 0.24, dmgExpo: 1.078,  // Gegner-Schaden analog
+    kleinScaleBasis: 1.06, kleinScaleCap: 3.0,         // zusätzliche Skalierung der kleinen Knoten je Etage (halten laenger mit)
+    hardFaktor: 1.45,                                  // zusätzlicher Multiplikator im Hard-Modus
     minibossAlle: 5,                                   // jede 5. Etage ein Miniboss (mehr HP/Schaden)
     minibossHpMult: 1.9, minibossDmgMult: 1.4,
     heilProEtage: 0.25                                 // Anteil der Max-HP, der zwischen den Etagen geheilt wird
@@ -3318,7 +3322,7 @@ function starteTowerEtage() {
   imKampf = false; aktionsSperre = false; inSubDungeon = false; towerRadahnPhase2 = false;
   // --- Verhängnis der GANZEN Etage würfeln (30%, nie auf der Finaletage) ---
   towerModifier = null;
-  if (towerEtage < TOWER_MAX && Math.random() < 0.30) {
+  if (towerEtage < TOWER_MAX && Math.random() < 0.45) {   // Verhaengnis-Chance 30% -> 45% (Turm-Haerte-Rework)
     towerModifier = TOWER_MODIFIERS[Math.floor(Math.random() * TOWER_MODIFIERS.length)];
     if (towerModifier.id === "ausgezehrt") spielerFlasks = Math.floor(maxKlassenFlasks / 2);   // gilt für die ganze Etage
     towerZeigeVerhaengnisToast(towerModifier);
