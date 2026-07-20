@@ -1520,7 +1520,7 @@
           + '<b style="color:#7fe0a4;">' + neu + '</b> ' + shopL("neu", "new") + ' · <b>' + (res.length - neu) + '</b> ' + shopL("Duplikate", "dupes")
           + (refundGesamt > 0 ? ' · <b style="color:#cda34f;">+' + refundGesamt + '</b> ' + shopL("erstattet", "refunded") : '')
           + ' · ' + shopL("Kosten", "Cost") + ': <b>' + kosten + '</b> <span style="color:#7fe0a4;">(−10%)</span></div>'
-        + '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:7px;">' + cards + '</div>'
+        + '<div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px;">' + cards + '</div>'
         + '<div style="text-align:center;"><button class="btn-modal-action" style="margin-top:14px;" onclick="renderShop()">' + shopL("Weiter", "Continue") + '</button></div>'
         + '</div>';
     }, 1650);
