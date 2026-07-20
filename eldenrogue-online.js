@@ -137,6 +137,16 @@
     "Feuerriese",
     "Maliketh, die Schwarze Klinge"
   ];
+  // DLC-Regionsbosse (ohne die beiden End-Bosse Radahn/Metyr, die eigene Achievements haben)
+  const DLC_BOSSE = [
+    "Göttliches Tanzlöwenbiest",
+    "Rellana, Ritterin der Zwillingsmonde",
+    "Sonnenblume",
+    "Midra, Herr der Wahnsinnigen Flamme",
+    "Messmer der Pfähler",
+    "Gaius",
+    "Romina, Heilige der Knospe"
+  ];
 
   /* ====== ELDENDEX-KATALOG (einzige Quelle der Wahrheit) ======
      id-Schema: Waffen "w:Name", Rüstung "a:Name", Talismane "t:typ".
@@ -246,6 +256,31 @@
     { id:"Dragonkin Soldier",                     cat:"gegner", reg:"minibosse", name:"Dragonkin Soldier",                     img:"images/Gegner/miniboss_dragonkin_soldier.png" },
     { id:"Putrid Tree Spirit",                    cat:"gegner", reg:"minibosse", name:"Putrid Tree Spirit",                    img:"images/Gegner/putrid_tree_spirit.webp" },
     { id:"Dungeon Skelett",                       cat:"gegner", reg:"minibosse", name:"Dungeon Skelett",                       img:"images/Gegner/skeleton.webp" },
+    // --- DLC-Gegner: Land des Schattens ---
+    { id:"Geisterflammen-Drache",  cat:"gegner", reg:"gravesite",  name:"Geisterflammen-Drache",  img:"images/Gegner/GRAVESITE_ELITE.jpg" },
+    { id:"Lamenter",               cat:"gegner", reg:"gravesite",  name:"Lamenter",               img:"images/Gegner/GRAVESITE_WAECHTER.png" },
+    { id:"Schwertmeister Onze",    cat:"gegner", reg:"gravesite",  name:"Schwertmeister Onze",    img:"images/Gegner/GRAVESITE_INVADER.webp" },
+    { id:"Karianischer Ritter",    cat:"gegner", reg:"ensis",      name:"Karianischer Ritter",    img:"images/Gegner/carian-elite-knight-v0-rszypmang49d1.webp" },
+    { id:"Kampfmagier von Ensis",  cat:"gegner", reg:"ensis",      name:"Kampfmagier von Ensis",  img:"images/Gegner/ENSIS_WAECHTER.webp" },
+    { id:"Zwillingsmond-Adept",    cat:"gegner", reg:"ensis",      name:"Zwillingsmond-Adept",    img:"images/Gegner/ENSIS_INVADER.webp" },
+    { id:"Runenbär",               cat:"gegner", reg:"waldgebiet", name:"Runenbär",               img:"images/Gegner/WALD_ELITE.webp" },
+    { id:"Schwarzklingen-Runenbär",cat:"gegner", reg:"waldgebiet", name:"Schwarzklingen-Runenbär",img:"images/Gegner/WALD_WAECHTER.jpg" },
+    { id:"Verirrter Jäger",        cat:"gegner", reg:"waldgebiet", name:"Verirrter Jäger",        img:"images/Gegner/WALD_INVADER.jpg" },
+    { id:"Fingercreeper",          cat:"gegner", reg:"waldgebiet", name:"Fingercreeper",          img:"images/Gegner/fingercreeper.jpg" },
+    { id:"Aging Untouchable",      cat:"gegner", reg:"gruselwald", name:"Aging Untouchable",      img:"images/icons/4026614_full.webp" },
+    { id:"Messmers Speerträger",   cat:"gegner", reg:"messmer",    name:"Messmers Speerträger",   img:"images/Gegner/MESSMER_ELITE.png" },
+    { id:"Flammenritter",          cat:"gegner", reg:"messmer",    name:"Flammenritter",          img:"images/Gegner/MESSMER_WAECHTER.webp" },
+    { id:"Anhänger Messmers",      cat:"gegner", reg:"messmer",    name:"Anhänger Messmers",      img:"images/Gegner/MESSMER_INVADER.webp" },
+    { id:"Blütenwächter",          cat:"gegner", reg:"garten",     name:"Blütenwächter",          img:"images/Gegner/GARTEN_ELITE.jpg" },
+    { id:"Steinerner Hüter",       cat:"gegner", reg:"garten",     name:"Steinerner Hüter",       img:"images/Gegner/GARTEN_WAECHTER.png" },
+    { id:"Pilger des Gartens",     cat:"gegner", reg:"garten",     name:"Pilger des Gartens",     img:"images/Gegner/GARTEN_INVADER.jpg" },
+    { id:"Ulkerbestie",            cat:"gegner", reg:"rauh",       name:"Ulkerbestie",            img:"images/Gegner/rauh_Elite.png" },
+    { id:"Roter Wolf des Champions",cat:"gegner", reg:"rauh",      name:"Roter Wolf des Champions",img:"images/Gegner/rauh_Wächter.webp" },
+    { id:"Rakshasa",               cat:"gegner", reg:"rauh",       name:"Rakshasa",               img:"images/Gegner/rauh_invader.jpg" },
+    { id:"Wächter von Enir-Ilim",  cat:"gegner", reg:"enirilim",   name:"Wächter von Enir-Ilim",  img:"images/Gegner/enir_elite.webp" },
+    { id:"Hornbewehrter Wächter",  cat:"gegner", reg:"enirilim",   name:"Hornbewehrter Wächter",  img:"images/Gegner/enir_wächter.png" },
+    { id:"Anhänger Miquellas",     cat:"gegner", reg:"enirilim",   name:"Anhänger Miquellas",     img:"images/Gegner/enir_invader.png" },
+    { id:"Fingerwurm",             cat:"gegner", reg:"finger",     name:"Fingerwurm",             img:"images/Gegner/wurm.avif" },
     // --- Bosse (id = exakter gegnerName) — Reihenfolge = Story-/Spielfortschritt ---
     { id:"Godrick, der Verpflanzte",          cat:"bosse", name:"Godrick, der Verpflanzte",          img:"images/bosse/godrick.webp" },
     { id:"Sternengeißel Radahn",              cat:"bosse", name:"Sternengeißel Radahn",              img:"images/bosse/radahn.webp" },
@@ -265,6 +300,17 @@
     { id:"Godfrey, der Erste Eldenlord",      cat:"bosse", name:"Godfrey, der Erste Eldenlord",      img:"images/bosse/godfrey.webp" },
     { id:"Radagon von der Goldenen Ordnung",  cat:"bosse", name:"Radagon von der Goldenen Ordnung",  img:"images/bosse/radagon.jpg" },
     { id:"Eldenbiest",                        cat:"bosse", name:"Eldenbiest",                        img:"images/bosse/eldenbeast.jpg" },
+    // --- DLC: Land des Schattens ---
+    { id:"Göttliches Tanzlöwenbiest",         cat:"bosse", name:"Göttliches Tanzlöwenbiest",         img:"images/bosse/tanzloewe.jpg" },
+    { id:"Rellana, Ritterin der Zwillingsmonde", cat:"bosse", name:"Rellana, Ritterin der Zwillingsmonde", img:"images/bosse/rellana.png" },
+    { id:"Sonnenblume",                       cat:"bosse", name:"Sonnenblume",                       img:"images/bosse/sonnenblume.png" },
+    { id:"Midra, Herr der Wahnsinnigen Flamme", cat:"bosse", name:"Midra, Herr der Wahnsinnigen Flamme", img:"images/bosse/midra.png" },
+    { id:"Messmer der Pfähler",               cat:"bosse", name:"Messmer der Pfähler",               img:"images/bosse/messmer.webp" },
+    { id:"Gaius",                             cat:"bosse", name:"Gaius",                             img:"images/bosse/Gauis.png" },
+    { id:"Romina, Heilige der Knospe",        cat:"bosse", name:"Romina, Heilige der Knospe",        img:"images/bosse/romina.png" },
+    { id:"Verheißener Gemahl Radahn",         cat:"bosse", name:"Verheißener Gemahl Radahn",         img:"images/bosse/pcr.webp" },
+    { id:"Radahn, Gemahl Miquellas",          cat:"bosse", name:"Radahn, Gemahl Miquellas",          img:"images/bosse/pcr.webp" },
+    { id:"Metyr, Mutter der Finger",          cat:"bosse", name:"Metyr, Mutter der Finger",          img:"images/bosse/metyr.webp" },
     { id:"Blaidd, der Halbwolf",              cat:"bosse", name:"Blaidd, der Halbwolf",              img:"images/Gegner/blaidd.avif" },
     { id:"Cemetery Shade",                    cat:"bosse", name:"Cemetery Shade",                    img:"images/bosse/catacomb_boss.jpg" },
     { id:"Baby PCR",                          cat:"bosse", name:"Baby PCR",                          img:"images/bosse/pcr.webp" }
@@ -295,8 +341,16 @@
     { id: "mohg",       name: "Miquellas Erwachen",     icon: "🩸", desc: "Besiege Mohg, Fürst des Blutes, und erwecke Miquella.", check: s => (s.bossKills["Mohg, Fürst des Blutes"] || 0) >= 1 },
     { id: "all_bosses", name: "Götterdämmerung",        icon: "🌒", desc: "Besiege jeden Halbgott mindestens einmal.", check: s => HAUPTBOSSE.every(b => (s.bossKills[b] || 0) >= 1) },
     /* --- DLC: Schatten des Erdbaums --- */
-    { id: "dlc_consort", name: "Gemahl des Gestirns",   icon: "🌘", desc: "Besiege den Verheißenen Gemahl Radahn am Ende von Enir-Ilim (nur im Schattenland — nicht im Turm).", check: s => ((s.bossKills || {})["Radahn, Gemahl Miquellas"] || 0) >= 1 },
-    { id: "dlc_metyr",   name: "Mutter der Finger",      icon: "🖐️", desc: "Lüfte das tiefste Geheimnis des Schattenlands und besiege Metyr in den Fingerruinen.", check: s => ((s.bossKills || {})["Metyr, Mutter der Finger"] || 0) >= 1 },
+    { id: "dlc_tanzloewe", name: "Sturm von Belurat",    icon: "🦁", desc: "Besiege das Göttliche Tanzlöwenbiest auf der Gräberebene.", check: s => ((s.bossKills || {})["Göttliches Tanzlöwenbiest"] || 0) >= 1 },
+    { id: "dlc_rellana",   name: "Zwillingsmonde",       icon: "🌗", desc: "Besiege Rellana, Ritterin der Zwillingsmonde, in Castle Ensis.", check: s => ((s.bossKills || {})["Rellana, Ritterin der Zwillingsmonde"] || 0) >= 1 },
+    { id: "dlc_sonnenblume", name: "Verblühte Sonne",    icon: "🌻", desc: "Besiege die Sonnenblume im Waldgebiet.", check: s => ((s.bossKills || {})["Sonnenblume"] || 0) >= 1 },
+    { id: "dlc_midra",     name: "Wahnsinnige Flamme",   icon: "😵‍💫", desc: "Besiege Midra, Herrn der Wahnsinnigen Flamme, im Gruselwald.", check: s => ((s.bossKills || {})["Midra, Herr der Wahnsinnigen Flamme"] || 0) >= 1 },
+    { id: "dlc_messmer",   name: "Flamme des Pfählers",  icon: "🔥", desc: "Besiege Messmer den Pfähler in seiner gekippten Festung.", check: s => ((s.bossKills || {})["Messmer der Pfähler"] || 0) >= 1 },
+    { id: "dlc_gaius",     name: "Der Wildschweinritter", icon: "🐗", desc: "Besiege Gaius im Garten.", check: s => ((s.bossKills || {})["Gaius"] || 0) >= 1 },
+    { id: "dlc_romina",    name: "Fäulnis der Knospe",   icon: "🦋", desc: "Besiege Romina, Heilige der Knospe, in den Ruinen von Rauh.", check: s => ((s.bossKills || {})["Romina, Heilige der Knospe"] || 0) >= 1 },
+    { id: "dlc_all_bosses", name: "Herr des Schattenlands", icon: "🌑", desc: "Besiege jeden Boss des Land des Schattens mindestens einmal.", check: s => DLC_BOSSE.every(b => ((s.bossKills || {})[b] || 0) >= 1) },
+    { id: "dlc_consort", name: "Gemahl des Gestirns",   icon: "🌘", desc: "END-BOSS: Besiege den Verheißenen Gemahl Radahn am Ende von Enir-Ilim (Haupt-Ende des Schattenlands).", check: s => ((s.bossKills || {})["Radahn, Gemahl Miquellas"] || 0) >= 1 },
+    { id: "dlc_metyr",   name: "Mutter der Finger",      icon: "🖐️", desc: "GEHEIM-ENDE: Lüfte das tiefste Geheimnis des Schattenlands und besiege Metyr.", check: s => ((s.bossKills || {})["Metyr, Mutter der Finger"] || 0) >= 1 },
     /* --- Runs / Abschluss --- */
     { id: "elden_lord", name: "Elden Lord",             icon: "👑", desc: "Schließe einen Run ab und werde Elden Lord.", check: s => s.gamesCompleted >= 1 },
     { id: "complete_10",name: "Veteran",                icon: "🎖️", desc: "Schließe 10 Runs ab.",                  check: s => s.gamesCompleted >= 10 },

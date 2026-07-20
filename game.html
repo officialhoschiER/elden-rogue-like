@@ -1611,6 +1611,7 @@ const bilderDatenbankBosse = {
   "Romina, Heilige der Knospe": "images/bosse/romina.png",
   "Metyr, Mutter der Finger": "images/bosse/metyr.webp",
   "Verheißener Gemahl Radahn": "images/bosse/pcr.webp",
+  "Radahn, Gemahl Miquellas": "images/bosse/pcr.webp",   // Phase 2 hatte kein Bild -> selbes PCR-Bild
   "Aging Untouchable": "images/icons/4026614_full.webp",
   "Loretta, Knight of the Haligtree": "images/loretta-knight-of-haligtree.jpg",
   "Commander Niall": "images/commander-niall-elden-ring-wiki.jpg",
@@ -1629,7 +1630,7 @@ const bilderDatenbankBosse = {
   "Feuerriese": "images/firegiant.avif", "Maliketh, die Schwarze Klinge": "images/maliketh.jpg",
   "Gideon Ofnir, der Allwissende": "images/gideon.webp", "Godfrey, der Erste Eldenlord": "images/godfrey.webp",
   "Radagon von der Goldenen Ordnung": "images/radagon.jpg", "Eldenbiest": "images/eldenbeast.jpg",
-  "Dungeon Skelett": "images/skeleton.webp", "Cemetery Shade": "images/catacomb_boss.jpg",
+  "Dungeon Skelett": "images/skeleton.webp", "Cemetery Shade": "images/catacomb_boss.jpg", "Dragonkin Soldier": "images/miniboss_dragonkin_soldier.png",
   "Baby PCR": "images/bosse/pcr.webp"
 };
 
@@ -2713,6 +2714,7 @@ function klickeKnoten(ebene, knoten) {
       gegnerSchaden = fin ? Math.round(tstats.dmg * 1.15) : tstats.dmg;
     }
     else if (inSewers) { gegnerName = "Esgar, Priester des Blutes"; gegnerMaxHp = 450; gegnerSchaden = 36; }
+    else if (inSubDungeon && aktuelleRegion === "EnirIlim") { gegnerName = "Dragonkin Soldier"; gegnerMaxHp = Math.round(120 * rMult); gegnerSchaden = Math.round(16 * rMult); }   // DLC Enir-Ilim: Höhlen-Gegner ist der Drachenkin-Soldat
     else if (inSubDungeon) { gegnerName = "Cemetery Shade"; gegnerMaxHp = Math.round(100 * rMult); gegnerSchaden = Math.round(14 * rMult); }
     else {
       if (aktuelleRegion === "Limgrave") { gegnerName = "Godrick, der Verpflanzte"; gegnerMaxHp = 250; gegnerSchaden = 20; }
