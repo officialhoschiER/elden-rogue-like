@@ -838,10 +838,10 @@ const CONFIG = {
     // (alle 5 Etagen) wuchsen schneller als die alten Gegner -> Turm war "sehr einfach".
     // Schaden ~verdoppelt, HP ~+60%, damit Mitte/Ende wirklich beissen. Endboss-Schaden
     // bleibt durch das x1.15-Finalecap (statt x1.6) threatening, aber kein Instant-Kill.
-    hpBasis: 95,  hpProEtage: 0.40,  hpExpo: 1.085,   // Gegner-HP = hpBasis * (1 + hpProEtage*(etage-1)) * hpExpo^(etage-1)
-    dmgBasis: 14, dmgProEtage: 0.24, dmgExpo: 1.078,  // Gegner-Schaden analog
+    hpBasis: 95,  hpProEtage: 0.44,  hpExpo: 1.09,    // Gegner-HP = hpBasis * (1 + hpProEtage*(etage-1)) * hpExpo^(etage-1)
+    dmgBasis: 14, dmgProEtage: 0.28, dmgExpo: 1.088,  // Gegner-Schaden analog (haerter als zuvor)
     kleinScaleBasis: 1.06, kleinScaleCap: 3.0,         // zusätzliche Skalierung der kleinen Knoten je Etage (halten laenger mit)
-    hardFaktor: 1.45,                                  // zusätzlicher Multiplikator im Hard-Modus
+    hardFaktor: 1.55,                                  // zusätzlicher Multiplikator im Hard-Modus
     minibossAlle: 5,                                   // jede 5. Etage ein Miniboss (mehr HP/Schaden)
     minibossHpMult: 1.9, minibossDmgMult: 1.4,
     heilProEtage: 0.25                                 // Anteil der Max-HP, der zwischen den Etagen geheilt wird
@@ -1611,8 +1611,8 @@ const bilderDatenbankBosse = {
   "Gaius": "images/bosse/Gauis.png",
   "Romina, Heilige der Knospe": "images/bosse/romina.png",
   "Metyr, Mutter der Finger": "images/bosse/metyr.webp",
-  "Verheißener Gemahl Radahn": "images/bosse/pcr.webp",
-  "Radahn, Gemahl Miquellas": "images/bosse/pcr.webp",   // Phase 2 hatte kein Bild -> selbes PCR-Bild
+  "Verheißener Gemahl Radahn": "images/bosse/PCR1.jpg",   // Phase 1
+  "Radahn, Gemahl Miquellas": "images/bosse/PCR2.jpg",    // Phase 2 (Miquella auf den Schultern)
   "Aging Untouchable": "images/icons/4026614_full.webp",
   "Loretta, Knight of the Haligtree": "images/loretta-knight-of-haligtree.jpg",
   "Commander Niall": "images/commander-niall-elden-ring-wiki.jpg",
@@ -3108,6 +3108,18 @@ async function gegnerKonter(opts) {
       gSchaden = Math.min(Math.max(gSchaden, malDmg), Math.round(finalMaxHp * 0.62));
       gSchaden = Math.max(1, gSchaden);
     }
+    // BATTLE TOWER: Schaden skaliert mit der Max-HP -> egal wie viel HP man stackt, ein Treffer kostet
+    // immer einen spürbaren Anteil. Damit kann man NIE unsterblich werden (das war das Endgame-Problem).
+    if (activeChallenge === "tower") {
+      let finalMaxHp = berechneFinalMaxHp();
+      let istBoss = (aktuellerKnotenTyp === 5);
+      let pct = istBoss ? Math.min(0.42, 0.11 + 0.007 * (towerEtage - 1))    // Boss: 11% -> bis 42%
+                        : Math.min(0.12, 0.035 + 0.003 * (towerEtage - 1));  // kleine Knoten: 3.5% -> bis 12%
+      let hpFloor = Math.round(finalMaxHp * pct * (1 - ruestungReduktion) * (1 + tStats.bonusDmgTakenPercent));
+      gSchaden = Math.max(gSchaden, hpFloor);
+      gSchaden = Math.min(gSchaden, Math.round(finalMaxHp * 0.55));   // aber nie ein One-Shot (max 55% pro Treffer)
+      gSchaden = Math.max(1, gSchaden);
+    }
     spielerHp = Math.max(0, spielerHp - gSchaden);
     if (gegnerName === "Rellana, Ritterin der Zwillingsmonde") rellanaGetroffen = true;   // Treffer kassiert -> kein Hitless-Bonus mehr
     playerWrapper.classList.add("enemy-hurt");
@@ -3264,6 +3276,7 @@ const TOWER_BOSSES = [
 let towerAngeboteneBelohnungen = [];
 let letzterTowerBoss = "";
 let towerModifier = null;   // aktuelles Verhängnis dieser Etage (null = keins)
+let towerBaseMaxHp = 0;     // Max-HP bei Tower-Start — der Erdbaum-Segen skaliert davon (kein exponentielles Compounding)
 let towerDmgMult = 1.0;     // Segen: Schadens-Multiplikator (stapelt)
 let towerSoulMult = 1.0;    // Segen: Seelen-Multiplikator
 let towerRadahnPhase2 = false;
@@ -3284,7 +3297,7 @@ function addMetaSeelen(n){ try { let evMult = (window.ER && ER.getEvent) ? (ER.g
 function towerSegenPool() {
   return [
     { icon:"🔥", titel: L("Kriegsflamme · +15% Schaden","War Flame · +15% dmg"),        apply: ()=>{ towerDmgMult += 0.15; } },
-    { icon:"❤️", titel: L("Erdbaum-Segen · +20% Max-HP","Erdtree Blessing · +20% max HP"), apply: ()=>{ let b=Math.round(spielerMaxHp*0.20); spielerMaxHp+=b; spielerHp=berechneFinalMaxHp(); } },
+    { icon:"❤️", titel: L("Erdbaum-Segen · +15% Max-HP","Erdtree Blessing · +15% max HP"), apply: ()=>{ let b=Math.round((towerBaseMaxHp||spielerMaxHp)*0.15); spielerMaxHp+=b; spielerHp=berechneFinalMaxHp(); } },   // +15% des START-Werts (linear, kein exponentielles Compounding)
     { icon:"🧪", img:"images/icons/icon_estus.png", titel: L("Heiliger Flakon · +1 & voll","Sacred Flask · +1 & refill"),    apply: ()=>{ maxKlassenFlasks++; spielerFlasks=maxKlassenFlasks; } },
     { icon:"💨", titel: L("Wind der Gnade · +8% Rolle","Wind of Grace · +8% dodge"),      apply: ()=>{ basisAusweichChance=Math.min(0.85, basisAusweichChance+0.08); } },
     { icon:"⚔️", titel: L("Miquellas Schärfung · Waffe +2","Miquella's Edge · weapon +2"), apply: ()=>{ waffenUpgrade+=2; } },
@@ -3308,6 +3321,7 @@ function towerGegnerStats(etage) {
 
 function starteTowerModus() {
   towerEtage = 1;
+  towerBaseMaxHp = spielerMaxHp;   // Referenz für den Erdbaum-Segen (fester Wert, kein Compounding)
   towerDmgMult = 1.0; towerSoulMult = 1.0; letzterTowerBoss = ""; towerRadahnPhase2 = false; towerModifier = null;
   inSubDungeon = false; mainMapState = null;
   besiegteWaechter = 0; questProgress = 0; completedDungeonsCount = 0;
