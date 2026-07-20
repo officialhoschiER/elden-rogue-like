@@ -1115,7 +1115,7 @@ function speichereMeta(m) { try { localStorage.setItem(META_KEY, JSON.stringify(
 function markiereGefolgeBoss(name) { try { if (!hardMode || !name || seedIsCustom) return; let m = ladeMeta(); m.idleUnlocked = m.idleUnlocked || []; if (m.idleUnlocked.indexOf(name) < 0) { m.idleUnlocked.push(name); speichereMeta(m); } } catch (e) {} }
 function L(de, en) { return (window.i18n && window.i18n.getLang && window.i18n.getLang() === "en") ? en : de; }
 
-const SEELEN_REGION_TIEFE = { Limgrave:0, Caelid:1, Leyndell:2, Mountaintops:3, FarumAzula:4, AshenCapital:5, EldenThrone:6, Haligtree:6, Gravesite:7, CastleEnsis:8, Waldgebiet:9, AbyssalWoods:9, FestungMessmer:10, Rauh:11, Garten:11, EnirIlim:12 };
+const SEELEN_REGION_TIEFE = { Limgrave:0, Caelid:1, Leyndell:2, Mountaintops:3, FarumAzula:4, AshenCapital:5, EldenThrone:6, Haligtree:6, Gravesite:7, CastleEnsis:8, Waldgebiet:9, AbyssalWoods:9, FestungMessmer:10, Rauh:11, Garten:11, EnirIlim:12, Fingerruinen:12 };
 function belohneSeelen(gewonnen) {
   // Seed-Run: keine Seelen (sonst Lucky-Seed-Farming) — AUSSER in der Dev-/Test-Umgebung, damit man dort vernünftig testen kann
   if (seedIsCustom && !(window.ER && ER.isDevMode && ER.isDevMode())) { letzteRunSeelen = 0; return 0; }
@@ -1449,6 +1449,7 @@ function regionBossName(region, ebene) {
   if (region === "Garten") return "Gaius";
   if (region === "Rauh") return "Romina, Heilige der Knospe";
   if (region === "EnirIlim") return "Verheißener Gemahl Radahn";
+  if (region === "Fingerruinen") return "Metyr, Mutter der Finger";
   return "";
 }
 // Kurzer Schwäche/Resistenz-Text für einen Boss (für den Hover-Tooltip)
@@ -1464,7 +1465,7 @@ function bossSchwaecheText(bossName) {
 }
 
 // DLC-Kette: Gravesite 9 → Ensis 10 → Waldgebiet/Gruselwald(=AbyssalWoods) 11 → Festung Messmer 12 → Rauh/Garten 13 → Enir-Ilim 14
-const regionStufe = { Limgrave:1, Liurnia:2, Caelid:2, Leyndell:3, Gelmir:3, Mountaintops:4, FarumAzula:5, AshenCapital:6, EldenThrone:7, Haligtree:8, Mohgwyn:8, Gravesite:9, CastleEnsis:10, Waldgebiet:11, AbyssalWoods:11, FestungMessmer:12, Rauh:13, Garten:13, EnirIlim:14 };
+const regionStufe = { Limgrave:1, Liurnia:2, Caelid:2, Leyndell:3, Gelmir:3, Mountaintops:4, FarumAzula:5, AshenCapital:6, EldenThrone:7, Haligtree:8, Mohgwyn:8, Gravesite:9, CastleEnsis:10, Waldgebiet:11, AbyssalWoods:11, FestungMessmer:12, Rauh:13, Garten:13, EnirIlim:14, Fingerruinen:14 };
 function gibStageNummer(){ return inSubDungeon ? 1 : (regionStufe[aktuelleRegion] || 1); }
 function gibTalismanTier(){ return Math.min(Math.max(gibStageNummer() - 1, 0), 3); }
 function tierSuffix(tier){ return tier > 0 ? " +" + tier : ""; }
@@ -1836,6 +1837,20 @@ function generiereRautenNetz(regionName) {
     }
   }
 
+  // DLC Gebiet der Finger: 3 KOMPLETTE Finger-Reihen (typ 24). Jeder Pfad quert pro Reihe genau
+  // einen Knoten -> man bläst garantiert 3 Finger, bevor man Metyr erreicht (kein Soft-Lock möglich).
+  if (regionName === "Fingerruinen") {
+    let eligible = [];
+    for (let e = 1; e < fertigeKarte.length - 1; e++) {
+      let z = fertigeKarte[e];
+      if (z && !z.knoten.some(k => k.typ === 4 || k.typ === 5)) eligible.push(e);   // keine Gnade-/Boss-Reihe
+    }
+    let pick = (eligible.length >= 3)
+      ? [eligible[0], eligible[Math.floor(eligible.length / 2)], eligible[eligible.length - 1]]
+      : eligible;
+    pick.forEach(e => { fertigeKarte[e].knoten.forEach(k => { k.typ = 24; }); });
+  }
+
   // DLC Festung von Messmer — zwei Gesichter:
   //  Aufstieg: oben wartet KEIN Boss, sondern der SCHALTER (typ 23), der die Festung kippt.
   //  Abstieg : ein STATUE-Knoten (typ 22) — davor beten schaltet den Garten frei; unten wartet Messmer.
@@ -2143,6 +2158,7 @@ function baueKarteHTML() {
     if (aktuelleRegion === "Garten") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(10,18,12,0.7), rgba(5,9,6,0.88)), url('images/background/garten.webp')";
     if (aktuelleRegion === "Rauh") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(24,6,8,0.78), rgba(10,4,4,0.92)), url('images/background/rauh.jpg')";
     if (aktuelleRegion === "EnirIlim") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(28,22,6,0.78), rgba(8,6,3,0.94)), url('images/background/enirelim.webp')";
+    if (aktuelleRegion === "Fingerruinen") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(18,14,30,0.82), rgba(5,4,10,0.94)), url('images/background/fingerruinen.jpg')";   // DLC Gebiet der Finger
   }
   mapScrollArea.classList.toggle("abyss-fog", aktuelleRegion === "AbyssalWoods" && !inSubDungeon);
   // DLC Festung Messmer: Aufstieg = normal (Start unten -> Schalter oben). Nach dem Kippen = Abstieg
@@ -2195,6 +2211,12 @@ function baueKarteHTML() {
         // Torbogen: solange kein images/icons/torbogen.png existiert, zeigt der Knoten das ⛩️-Emoji
         imgTag.src = bDatenbankHTML[20];
         imgTag.onerror = function(){ this.outerHTML = '<span style="font-size:1.8rem; pointer-events:none;">⛩️</span>'; };
+      } else if (knoten.typ === 24) {
+        // DLC Gebiet der Finger: ein Finger zum Reinblasen; geblasene Finger sind gedämpft.
+        imgTag.src = "images/icons/finger_mimic.webp";
+        imgTag.classList.add("fullbleed");
+        imgTag.onerror = function(){ this.onerror = null; this.outerHTML = '<span style="font-size:1.9rem; pointer-events:none;">🖐</span>'; };
+        if (Array.isArray(fingerGeblasen) && fingerGeblasen.indexOf(knoten.id) >= 0) { imgTag.style.filter = "grayscale(1)"; imgTag.style.opacity = "0.4"; }
       } else {
         let iconPfad = bDatenbankHTML[knoten.typ] || "images/icon_loot.webp"; imgTag.src = iconPfad;
         imgTag.onerror = function(){ this.onerror = null; this.src = "images/icon_loot.webp"; };   // fehlendes Icon -> generisches Fallback
@@ -2622,6 +2644,18 @@ function klickeKnoten(ebene, knoten) {
     return;
   }
 
+  if (knoten.typ === 24) {   // DLC Gebiet der Finger: in den Finger blasen -> zählt Richtung Metyr
+    if (!Array.isArray(fingerGeblasen)) fingerGeblasen = [];
+    if (fingerGeblasen.indexOf(knoten.id) < 0) fingerGeblasen.push(knoten.id);
+    try { playFingerSound(); } catch(e){}
+    speichereRun();
+    let __n = fingerGeblasen.length;
+    oeffneStatPopup(L("Ein Finger erklingt", "A Finger Sounds"),
+      L("Du legst die Lippen an den Finger und bläst. Ein tiefer Ton hallt durch die Säulen — <b>" + __n + " / 3</b>." + (__n >= 3 ? "\n\nAlle Finger haben getönt. Metyr erwacht." : ""),
+        "You set your lips to the finger and blow. A deep tone echoes through the pillars — <b>" + __n + " / 3</b>." + (__n >= 3 ? "\n\nAll fingers have tolled. Metyr awakens." : "")), ebene + 1);
+    return;
+  }
+
   if (knoten.typ === 23) { kippeFestung(); return; }   // DLC: der Schalter oben — hier wartet KEIN Boss
 
   if (knoten.typ === 22) {   // DLC Festung Messmer: die Statue — davor beten öffnet nach Messmer den Garten
@@ -2682,6 +2716,7 @@ function klickeKnoten(ebene, knoten) {
   if (aktuelleRegion === "AbyssalWoods") rMult = (hardMode ? 9.0*1.3 : 9.0) * 1.05;   // Gruselwald
   if (aktuelleRegion === "FestungMessmer") rMult = (hardMode ? 10.0*1.3 : 10.0) * 1.05;
   if (aktuelleRegion === "Garten") rMult = (hardMode ? 11.0*1.3 : 11.0) * 1.05;
+  if (aktuelleRegion === "Fingerruinen") rMult = (hardMode ? 12.0*1.3 : 12.0) * 1.05;   // Reich der Äußeren Götter
 
   if (gebietsGegnerKonfig[aktuelleRegion]) {
     let cfg = gebietsGegnerKonfig[aktuelleRegion];
@@ -2690,6 +2725,11 @@ function klickeKnoten(ebene, knoten) {
     else if (knoten.typ === 3) { gegnerName = cfg.invaderName; gegnerMaxHp = Math.round(60 * rMult); gegnerSchaden = Math.round(12 * rMult); }
   }
   
+  // DLC Gebiet der Finger: JEDER Kampfknoten ist der Fingerwurm (30% Bann-Spell, 2 Runden).
+  if (aktuelleRegion === "Fingerruinen" && (knoten.typ === 1 || knoten.typ === 2 || knoten.typ === 3)) {
+    gegnerName = "Fingerwurm"; gegnerMaxHp = Math.round(45 * rMult); gegnerSchaden = Math.round(7.5 * rMult);
+  }
+
   if (knoten.typ === 21) { gegnerName = "Fingercreeper"; gegnerMaxHp = Math.round(95 * rMult); gegnerSchaden = Math.round(17 * rMult); }   // DLC Waldgebiet: getarnter Geheim-Gegner -> dropt die Finger Mimic
   else if (knoten.typ === 11) { gegnerName = "Dungeon Skelett"; gegnerMaxHp = Math.round(25 * rMult); gegnerSchaden = Math.round(5 * rMult); }
   else if (knoten.typ === 9) {
@@ -2743,6 +2783,7 @@ function klickeKnoten(ebene, knoten) {
       else if (aktuelleRegion === "Garten") { gegnerName = "Gaius"; gegnerMaxHp = 2900; gegnerSchaden = 165; }   // spiegelt Romina (paralleler Weg)
       else if (aktuelleRegion === "Rauh") { gegnerName = "Romina, Heilige der Knospe"; gegnerMaxHp = 2900; gegnerSchaden = 165; }
       else if (aktuelleRegion === "EnirIlim") { gegnerName = "Verheißener Gemahl Radahn"; gegnerMaxHp = 3800; gegnerSchaden = 195; }   // finaler DLC-Boss: bewusst der haerteste
+      else if (aktuelleRegion === "Fingerruinen") { gegnerName = "Metyr, Mutter der Finger"; gegnerMaxHp = 3800; gegnerSchaden = 195; }   // Geheim-End-Boss
       else if (aktuelleRegion === "EldenThrone") {
         if (ebene === 1) { gegnerName = "Godfrey, der Erste Eldenlord"; gegnerMaxHp = 1800; gegnerSchaden = 100; }
         if (ebene === 3) { gegnerName = "Radagon von der Goldenen Ordnung"; gegnerMaxHp = 2000; gegnerSchaden = 110; }
@@ -4395,21 +4436,16 @@ function aktualisiereWahnsinnAnzeige() {
    Drei Finger (72/45/27) müssen "geblasen" werden -> Metyr erwacht.
    ============================================================ */
 function starteFingerruinen() {
-  let ov = document.getElementById("popup-overlay"); ov.style.display = "none";
-  aktuelleRegion = "Fingerruinen"; scharlachRot = false; inFingerruinen = true;
-  fingerPos = FINGER_START; fingerGeblasen = []; fingerNodes = wuerfleFinger(); fingerPfad = [FINGER_START];
-  fingerWuermer = wuerfleWuermer(); fingerWuermerTot = []; wurmBann = 0;
+  document.getElementById("popup-overlay").style.display = "none";
+  aktuelleRegion = "Fingerruinen"; scharlachRot = false; inFingerruinen = false;
+  fingerGeblasen = []; wurmBann = 0;
   aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null; imKampf = false;
+  netzKarte = generiereRautenNetz("Fingerruinen");
   heileUndRegeneriereVoll(hardMode);
   aktualisiereWahnsinnAnzeige(); speichereRun(); baueKarteHTML(); updateUI();
-  let content = document.getElementById("popup-content");
-  content.innerHTML =
-    '<h3 style="color:var(--gold);font-size:1.6rem;margin-top:0;letter-spacing:2px;font-family:\'Mantinia\',serif;">' + L("Die Ruinen der Finger", "The Finger Ruins") + '</h3>' +
-    '<p style="color:#ddd;font-size:0.92rem;font-family:sans-serif;line-height:1.55;white-space:pre-line;">' +
-      L("Nur <b>nach oben oder rechts</b>, kein Zurück. <b>Blas in alle drei Finger</b> (🖐), dann erwacht <b>Metyr</b> oben rechts. Plane so, dass du keinen auslässt.",
-        "Only <b>up or right</b>, no going back. <b>Blow into all three fingers</b> (🖐), then <b>Metyr</b> awakens top-right. Plan so you miss none.") + '</p>' +
-    '<button class="btn-modal-action" onclick="document.getElementById(\'popup-overlay\').style.display=\'none\'; baueKarteHTML();">' + L("Ich bin bereit", "I am ready") + '</button>';
-  ov.style.display = "flex";
+  oeffneStatPopup(L("Die Ruinen der Finger", "The Finger Ruins"),
+    L("Ein Feld grauer Steinsäulen unter fremdem Sternenhimmel. Jeder Gegner hier ist ein <b>Fingerwurm</b> (kann dich bannen). <b>Blas in die drei Finger</b> (🖐) auf deinem Weg — dann wartet <b>Metyr</b>.",
+      "A field of grey stone pillars beneath an alien sky. Every enemy here is a <b>finger worm</b> (it can bind you). <b>Blow into the three fingers</b> (🖐) along your path — then <b>Metyr</b> awaits."), 1);
 }
 // Einbahn: 3 zufällige Finger, aber garantiert auf EINEM monotonen Treppen-Pfad
 // (Start unten links -> Metyr oben rechts, nur hoch/rechts). So ist jeder Finger
