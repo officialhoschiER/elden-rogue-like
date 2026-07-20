@@ -963,7 +963,7 @@ let hatGebetet = false;            // an der Statue in Messmers Abstieg gebetet 
 let messmerGekippt = false;        // Schalter oben in der Festung gezogen -> Abstieg mit neuem Layout, Messmer unten
 let fingerWuermer = [];            // Gebiet der Finger: Kacheln mit einem Wurm-Gegner
 let fingerWuermerTot = [];         // davon bereits erschlagen
-let wurmBann = false;              // Wurm-Spell aktiv -> die naechste Aktion des Spielers faellt aus
+let wurmBann = 0;              // Wurm-Spell aktiv -> die naechste Aktion des Spielers faellt aus
 // Die Finger Mimic ist ein echtes RUCKSACK-Item (Drop des Fingercreepers im Waldgebiet).
 // Sie ist der Schlüssel zum Gebiet der Finger (Metyr) — wer sie benutzt/wegwirft, verliert ihn.
 const FINGER_MIMIC = { type: "fingermimic", name: "Finger Mimic", desc: "Ein zuckender, abgetrennter Finger. Er fühlt sich… erwartungsvoll an.", icon: "🖐", bild: "images/icons/finger_mimic.webp" };
@@ -1040,7 +1040,7 @@ function ladeGespeichertenRun() {
     if (window.ER && ER.setSeedRun) ER.setSeedRun(seedIsCustom);
     setTimeout(aktualisiereSeedAnzeige, 0);
     torbogenSpruenge = d.torbogenSpruenge || 0; wolfsgeheulGehoert = !!d.wolfsgeheulGehoert; wahnsinn = d.wahnsinn || 0; untouchableRunden = d.untouchableRunden || 0; rellanaGetroffen = !!d.rellanaGetroffen; scharlachRot = !!d.scharlachRot; dlcWahlOffen = !!d.dlcWahlOffen;
-    rauhGeheimIntakt = d.rauhGeheimIntakt !== false; inFingerruinen = !!d.inFingerruinen; fingerPos = (typeof d.fingerPos === "number") ? d.fingerPos : 90; fingerGeblasen = d.fingerGeblasen || []; fingerNodes = d.fingerNodes || []; fingerPfad = (d.fingerPfad && d.fingerPfad.length) ? d.fingerPfad : [fingerPos]; hatGebetet = !!d.hatGebetet; messmerGekippt = !!d.messmerGekippt; fingerWuermer = d.fingerWuermer || []; fingerWuermerTot = d.fingerWuermerTot || []; wurmBann = false;
+    rauhGeheimIntakt = d.rauhGeheimIntakt !== false; inFingerruinen = !!d.inFingerruinen; fingerPos = (typeof d.fingerPos === "number") ? d.fingerPos : 90; fingerGeblasen = d.fingerGeblasen || []; fingerNodes = d.fingerNodes || []; fingerPfad = (d.fingerPfad && d.fingerPfad.length) ? d.fingerPfad : [fingerPos]; hatGebetet = !!d.hatGebetet; messmerGekippt = !!d.messmerGekippt; fingerWuermer = d.fingerWuermer || []; fingerWuermerTot = d.fingerWuermerTot || []; wurmBann = 0;
     setTimeout(aktualisiereWahnsinnAnzeige, 0);
     if (dlcWahlOffen) setTimeout(oeffneMohgDlcWahl, 100);   // Wahl-Popup übersteht einen Reload
     towerEtage=d.towerEtage||0;
@@ -2075,7 +2075,7 @@ function direktNeustarten() {
   playerHitsOnEnemy = 0; enemyIsStaggered = false; staggerVisualActive = false; nextHitBonusDamage = false;
   currentAffinity = "Keine"; affinityHits = 0; completedDungeonsCount = 0;
   backpackItems = [null, null, null]; activeBuffs = []; inSubDungeon = false; inSewers = false; mainMapState = null; towerEtage = 0;
-  torbogenSpruenge = 0; wolfsgeheulGehoert = false; wahnsinn = 0; untouchableRunden = 0; rellanaGetroffen = false; scharlachRot = false; dlcWahlOffen = false; rauhGeheimIntakt = true; inFingerruinen = false; fingerPos = 90; fingerGeblasen = []; fingerNodes = []; fingerPfad = [90]; hatGebetet = false; messmerGekippt = false; fingerWuermer = []; fingerWuermerTot = []; wurmBann = false; aktualisiereWahnsinnAnzeige();
+  torbogenSpruenge = 0; wolfsgeheulGehoert = false; wahnsinn = 0; untouchableRunden = 0; rellanaGetroffen = false; scharlachRot = false; dlcWahlOffen = false; rauhGeheimIntakt = true; inFingerruinen = false; fingerPos = 90; fingerGeblasen = []; fingerNodes = []; fingerPfad = [90]; hatGebetet = false; messmerGekippt = false; fingerWuermer = []; fingerWuermerTot = []; wurmBann = 0; aktualisiereWahnsinnAnzeige();
   // Seed-Run (geteilter Seed): derselbe Seed bleibt für den Retry — normaler Run: frisch würfeln
   setzeSeed(seedIsCustom ? runSeed : zufallsSeed(), seedIsCustom);
   oeffneKlassenAuswahl();
@@ -3036,9 +3036,9 @@ async function gegnerKonter(opts) {
       zeigeFloatingZahl(playerWrapper, t("float_dodged"), "dmg-dodge");
       document.getElementById("battle-log").innerText += "\n" + L("Du rollst unter dem Spruch hindurch.", "You roll clear of the spell.");
     } else {
-      wurmBann = true;
+      wurmBann = 2;   // 2 Runden bewegungsunfähig
       zeigeFloatingZahl(playerWrapper, L("GEBANNT", "BOUND"), "dmg-enemy");
-      document.getElementById("battle-log").innerText += "\n" + L("Der Spruch schließt sich um deine Glieder — du kannst dich eine Runde nicht rühren!", "The spell clamps around your limbs — you cannot move for one round!");
+      document.getElementById("battle-log").innerText += "\n" + L("Der Spruch schließt sich um deine Glieder — du kannst dich <b>2 Runden</b> nicht rühren!", "The spell clamps around your limbs — you cannot move for <b>2 rounds</b>!");
     }
     updateUI();
     await wait(opts.cleanupDelay || 300);
@@ -3084,12 +3084,12 @@ async function gegnerKonter(opts) {
   }
 }
 
-// Der Wurm-Bann: die Aktion des Spielers verpufft, der Gegner kontert frei. Danach ist der Bann vorbei.
+// Der Wurm-Bann: die Aktion des Spielers verpufft, der Gegner kontert frei. Hält 2 Runden.
 async function verbrauchteBannRunde() {
-  if (!wurmBann) return false;
-  wurmBann = false;
+  if (wurmBann <= 0) return false;
+  wurmBann--;   // eine gebannte Runde verbraucht
   aktionsSperre = true; updateUI();
-  document.getElementById("battle-log").innerText = L("Du bist gebannt — deine Glieder gehorchen dir nicht.", "You are bound — your limbs will not obey.");
+  document.getElementById("battle-log").innerText = L("Du bist gebannt — deine Glieder gehorchen dir nicht" + (wurmBann > 0 ? " (noch 1 Runde)" : "") + ".", "You are bound — your limbs will not obey" + (wurmBann > 0 ? " (1 more round)" : "") + ".");
   zeigeFloatingZahl(document.getElementById("player-sprite-wrapper"), L("GEBANNT", "BOUND"), "dmg-enemy");
   await wait(500);
   await gegnerKonter({ windup: true, dmgVariance: () => Math.floor(Math.random() * 4) - 1, logSuccess: "roll_success", logFail: "roll_fail", logStagger: "stagger_alert", cleanupDelay: 300 });
@@ -3916,7 +3916,7 @@ function kampfGewonnen() {
   // DLC Gebiet der Finger: Wurm erschlagen -> zurück aufs Gitter (keine Ebenen-Logik hier)
   if (gegnerName === "Fingerwurm") {
     if (fingerWuermerTot.indexOf(fingerPos) < 0) fingerWuermerTot.push(fingerPos);
-    imKampf = false; aktionsSperre = false; wurmBann = false; aktuellerKnotenTyp = null;
+    imKampf = false; aktionsSperre = false; wurmBann = 0; aktuellerKnotenTyp = null;
     document.getElementById("popup-overlay").style.display = "none";
     speichereRun(); baueKarteHTML(); updateUI();
     return;
@@ -4398,7 +4398,7 @@ function starteFingerruinen() {
   let ov = document.getElementById("popup-overlay"); ov.style.display = "none";
   aktuelleRegion = "Fingerruinen"; scharlachRot = false; inFingerruinen = true;
   fingerPos = FINGER_START; fingerGeblasen = []; fingerNodes = wuerfleFinger(); fingerPfad = [FINGER_START];
-  fingerWuermer = wuerfleWuermer(); fingerWuermerTot = []; wurmBann = false;
+  fingerWuermer = wuerfleWuermer(); fingerWuermerTot = []; wurmBann = 0;
   aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null; imKampf = false;
   heileUndRegeneriereVoll(hardMode);
   aktualisiereWahnsinnAnzeige(); speichereRun(); baueKarteHTML(); updateUI();
@@ -4513,7 +4513,7 @@ function starteFingerwurm() {
   // muss der harte Teil bleiben — sonst schlägt das Fußvolk fast so hart wie der Geheimboss.
   let m = (hardMode ? 12.0 * 1.3 : 12.0) * 1.05;
   gegnerName = "Fingerwurm"; gegnerMaxHp = Math.round(45 * m); gegnerHp = gegnerMaxHp; gegnerSchaden = Math.round(7.5 * m);
-  aktuellerKnotenTyp = 1; imKampf = true; aktionsSperre = false; wurmBann = false;
+  aktuellerKnotenTyp = 1; imKampf = true; aktionsSperre = false; wurmBann = 0;
   playerHitsOnEnemy = 0; enemyIsStaggered = false; staggerVisualActive = false; nextHitBonusDamage = false;
   if (window.ER) try { ER.discover("Fingerwurm"); } catch (e) {}
   document.getElementById("battle-log").innerText = L("Zwischen den Säulen schiebt sich ein bleicher Wurm hervor. Sein Maul formt Laute, die keine Zunge sprechen sollte.", "A pale worm pushes out from between the pillars. Its maw forms sounds no tongue should speak.");
@@ -4774,7 +4774,7 @@ function bestaetigeStufe(naechsteEbene) { document.getElementById("popup-overlay
     activeChallenge = "";
     hatGodrickRune = hatRadahnRune = hatMorgottRune = true;
     aktuelleRegion = region; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null;
-    torbogenSpruenge = 0; wolfsgeheulGehoert = false; wahnsinn = 0; untouchableRunden = 0; rellanaGetroffen = false; rauhGeheimIntakt = true; inFingerruinen = false; fingerPos = 90; fingerGeblasen = []; fingerNodes = []; fingerPfad = [90]; hatGebetet = false; messmerGekippt = false; fingerWuermer = []; fingerWuermerTot = []; wurmBann = false;
+    torbogenSpruenge = 0; wolfsgeheulGehoert = false; wahnsinn = 0; untouchableRunden = 0; rellanaGetroffen = false; rauhGeheimIntakt = true; inFingerruinen = false; fingerPos = 90; fingerGeblasen = []; fingerNodes = []; fingerPfad = [90]; hatGebetet = false; messmerGekippt = false; fingerWuermer = []; fingerWuermerTot = []; wurmBann = 0;
     scharlachRot = (region === "Rauh");
     try { netzKarte = generiereRautenNetz(region); } catch(e){ console.warn(e); }
     devClosePopups(); devApply(); aktualisiereWahnsinnAnzeige();
