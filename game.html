@@ -2676,7 +2676,9 @@ function klickeKnoten(ebene, knoten) {
   }
   if (knoten.typ === 6) { oeffneTalismanPopup(ebene + 1); return; }
   if (knoten.typ === 7) {
-    maxKlassenFlasks += 1; spielerFlasks = maxKlassenFlasks; estusHeilProzent = Math.min(0.95, estusHeilProzent + (hardMode ? 0.025 : 0.05));
+    maxKlassenFlasks += 1;
+    if (activeChallenge === "tower") maxKlassenFlasks = Math.min(6, maxKlassenFlasks);   // Tower: Flakons gedeckelt
+    spielerFlasks = maxKlassenFlasks; estusHeilProzent = Math.min(0.95, estusHeilProzent + (hardMode ? 0.025 : 0.05));
     oeffneStatPopup(t("seed_title"), t("seed_desc", { pct: Math.round(estusHeilProzent*100) }), ebene + 1); return;
   }
   if (knoten.typ === 8) { oeffneTowerSelectionMenu(ebene + 1); return; }
@@ -3234,7 +3236,9 @@ async function spielerHeilen() {
   aktionsSperre = true;
   let tStats = berechneTalismanStats();
   let finalMaxHp = berechneFinalMaxHp();
-  let heilWert = Math.round(finalMaxHp * estusHeilProzent * (1 + tStats.bonusHealPercent));
+  let effHeilProz = estusHeilProzent * (1 + tStats.bonusHealPercent);
+  if (activeChallenge === "tower") effHeilProz = Math.min(effHeilProz, 0.55);   // Tower: Heilung gedeckelt -> kein Heil-Lock
+  let heilWert = Math.round(finalMaxHp * effHeilProz);
   spielerHp = Math.min(finalMaxHp, spielerHp + heilWert); spielerFlasks--;
   if (playerHitsOnEnemy > 0) playerHitsOnEnemy--;   // Heilen statt Angreifen -> die Haltung des Gegners erholt sich eine Stufe
   if (window.ER) ER.flaskDrunk();
@@ -3298,7 +3302,7 @@ function towerSegenPool() {
   return [
     { icon:"🔥", titel: L("Kriegsflamme · +15% Schaden","War Flame · +15% dmg"),        apply: ()=>{ towerDmgMult += 0.15; } },
     { icon:"❤️", titel: L("Erdbaum-Segen · +15% Max-HP","Erdtree Blessing · +15% max HP"), apply: ()=>{ let b=Math.round((towerBaseMaxHp||spielerMaxHp)*0.15); spielerMaxHp+=b; spielerHp=berechneFinalMaxHp(); } },   // +15% des START-Werts (linear, kein exponentielles Compounding)
-    { icon:"🧪", img:"images/icons/icon_estus.png", titel: L("Heiliger Flakon · +1 & voll","Sacred Flask · +1 & refill"),    apply: ()=>{ maxKlassenFlasks++; spielerFlasks=maxKlassenFlasks; } },
+    { icon:"🧪", img:"images/icons/icon_estus.png", titel: L("Heiliger Flakon · +1 & voll","Sacred Flask · +1 & refill"),    apply: ()=>{ maxKlassenFlasks = Math.min(6, maxKlassenFlasks + 1); spielerFlasks=maxKlassenFlasks; } },
     { icon:"💨", titel: L("Wind der Gnade · +8% Rolle","Wind of Grace · +8% dodge"),      apply: ()=>{ basisAusweichChance=Math.min(0.85, basisAusweichChance+0.08); } },
     { icon:"⚔️", titel: L("Miquellas Schärfung · Waffe +2","Miquella's Edge · weapon +2"), apply: ()=>{ waffenUpgrade+=2; } },
     { icon:"✨", img:"images/icons/lords-rune-tools-elden-ring-wiki-guide.png", titel: L("Seelensegen · +Seelen","Soul Blessing · +souls"),              apply: ()=>{ towerSoulMult += 0.25; addMetaSeelen(50); } }
