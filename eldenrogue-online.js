@@ -373,19 +373,19 @@
       how:  { de: "Lege als Vagabund zu Run-Beginn deine Rüstung ab (aus dem Slot ziehen) und schließe den Run ab.", en: "As Vagabond, drag your armor out of its slot at the start of a run and finish the run." },
       check: s => (s.normalNoArmorClears || 0) >= 1,
       progress: null },
-    { id: "gelmir", icon: "🌋", secret: true,   // geheim — Ryas Halskette (nur Samurai, in Liurnia) soll ein Rätsel bleiben
+    { id: "gelmir", icon: "🌋", img: "images/background/gelmir.webp", secret: true,   // geheim — Ryas Halskette (nur Samurai, in Liurnia) soll ein Rätsel bleiben
       name: { de: "Der Berg Gelmir", en: "Mount Gelmir" },
       desc: { de: "Ein alternativer Pfad statt Leyndell — der brennende Berg mit Rykard, Herrn der Blasphemie.", en: "An alternative path instead of Leyndell — the burning mount with Rykard, Lord of Blasphemy." },
       hint: { de: "Jemand in den Seen vermisst etwas Kostbares …", en: "Someone in the lakes misses something precious …" },
       how:  { de: "Finde als Samurai in Liurnia Ryas Halskette und bringe sie ihr zurück — sie lädt dich nach Haus Vulkan ein.", en: "As Samurai, find Rya's necklace in Liurnia and return it to her — she invites you to Volcano Manor." },
       check: s => (s.ryaInvites || 0) >= 1 || ((s.bossKills || {})["Rykard, Herr der Blasphemie"] || 0) >= 1,   // Grace: wer Rykard schon besiegt hat, behält den Pfad
       progress: null },
-    { id: "mohgwyn", icon: "🩸", secret: true,   // geheim — der Kanalisations-Knoten in Leyndell soll überraschen
+    { id: "mohgwyn", icon: "🩸", img: "images/background/mohgwyn.avif", secret: true,   // geheim — der Kanalisations-Knoten in Leyndell soll überraschen
       name: { de: "Die Mohgwyn-Dynastie", en: "Mohgwyn Dynasty" },
       desc: { de: "Die Kanalisation der Hauptstadt, Mohg und ein Pfad, der mit Miquellas Erwachen endet.", en: "The capital's sewers, Mohg, and a path that ends with Miquella's awakening." },
       hint: { de: "Ein weiteres Geheimnis schlummert in der Tiefe …", en: "Another secret slumbers in the depths …" },
-      how:  { de: "Besiege Rykard, Herrn der Blasphemie, am Berg Gelmir — danach findet der Bettler die Kanalisation in Leyndell.", en: "Defeat Rykard, Lord of Blasphemy, on Mount Gelmir — afterwards the Wretch can find the sewers in Leyndell." },
-      check: s => ((s.bossKills || {})["Rykard, Herr der Blasphemie"] || 0) >= 1,
+      how:  { de: "Besiege zuerst Rykard am Berg Gelmir (dann taucht die Kanalisation in Leyndell auf) und bezwinge dort als Bettler Mohg, das Omen.", en: "First defeat Rykard on Mount Gelmir (the sewers then appear in Leyndell), and as the Wretch defeat Mohg, the Omen, down there." },
+      check: s => ((s.bossKills || {})["Mohg, das Omen"] || 0) >= 1,   // erst der Sewers-Boss (= Medaille) zaehlt, NICHT schon der Rykard-Kill
       progress: null }
   ];
   function unlockInfo() {

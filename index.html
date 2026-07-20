@@ -2087,7 +2087,7 @@
       var desc = en ? u.desc.en : u.desc.de;
       var hint = en ? u.hint.en : u.hint.de;
       var how = u.how ? (en ? u.how.en : u.how.de) : hint;
-      var icHtml = u.img ? '<img src="' + u.img + '" style="width:34px;height:34px;object-fit:contain;filter:drop-shadow(0 0 6px rgba(205,163,79,0.35));" onerror="this.replaceWith(document.createTextNode(\'' + u.icon + '\'))">' : u.icon;
+      var icHtml = u.img ? '<img src="' + u.img + '" style="width:38px;height:38px;object-fit:cover;border-radius:7px;filter:drop-shadow(0 0 6px rgba(205,163,79,0.35));" onerror="this.replaceWith(document.createTextNode(\'' + u.icon + '\'))">' : u.icon;
       if (u.unlocked) {
         return '<div class="ach-card">' +
           '<div class="ic">' + icHtml + '</div>' +
@@ -2801,7 +2801,7 @@ function showNextUnlock() {
   var u = _unlockQueue.shift(); if (!u) return;
   var en = _menuIsEn();
   document.getElementById("ur-kicker").innerText = en ? "🔓 NEW UNLOCK" : "🔓 NEU FREIGESCHALTET";
-  document.getElementById("ur-icon").innerHTML = u.img ? '<img src="' + u.img + '" style="width:76px;height:76px;object-fit:contain;filter:drop-shadow(0 0 18px rgba(205,163,79,0.6));" onerror="this.replaceWith(document.createTextNode(\'' + (u.icon || "🔓") + '\'))">' : (u.icon || "🔓");
+  document.getElementById("ur-icon").innerHTML = u.img ? '<img src="' + u.img + '" style="width:100px;height:100px;object-fit:cover;border-radius:12px;box-shadow:0 0 18px rgba(205,163,79,0.5);border:1px solid rgba(205,163,79,0.4);" onerror="this.replaceWith(document.createTextNode(\'' + (u.icon || "🔓") + '\'))">' : (u.icon || "🔓");
   document.getElementById("ur-name").innerText = en ? u.name.en : u.name.de;
   document.getElementById("ur-desc").innerText = en ? u.desc.en : u.desc.de;
   document.getElementById("ur-btn").innerText = _unlockQueue.length ? (en ? "Next ▸" : "Weiter ▸") : (en ? "Let's go!" : "Los geht's!");
