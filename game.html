@@ -169,10 +169,11 @@ h1, h2, h3, .btn-menu, .btn-combat, .btn-social, .game-author-tag, #region-displ
       position: relative;
     }
 
-    #map-grid { 
+    #map-grid {
       display: flex; flex-direction: column-reverse; justify-content: space-between;
       height: 94%; width: 100%; max-width: 750px; position: relative; z-index: 10;
     }
+    #map-grid.map-descend { flex-direction: column; }   /* Messmer-Abstieg: Start oben, Boss unten */
     .map-row { display: flex; justify-content: space-around; width: 100%; position: relative; padding: 5px 0; }
 
     .map-node {
@@ -2143,6 +2144,9 @@ function baueKarteHTML() {
     if (aktuelleRegion === "EnirIlim") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(28,22,6,0.78), rgba(8,6,3,0.94)), url('images/background/enirelim.webp')";
   }
   mapScrollArea.classList.toggle("abyss-fog", aktuelleRegion === "AbyssalWoods" && !inSubDungeon);
+  // DLC Festung Messmer: Aufstieg = normal (Start unten -> Schalter oben). Nach dem Kippen = Abstieg
+  // (Start OBEN -> Messmer unten): dazu die Karte vertikal umdrehen.
+  grid.classList.toggle("map-descend", aktuelleRegion === "FestungMessmer" && messmerGekippt && !inSubDungeon);
 
   netzKarte.forEach(zeile => {
     let rowDiv = document.createElement("div"); rowDiv.classList.add("map-row");
@@ -4265,7 +4269,7 @@ function starteWaldgebiet() {
   heileUndRegeneriereVoll(hardMode);
   speichereRun(); baueKarteHTML(); updateUI(); aktualisiereWahnsinnAnzeige();
   oeffneStatPopup(L("Blaidd zeigt den Weg", "Blaidd Shows the Way"),
-    L("Ein Wolfsgeheul — und aus dem Dickicht tritt <b>Blaidd</b>. „Du hast durch die Tore gefunden. Dann folge mir.“\n\nEr führt dich auf einen verborgenen Pfad ins <b>Waldgebiet</b>. <i>„Keine Angst — es ist nicht B4ronyx“</i>, lacht er.\n\nHier sieht jeder Weg aus wie der nächste. Lies genau, was dich erwartet.", "A wolf's howl — and from the thicket steps <b>Blaidd</b>. “You found your way through the gates. Then follow me.”\n\nHe leads you down a hidden path into the <b>Woodlands</b>. <i>“Don't worry — it's not B4ronyx,”</i> he laughs.\n\nHere every path looks like the next. Read carefully what awaits you."), 1);
+    L("Ein Wolfsgeheul — und aus dem Dickicht tritt <b>Blaidd</b>. „Du hast durch die Tore gefunden. Dann folge mir.“\n\nEr führt dich auf einen verborgenen Pfad ins <b>Waldgebiet</b>.\n\nHier sieht jeder Weg aus wie der nächste. Lies genau, was dich erwartet.", "A wolf's howl — and from the thicket steps <b>Blaidd</b>. “You found your way through the gates. Then follow me.”\n\nHe leads you down a hidden path into the <b>Woodlands</b>.\n\nHere every path looks like the next. Read carefully what awaits you."), 1);
 }
 
 // --- DLC-Mittelweg: keine Tore -> Gruselwald (erbt die Abgrund-Mechanik, interner Schluessel bleibt AbyssalWoods) ---
