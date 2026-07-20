@@ -172,13 +172,13 @@
       quest_opt_roll_sub: "Hebt deine Ausweich-Rolle auf 65% an (Hard Cap: 75%).",
 
       // Boss Defeat Text Blocks
-      boss_godrick_win: "Godrick ist zerschmettert!\nDu erbeutest seine Große Rune.\n\nEin neuer Pfad öffnet sich: Das vom Scharlach verrottete Ödland... CAELID!",
-      boss_radahn_win: "Du hast Radahn bezwungen!\nDas Schicksal setzt sich wieder in Bewegung.\n\nDein nächstes Ziel ist die goldene Hauptstadt... LEYNDELL!",
-      boss_morgott_win: "Morgott löst sich in Goldstaub auf!\nDu erhältst Morgotts Große Rune (Verdoppelt dein maximales Leben).\n\nDer Weg führt dich nun hinauf in die eisigen, gefährlichen Höhen...\nMOUNTAINTOPS OF THE GIANTS!",
-      boss_giant_win: "Der letzte Riese bricht im Schnee zusammen!\n\n🎒 Dein Waffen-Lager fasst ab jetzt 2 Waffen!\n\nEin Riss im Raum wirft dich in das zerfallende, zeitlose Himmelsreich...\nCRUMBLING FARUM AZULA!",
-      boss_maliketh_win: "Maliketh ist gefallen. Die Rune des Todes ist entfesselt!\n\n💍 Du kannst ab jetzt einen 4. Talisman tragen!\n\nDie Hauptstadt brennt. Kehre zurück zur Aschehauptstadt!",
-      boss_gideon_win: "Gideon wurde zum Schweigen gebracht.\n\nDer Weg zum Eldenthron ist frei. Mach dich bereit für den finalen Aufstieg!",
-      boss_godfrey_win: "Godfrey hat dir Respekt gezollt und ist gefallen.\n\nDu spürst eine letzte rettende Gnade vor dir, bevor du das Innere des Erdenbaums betrittst...",
+      boss_godrick_win: "",
+      boss_radahn_win: "",
+      boss_morgott_win: "",
+      boss_giant_win: "",
+      boss_maliketh_win: "",
+      boss_gideon_win: "",
+      boss_godfrey_win: "",
       boss_beast_win: "GOTT GESCHLACHTET.\n\nDu hast die Goldene Ordnung bezwungen und die Scherben vereint. Du bist der neue Elden Lord! GGG!",
       enemy_elite_win: "Der Wächter schwindet.\nDeine maximale Lebenskraft erhöht sich um +10% (+{hp} HP)!",
       enemy_skeleton_win: "Das Skelett zerbröselt zu wirrer Asche. Der Weg ist frei!",
@@ -621,13 +621,13 @@
       quest_opt_roll_sub: "Sets base dodge roll to 65% (hard cap: 75%).",
 
       // Boss Defeat Text Blocks
-      boss_godrick_win: "Godrick is shattered!\nYou claim his Great Rune.\n\nA new pathway opens into the scarlet-rotted blighted wastes... CAELID!",
-      boss_radahn_win: "Starscourge Radahn has been conquered!\nThe stars align, and fate resumes its course.\n\nYour next destination is the golden capital... LEYNDELL!",
-      boss_morgott_win: "Morgott dissolves into golden dust!\nYou receive Morgott's Great Rune (Doubles your maximum life force).\n\nThe path leads up into the frozen, dangerous heights... MOUNTAINTOPS OF THE GIANTS!",
-      boss_giant_win: "The last Giant collapses into the snow!\n\n🎒 Your weapon storage capacity expanded to 2 slots!\n\nA fracture in space hurls you into the crumbling, timeless sky realm... CRUMBLING FARUM AZULA!",
-      boss_maliketh_win: "Maliketh has fallen. Destined Death is unleashed!\n\n💍 You can now equip a 4th Talisman slot!\n\nThe Royal Capital burns. Return to the Capital of Ash!",
-      boss_gideon_win: "Sir Gideon Ofnir has been silenced.\n\nThe path to the Elden Throne is clear. Prepare for the final ascent!",
-      boss_godfrey_win: "Godfrey has granted you his respect and perished.\n\nA final guiding grace awaits right outside the Erdtree core...",
+      boss_godrick_win: "",
+      boss_radahn_win: "",
+      boss_morgott_win: "",
+      boss_giant_win: "",
+      boss_maliketh_win: "",
+      boss_gideon_win: "",
+      boss_godfrey_win: "",
       boss_beast_win: "GOD SLAIN.\n\nYou have shattered the Golden Order and mended the Ring. You stand as the new Elden Lord! GGG!",
       enemy_elite_win: "The Guardian fades.\nYour maximum health increased by +10% (+{hp} HP)!",
       enemy_skeleton_win: "The skeleton crumbles to dust. The path is clear!",
@@ -918,7 +918,8 @@
     },
     t: function (key, placeholders) {
       let dict = TRANSLATIONS[currentLang] || TRANSLATIONS["de"];
-      let text = dict[key] || TRANSLATIONS["de"][key] || key;
+      // Existenz statt Wahrheitswert prüfen: ein bewusst LEERER Text ("") soll leer bleiben, nicht auf den Key-Namen zurückfallen.
+      let text = (key in dict) ? dict[key] : ((key in TRANSLATIONS["de"]) ? TRANSLATIONS["de"][key] : key);
       if (placeholders) {
         Object.keys(placeholders).forEach(k => {
           text = text.replace(new RegExp(`{${k}}`, 'g'), placeholders[k]);

@@ -3819,8 +3819,7 @@ function kampfGewonnen() {
   // === DLC: Land des Schattens — Boss-Übergänge ===
   if (gegnerName === "Göttliches Tanzlöwenbiest") {
     aktuelleRegion = "CastleEnsis"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null; netzKarte = generiereRautenNetz("CastleEnsis");
-    oeffneStatPopup(L("Das Tanzlöwenbiest ist gefallen", "The Dancing Lion Has Fallen"),
-      L("Das göttliche Biest zerfällt zu Sturmwind und Staub. Hinter Belurat öffnet sich der Weg zur Mondlichtfestung der Karianer: <b>Castle Ensis</b>.\n\nMan erzählt sich, in den alten Mauern schlummern <i>Mechanismen</i>, die seit Äonen niemand mehr berührt hat…", "The divine beast dissolves into storm and dust. Beyond Belurat, the path opens to the Carian moonlight fortress: <b>Castle Ensis</b>.\n\nThey say ancient <i>mechanisms</i> slumber in those old walls, untouched for eons…"), 1);
+    oeffneStatPopup(L("Tanzlöwenbiest besiegt", "Dancing Lion Defeated"), "", 1);
     return;
   }
   if (gegnerName === "Rellana, Ritterin der Zwillingsmonde") {
@@ -3831,14 +3830,12 @@ function kampfGewonnen() {
     return;
   }
   if (gegnerName === "Sonnenblume") {
-    starteFestungMessmer(L("Die Sonnenblume ist gefallen", "The Sunflower Has Fallen"),
-      L("Die riesige Blüte sinkt in sich zusammen, und der Wald wird still.\n\nZwischen den Stämmen ragt eine gewaltige Silhouette auf: die <b>Festung von Messmer</b>.", "The giant bloom collapses in on itself, and the woods fall silent.\n\nBetween the trunks a vast silhouette rises: <b>Messmer's Fortress</b>."));
+    starteFestungMessmer(L("Sonnenblume besiegt", "Sunflower Defeated"), "");
     return;
   }
   if (gegnerName === "Midra, Herr der Wahnsinnigen Flamme") {
     wahnsinn = 0; aktualisiereWahnsinnAnzeige();
-    starteFestungMessmer(L("Der Wahnsinn erlischt", "The Frenzy Gutters Out"),
-      L("Midras Haupt sinkt herab, und die Wahnsinnige Flamme verglimmt. Der Gruselwald gibt dich frei.\n\nVor dir ragt die <b>Festung von Messmer</b> in den verhangenen Himmel.", "Midra's head sinks low, and the Frenzied Flame gutters out. The eerie woods release you.\n\nBefore you rises <b>Messmer's Fortress</b>, against the veiled sky."));
+    starteFestungMessmer(L("Midra besiegt", "Midra Defeated"), "");
     return;
   }
   if (gegnerName === "Messmer der Pfähler") { oeffneWegwahlMessmer(); return; }
@@ -3849,14 +3846,12 @@ function kampfGewonnen() {
       starteFingerruinen(); return;
     }
     // Ohne Finger Mimic: der Garten gibt nichts her -> regulärer Weg nach Enir-Ilim
-    starteEnirIlim(L("Hier ist einfach nichts", "There is simply nothing here"),
-      L("Gaius sinkt zu Boden, und am Ende des Gartens… ist nichts. Nur Wind in den Blüten.\n\nDir fehlt etwas, um diesen Ort zu öffnen. Du wendest dich ab — nach <b>Enir-Ilim</b>.", "Gaius falls, and at the end of the garden… there is nothing. Only wind in the blossoms.\n\nSomething is missing to open this place. You turn away — towards <b>Enir-Ilim</b>."));
+    starteEnirIlim(L("Gaius besiegt", "Gaius Defeated"), L("Am Ende des Gartens ist nichts — dir fehlt etwas, um diesen Ort zu öffnen.", "At the end of the garden there is nothing — something is missing to open this place."));
     return;
   }
   if (gegnerName === "Romina, Heilige der Knospe") {
     scharlachRot = false;
-    starteEnirIlim(L("Romina ist gefallen", "Romina Has Fallen"),
-      L("Die Heilige der Knospe sinkt in ihre eigenen Ranken zurück, und die Scharlachfäule ebbt ab.\n\nVor dir ragt der Turm von <b>Enir-Ilim</b> in den verhangenen Himmel — am Ende des Aufstiegs wartet der Verheißene Gemahl.", "The Saint of the Bud sinks back into her own vines, and the Scarlet Rot recedes.\n\nBefore you, the tower of <b>Enir-Ilim</b> rises into the veiled sky — at the summit of the ascent waits the Promised Consort."));
+    starteEnirIlim(L("Romina besiegt", "Romina Defeated"), "");
     return;
   }
   if (gegnerName === "Radahn, Gemahl Miquellas") {
@@ -3887,12 +3882,12 @@ function kampfGewonnen() {
   if (gegnerName === "Rennala, Königin des Vollmonds") {
     hatRennalaRune = true;
     if (kannNachGelmir()) { oeffneWegwahlLeyndell(L("Rennala ist gefallen", "Rennala Has Fallen")); return; }
-    aktuelleRegion = "Leyndell"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null; netzKarte = generiereRautenNetz("Leyndell"); oeffneStatPopup(L("Rennala bezwungen", "Rennala Defeated"), L("Die Königin des Vollmonds ist gefallen. Ihre Große Rune schenkt dir eine zweite Chance — eine Wiederbelebung mit 50% HP. Dein Weg führt weiter nach Leyndell.", "The Queen of the Full Moon has fallen. Her Great Rune grants you a second chance — a revive at 50% HP. Your path leads on to Leyndell."), 1); return;
+    aktuelleRegion = "Leyndell"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null; netzKarte = generiereRautenNetz("Leyndell"); oeffneStatPopup(L("Rennala besiegt", "Rennala Defeated"), L("Ihre Rune schenkt dir eine Wiederbelebung (50% HP).", "Her rune grants you one revive (50% HP)."), 1); return;
   }
   if (gegnerName === "Rykard, Herr der Blasphemie") {
     hatRykardRune = true; if (hardMode) maxTalismanSlots = Math.max(maxTalismanSlots, 3);   // Parität zu Morgott im Hard Mode
     aktuelleRegion = "Mountaintops"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null; netzKarte = generiereRautenNetz("Mountaintops");
-    oeffneStatPopup(L("Rykard bezwungen", "Rykard Defeated"), L("Der Herr der Blasphemie ist verschlungen worden — von dir. Seine Große Rune nährt dich fortan mit jedem Hieb. Dein Weg führt hinauf zu den Gipfeln der Riesen.", "The Lord of Blasphemy has been devoured — by you. His Great Rune now feeds you with every strike. Your path leads up to the Mountaintops of the Giants."), 1); return;
+    oeffneStatPopup(L("Rykard besiegt", "Rykard Defeated"), "", 1); return;
   }
   if (gegnerName === "Morgott, der Omenkönig") { hatMorgottRune = true; if (hardMode) maxTalismanSlots = Math.max(maxTalismanSlots, 3); aktuelleRegion = "Mountaintops"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null; netzKarte = generiereRautenNetz("Mountaintops"); oeffneStatPopup(t("boss_morgott_title"), t("boss_morgott_win"), 1); return; }
   if (gegnerName === "Feuerriese") { maxWaffenSlots = hardMode ? 1 : 2; aktuelleRegion = "FarumAzula"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null; netzKarte = generiereRautenNetz("FarumAzula"); oeffneStatPopup(t("boss_giant_title"), t("boss_giant_win"), 1); return; }
@@ -4170,7 +4165,7 @@ function oeffneStatPopup(titel, text, naechsteEbene) {
   let overlay = document.getElementById("popup-overlay"); let content = document.getElementById("popup-content");
   content.innerHTML = `
     <h3 style="color: var(--gold); font-size:1.6rem; margin-top:0; letter-spacing:2px; font-family: 'Mantinia', serif;">${titel}</h3>
-    <p style="color:#ddd; font-size:0.95rem; font-family: sans-serif; white-space: pre-line; line-height:1.5;">${text}</p>
+    ${text ? `<p style="color:#ddd; font-size:0.95rem; font-family: sans-serif; white-space: pre-line; line-height:1.5;">${text}</p>` : ""}
     <button class="btn-modal-action" onclick="bestaetigeStufe(${naechsteEbene})">${t("btn_continue")}</button>
   `;
   overlay.style.display = "flex";
@@ -4268,8 +4263,8 @@ function starteWaldgebiet() {
   netzKarte = generiereRautenNetz("Waldgebiet");
   heileUndRegeneriereVoll(hardMode);
   speichereRun(); baueKarteHTML(); updateUI(); aktualisiereWahnsinnAnzeige();
-  oeffneStatPopup(L("Blaidd zeigt den Weg", "Blaidd Shows the Way"),
-    L("Ein Wolfsgeheul — und aus dem Dickicht tritt <b>Blaidd</b>. „Du hast durch die Tore gefunden. Dann folge mir.“\n\nEr führt dich auf einen verborgenen Pfad ins <b>Waldgebiet</b>.\n\nHier sieht jeder Weg aus wie der nächste. Lies genau, was dich erwartet.", "A wolf's howl — and from the thicket steps <b>Blaidd</b>. “You found your way through the gates. Then follow me.”\n\nHe leads you down a hidden path into the <b>Woodlands</b>.\n\nHere every path looks like the next. Read carefully what awaits you."), 1);
+  oeffneStatPopup(L("Waldgebiet", "Woodlands"),
+    L("Blaidd führt dich hinein. Hier sieht jeder Knoten gleich aus — <b>lies die Beschreibung</b>, um zu wissen, was dich erwartet.", "Blaidd leads you in. Every node looks the same here — <b>read the description</b> to know what awaits."), 1);
 }
 
 // --- DLC-Mittelweg: keine Tore -> Gruselwald (erbt die Abgrund-Mechanik, interner Schluessel bleibt AbyssalWoods) ---
@@ -4280,7 +4275,7 @@ function starteGruselwald() {
   netzKarte = generiereRautenNetz("AbyssalWoods");
   speichereRun(); baueKarteHTML(); updateUI(); aktualisiereWahnsinnAnzeige();
   oeffneStatPopup(L("Der Gruselwald", "The Eerie Woods"),
-    L("Kein Licht. Kein Laut. Nur ein Wald aus schwarzen Stämmen unter einem Himmel, der keiner ist.\n\nAlle Wege sind pechschwarz — doch es gibt <b>einen richtigen Pfad</b>, der ganz sacht glimmt. Verlässt du ihn, deckt sich der Knoten auf und der <b>Aging Untouchable</b> ergreift dich: kein Schaden, aber <b>+25% Wahnsinn</b> je Griff. Bei 100% ist dein Geist verloren.\n\nAm Ende wartet <b>Midra</b>. Sieh genau hin. Und geh leise.", "No light. No sound. Only a forest of black trunks beneath a sky that is no sky.\n\nEvery path is pitch-black — but there is <b>one right way</b> that glimmers ever so faintly. Stray from it and the node reveals itself as the <b>Aging Untouchable</b> seizes you: no damage, but <b>+25% madness</b> per grasp. At 100%, your mind is lost.\n\nAt the end waits <b>Midra</b>. Look closely. And tread quietly."), 1);
+    L("Alle Wege sind schwarz — nur der <b>richtige</b> glimmt sacht. Verlässt du ihn, packt dich der Aging Untouchable: <b>+25% Wahnsinn</b> je Griff, bei 100% ist der Run vorbei.", "Every path is black — only the <b>right</b> one faintly glimmers. Stray from it and the Aging Untouchable grabs you: <b>+25% madness</b> each time; at 100% the run is over."), 1);
 }
 
 // --- Beide Mittelwege muenden hier: die Festung von Messmer ---
@@ -4409,8 +4404,8 @@ function starteFingerruinen() {
   content.innerHTML =
     '<h3 style="color:var(--gold);font-size:1.6rem;margin-top:0;letter-spacing:2px;font-family:\'Mantinia\',serif;">' + L("Die Ruinen der Finger", "The Finger Ruins") + '</h3>' +
     '<p style="color:#ddd;font-size:0.92rem;font-family:sans-serif;line-height:1.55;white-space:pre-line;">' +
-      L("Ein endloses Feld grauer Steinsäulen unter einem Sternenhimmel, der nicht der unsere ist.\n\nDu steigst von <b>unten links</b> nach <b>oben rechts</b> — Schritt für Schritt, immer nur <b>nach oben oder rechts</b>. Es gibt <b>kein Zurück</b>. Auf dem Weg liegen <b>drei Finger</b>: steh auf einem und <b>blas hinein</b>, bis er erklingt. Erst wenn alle drei getönt haben, erwacht <b>Metyr</b> in der oberen Ecke.\n\nDu siehst alles — plane deinen Weg so, dass du keinen Finger auslässt. Felder, die einen Finger abschneiden würden, bleiben gesperrt.",
-        "An endless field of grey stone pillars beneath a starfield not our own.\n\nYou ascend from <b>bottom-left</b> to <b>top-right</b> — step by step, only ever <b>up or right</b>. There is <b>no going back</b>. Three <b>fingers</b> lie along the way: stand on one and <b>blow into it</b> until it sounds. Only when all three have tolled does <b>Metyr</b> awaken in the far corner.\n\nYou can see everything — plan your route so you miss no finger. Tiles that would strand a finger stay locked.") + '</p>' +
+      L("Nur <b>nach oben oder rechts</b>, kein Zurück. <b>Blas in alle drei Finger</b> (🖐), dann erwacht <b>Metyr</b> oben rechts. Plane so, dass du keinen auslässt.",
+        "Only <b>up or right</b>, no going back. <b>Blow into all three fingers</b> (🖐), then <b>Metyr</b> awakens top-right. Plan so you miss none.") + '</p>' +
     '<button class="btn-modal-action" onclick="document.getElementById(\'popup-overlay\').style.display=\'none\'; baueKarteHTML();">' + L("Ich bin bereit", "I am ready") + '</button>';
   ov.style.display = "flex";
 }
