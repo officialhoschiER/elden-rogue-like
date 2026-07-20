@@ -2208,7 +2208,7 @@ function baueKarteHTML() {
         imgTag.src = "images/icons/4026614_full.webp";
         imgTag.classList.add("fullbleed");
       } else if (knoten.typ === 20) {
-        // Torbogen: solange kein images/icons/torbogen.png existiert, zeigt der Knoten das ⛩️-Emoji
+        // Torbogen: echtes Icon (tor.png via bDatenbankHTML[20]); ⛩️-Emoji nur als Fallback
         imgTag.src = bDatenbankHTML[20];
         imgTag.onerror = function(){ this.outerHTML = '<span style="font-size:1.8rem; pointer-events:none;">⛩️</span>'; };
       } else if (knoten.typ === 24) {
