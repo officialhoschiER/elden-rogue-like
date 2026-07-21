@@ -3122,14 +3122,21 @@ async function gegnerKonter(opts) {
       gSchaden = Math.min(gSchaden, Math.round(finalMaxHp * 0.55));   // aber nie ein One-Shot (max 55% pro Treffer)
       gSchaden = Math.max(1, gSchaden);
     }
-    // DLC-ENDBOSSE (Gemahl Radahn P1/P2 + Metyr): %HP-Schadensboden wie im Tower, damit HP-Stacking
-    // sie nicht trivialisiert. Egal ob 1500 oder 10000 HP -> ein Treffer kostet immer ~20% der Leiste.
-    if (gegnerName === "Verheißener Gemahl Radahn" || gegnerName === "Radahn, Gemahl Miquellas" || gegnerName === "Metyr, Mutter der Finger") {
-      let finalMaxHp = berechneFinalMaxHp();
-      let dlcFloor = Math.round(finalMaxHp * 0.20 * (1 - ruestungReduktion) * (1 + tStats.bonusDmgTakenPercent));
-      gSchaden = Math.max(gSchaden, dlcFloor);
-      gSchaden = Math.min(gSchaden, Math.round(finalMaxHp * 0.50));   // kein One-Shot (max 50% pro Treffer)
-      gSchaden = Math.max(1, gSchaden);
+    // DLC %HP-Schadensboden (wie im Tower), damit HP-Stacking die Bosse nicht trivialisiert.
+    //  · Endbosse (Radahn P1/P2 + Metyr): 25% pro Treffer — echte Walls.
+    //  · normale DLC-Regionsbosse: 10% pro Treffer.
+    // Egal ob 1500 oder 15000 HP -> der Treffer kostet immer denselben Anteil.
+    {
+      let __endboss = (gegnerName === "Verheißener Gemahl Radahn" || gegnerName === "Radahn, Gemahl Miquellas" || gegnerName === "Metyr, Mutter der Finger");
+      let __dlcBoss = (gegnerName === "Göttliches Tanzlöwenbiest" || gegnerName === "Rellana, Ritterin der Zwillingsmonde" || gegnerName === "Sonnenblume" || gegnerName === "Midra, Herr der Wahnsinnigen Flamme" || gegnerName === "Messmer der Pfähler" || gegnerName === "Gaius" || gegnerName === "Romina, Heilige der Knospe");
+      if (__endboss || __dlcBoss) {
+        let finalMaxHp = berechneFinalMaxHp();
+        let floorPct = __endboss ? 0.25 : 0.10;
+        let dlcFloor = Math.round(finalMaxHp * floorPct * (1 - ruestungReduktion) * (1 + tStats.bonusDmgTakenPercent));
+        gSchaden = Math.max(gSchaden, dlcFloor);
+        gSchaden = Math.min(gSchaden, Math.round(finalMaxHp * 0.50));   // kein One-Shot (max 50% pro Treffer)
+        gSchaden = Math.max(1, gSchaden);
+      }
     }
     spielerHp = Math.max(0, spielerHp - gSchaden);
     if (gegnerName === "Rellana, Ritterin der Zwillingsmonde") rellanaGetroffen = true;   // Treffer kassiert -> kein Hitless-Bonus mehr
