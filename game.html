@@ -887,6 +887,11 @@ function spielDailySeedStr() {
   for (var j = 0; j < 6; j++) { h = Math.imul(h ^ (h >>> 16), 2246822507); h >>>= 0; s += chars[h % 36]; }
   return s;
 }
+// Läuft der aktuelle Run auf dem HEUTIGEN Tages-Seed? (egal ob per Button oder manuell eingegeben)
+// -> Roundtable-Upgrades werden dann deaktiviert, damit die Daily-Rangliste fair ist (alle mit Basis-Stats).
+function istDailySeedRun() {
+  try { return !!seedIsCustom && String(runSeed).toUpperCase() === spielDailySeedStr().toUpperCase(); } catch (e) { return false; }
+}
 let __dailyEingereicht = false;   // pro Run nur einmal in die Daily-Rangliste eintragen
 function pruefeDailyWertung() {
   try {
@@ -2108,8 +2113,8 @@ function waehleKlasseEngine(klasse) {
   if (klasse === 'schwertkaempfer') { spielerMaxHp = 150; maxKlassenFlasks = hardMode ? 2 : 3; spielerFlasks = maxKlassenFlasks; basisAusweichChance = 0.30; playerImageStr = "images/tarnished_ritter.webp"; }
   else if (klasse === 'samurai') { spielerMaxHp = 110; maxKlassenFlasks = hardMode ? 1 : 2; spielerFlasks = maxKlassenFlasks; basisAusweichChance = 0.40; playerImageStr = "images/tarnished_samurai.webp"; }
   else if (klasse === 'nackt') { spielerMaxHp = 90; maxKlassenFlasks = hardMode ? 0 : 1; spielerFlasks = maxKlassenFlasks; basisAusweichChance = 0.50; playerImageStr = "images/tarnished_nackt.webp"; }
-  // ⚜️ Meta-Upgrades (Roundtable) anwenden
-  let __meta = ladeMeta(); let __a = __meta.attr || {};
+  // ⚜️ Meta-Upgrades (Roundtable) anwenden — im DAILY-SEED-Run DEAKTIVIERT (alle starten mit Basis-Stats -> faire Rangliste)
+  let __meta = ladeMeta(); let __a = istDailySeedRun() ? {} : (__meta.attr || {});
   window.__attr = __a;                                                 // für Schadensberechnung im Kampf
   spielerMaxHp += (__a.vgr||0) * 10;                                   // Lebenskraft: +10 HP/Pkt
   waffenUpgrade += (__a.str||0);                                       // Stärke: +1 Start-Waffenstufe pro Punkt
