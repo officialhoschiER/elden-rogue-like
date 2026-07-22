@@ -1,0 +1,22 @@
+# Lokale Arbeitsdokumente (nicht fürs öffentliche Repo)
+TEXT-ICON-REVIEW.md
+QA-AUDIT-v1.5.3.md
+KONZEPT-DLC-SKINS-KLASSEN.md
+STREAMER-STRATEGIE.md
+MASTERPLAN.md
+
+# Lokale Tool-/Editor-Dateien
+.claude/
+Thumbs.db
+desktop.ini
+
+# Discord-Bot: Secrets & Abhängigkeiten (Code selbst wird committet)
+discord-rollen/functions/node_modules/
+discord-rollen/functions/.env
+discord-rollen/.firebaserc
+
+# Cloudflare Worker lokaler Cache
+discord-rollen/cloudflare/.wrangler/
+
+# Lokales Test-Deploy-Paket (nicht committen)
+_deploy/

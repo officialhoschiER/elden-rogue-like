@@ -16,8 +16,8 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-  <script src="lang.js?v=1.5.38"></script>
-  <script src="eldenrogue-online.js?v=1.5.38"></script>
+  <script src="lang.js?v=1.5.37"></script>
+  <script src="eldenrogue-online.js?v=1.5.37"></script>
   
   <style>
     :root { --gold: #cda34f; --gold-dark: #8c6d2d; --bg-dark: #0b0b0b; --border-color: #3a3224; --panel: #161616; }
@@ -116,6 +116,54 @@
 
     .btn-tower { background: linear-gradient(135deg, #2a1d0c, #3a2a12); color: #e6a23c; border: 1px solid #e6a23c; position: relative; overflow: hidden; }
     .btn-tower:hover { background: linear-gradient(135deg, #e6a23c, #d4892a); color: #1a1208; box-shadow: 0 0 26px rgba(230,162,60,0.55); transform: translateY(-2px); }
+    .btn-daily { display: block; width: fit-content; max-width: none; margin: 22px auto 0; padding: 8px 20px; font-size: 0.78rem; letter-spacing: 1.5px; white-space: nowrap; background: rgba(20,28,34,0.72); color: #8fb3c4; border: 1px solid #3f5f6d; border-radius: 6px; }
+    .btn-daily:hover { background: rgba(58,90,104,0.5); color: #d3e8f0; border-color: #5a8296; box-shadow: 0 0 14px rgba(58,90,104,0.4); transform: translateY(-1px); }
+    #daily-label { font-weight: bold; }
+    /* ===== Elden Idle ===== */
+    #modal-idle .modal-box { max-width: 1040px; width: 96vw; }
+    .idle-away { text-align:center; background:rgba(46,204,113,0.12); border:1px solid rgba(46,204,113,0.4); color:#8fe6b0; border-radius:6px; padding:9px; margin-bottom:14px; font-family:sans-serif; font-size:0.9rem; }
+    .idle-top { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:14px; }
+    .idle-runen-box { font-family:'Cinzel',serif; color:var(--gold); font-size:1.7rem; }
+    .idle-runen-lbl { font-size:0.78rem; color:#8a7f68; font-family:sans-serif; }
+    .idle-rate-box { font-family:sans-serif; color:#9fce8f; font-size:1.05rem; font-weight:bold; }
+    /* zwei aktive Slots oben (die farmenden Bosse) */
+    .idle-slots { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:14px; }
+    .idle-slot { position:relative; min-height:128px; border:2px dashed #4a4335; border-radius:12px; background:rgba(0,0,0,0.3); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:12px; }
+    .idle-slot.filled { border-style:solid; border-color:var(--gold); background:rgba(30,24,14,0.55); box-shadow:inset 0 0 16px rgba(205,163,79,0.22); cursor:pointer; }
+    .idle-slot.filled:hover { border-color:#e74c3c; background:rgba(40,16,16,0.5); }
+    .idle-slot img { width:72px; height:72px; object-fit:cover; border-radius:50%; border:2px solid var(--gold-dark); }
+    .idle-slot.filled img { border-color:var(--gold); box-shadow:0 0 14px rgba(205,163,79,0.55); }
+    .idle-slot-nm { font-family:sans-serif; font-weight:bold; color:#ede6d4; font-size:0.98rem; margin-top:8px; }
+    .idle-slot-rt { font-family:sans-serif; color:#9fce8f; font-size:0.84rem; font-weight:bold; }
+    .idle-slot-empty { color:#6a6250; font-family:sans-serif; font-size:0.95rem; }
+    .idle-x { position:absolute; top:6px; right:9px; background:none; border:none; color:#8a7f68; cursor:pointer; font-size:1rem; z-index:2; }
+    .idle-x:hover { color:#e74c3c; }
+    .idle-hint { font-family:sans-serif; color:#8a7f68; font-size:0.8rem; text-align:center; margin-bottom:12px; }
+    /* Offline-Kapazitaets-Ausbau (relativ teuer) */
+    .idle-cap { display:flex; align-items:center; justify-content:space-between; gap:12px; background:rgba(20,16,28,0.6); border:1px solid #3a3350; border-radius:8px; padding:9px 14px; margin-bottom:14px; font-family:sans-serif; }
+    .idle-cap-info { color:#c9bfe0; font-size:0.86rem; }
+    .idle-cap-info b { color:#d9b3ff; }
+    .idle-cap-buy { background:#241a34; color:#d9b3ff; border:1px solid #6a4a9a; border-radius:6px; padding:7px 14px; font-family:sans-serif; font-size:0.82rem; font-weight:bold; cursor:pointer; white-space:nowrap; }
+    .idle-cap-buy:hover:not(:disabled) { background:#6a4a9a; color:#fff; }
+    .idle-cap-buy:disabled { opacity:0.4; cursor:not-allowed; }
+    .idle-cap-max { color:#8a7f68; font-size:0.82rem; font-style:italic; }
+    /* scrollfreies Boss-Grid mit Preis unten auf dem Bild — passt sich der Fensterbreite an */
+    .idle-roster { display:grid; grid-template-columns:repeat(auto-fill, minmax(112px, 1fr)); gap:11px; }
+    .idle-card { position:relative; border:1px solid var(--border-color); border-radius:10px; background:#0f0f0f; overflow:hidden; cursor:pointer; transition:border-color .15s, transform .15s, box-shadow .15s; }
+    .idle-card:hover:not(.locked) { transform:translateY(-2px); border-color:var(--gold-dark); }
+    .idle-card.locked { opacity:0.45; cursor:default; }
+    .idle-card.owned { border-color:#5a6f4a; }
+    .idle-card.slotted { border-color:var(--gold); box-shadow:0 0 11px rgba(205,163,79,0.45); }
+    .idle-imgwrap { position:relative; width:100%; aspect-ratio:1/1; }
+    .idle-card-img { width:100%; height:100%; object-fit:cover; display:block; }
+    .idle-price { position:absolute; left:0; right:0; bottom:0; text-align:center; font-family:sans-serif; font-size:0.82rem; font-weight:bold; padding:4px 3px; backdrop-filter:blur(1px); }
+    .idle-price.buy { color:var(--gold); background:rgba(20,14,6,0.82); }
+    .idle-price.buy.poor { color:#8a7355; }
+    .idle-price.locked { color:#b9b0a0; background:rgba(0,0,0,0.7); }
+    .idle-price.owned { color:#a9e08f; background:rgba(14,24,10,0.82); }
+    .idle-price.slotted { color:#111; background:rgba(205,163,79,0.9); }
+    .idle-card-rt { font-family:sans-serif; font-size:0.72rem; color:#7d9a6d; text-align:center; padding:5px 3px; }
+    .idle-soul-ic { height:0.95em; width:auto; vertical-align:-0.16em; }
     .btn-ico { height: 1.15em; width: auto; vertical-align: -0.22em; margin-right: 7px; display: inline-block; }
     /* Seelen-Anzeige oben links */
     #souls-badge { position: fixed; top: 18px; left: 86px; z-index: 40; display: flex; align-items: center; gap: 10px;
@@ -126,7 +174,7 @@
     /* Seelen-Anzeige rückt mit, wenn das Seitenmenü ausgeklappt ist (kein Überlappen) */
     .sidebar.open ~ #souls-badge { left: 240px; }
     /* Versions-Label (klick -> Patch Notes) */
-    #version-tag { position: fixed; bottom: 12px; right: 16px; z-index: 40; font-family: 'Cinzel', serif; font-size: 0.82rem;
+    #version-tag { position: fixed; top: 14px; right: 18px; z-index: 40; font-family: 'Cinzel', serif; font-size: 0.82rem;
       color: #8c6d2d; letter-spacing: 1px; cursor: pointer; opacity: 0.7; transition: opacity 0.2s, color 0.2s; }
     #version-tag:hover { opacity: 1; color: var(--gold); }
     /* Roundtable & Bestenliste exakt gleich groß */
@@ -202,6 +250,33 @@
     .btn-google { display: flex; align-items: center; gap: 8px; background: #fff; color: #444; border: none; border-radius: 4px; padding: 8px 14px; font-family: sans-serif; font-weight: bold; font-size: 0.85rem; cursor: pointer; }
     .btn-google:hover { box-shadow: 0 0 14px rgba(255,255,255,0.25); }
     .btn-google img { width: 16px; height: 16px; }
+    /* ===== To-Do / "Erste Schritte" ===== */
+    .todo-card { position: fixed; top: 96px; left: 86px; width: 300px; z-index: 35; margin: 0; background: linear-gradient(160deg, rgba(30,24,14,0.94), rgba(15,13,9,0.94)); border: 1px solid var(--gold-dark); border-radius: 10px; padding: 11px 13px; text-align: left; box-shadow: 0 6px 26px rgba(0,0,0,0.55); transition: left 0.25s ease; }
+    /* wandert exakt wie die Seelen mit dem Seitenmenü mit */
+    .sidebar.open ~ #todo-card { left: 240px; }
+    @media (max-width: 900px) { .todo-card { display: none; } }
+    .todo-top { display: flex; justify-content: space-between; align-items: center; font-family: 'Cinzel', serif; color: var(--gold); font-size: 0.95rem; letter-spacing: 1px; margin-bottom: 8px; }
+    .todo-x { background: none; border: none; color: #6a6250; font-size: 0.85rem; cursor: pointer; padding: 2px 6px; line-height: 1; }
+    .todo-x:hover { color: var(--gold); }
+    .todo-item { display: flex; align-items: center; gap: 12px; padding: 8px; border-radius: 8px; }
+    .todo-item.clickable { cursor: pointer; }
+    .todo-item.clickable:hover { background: rgba(205,163,79,0.09); }
+    .todo-chk { flex-shrink: 0; width: 19px; height: 19px; border-radius: 50%; border: 1.5px solid #5a5344; color: #1a1206; display: flex; align-items: center; justify-content: center; font-family: sans-serif; font-weight: bold; font-size: 0.72rem; transition: all 0.15s ease; }
+    .todo-item.done .todo-chk { background: var(--gold); border-color: var(--gold); }
+    .todo-item.clickable:hover .todo-chk { border-color: var(--gold); }
+    .todo-txt b { display: block; font-family: sans-serif; font-size: 0.88rem; color: #ede6d4; }
+    .todo-item.done .todo-txt b { color: #9fce8f; }
+    .todo-txt small { color: #8a7f68; font-size: 0.71rem; font-family: sans-serif; }
+    .todo-tut { margin: 4px 0 8px 10px; padding: 11px 13px; background: rgba(0,0,0,0.3); border-left: 2px solid var(--gold-dark); border-radius: 6px; font-family: sans-serif; font-size: 0.8rem; color: #cdbfa3; }
+    .todo-discord-btn { display: inline-flex; align-items: center; gap: 8px; background: #5865F2; color: #fff; border: 1px solid #727efd; border-radius: 6px; padding: 8px 14px; font-family: sans-serif; font-weight: bold; font-size: 0.82rem; text-decoration: none; }
+    .todo-discord-btn:hover { background: #727efd; box-shadow: 0 0 12px rgba(88,101,242,0.5); }
+    .todo-discord-btn img { width: 18px; height: 18px; object-fit: contain; }
+    .todo-step { margin-bottom: 8px; line-height: 1.5; }
+    .todo-step:last-of-type { margin-bottom: 6px; }
+    .todo-link { color: var(--gold); text-decoration: none; font-weight: bold; }
+    .todo-link:hover { text-decoration: underline; }
+    .todo-code { margin-top: 6px; font-family: sans-serif; font-size: 0.82rem; }
+    .todo-done { margin-top: 4px; }
     .btn-mini { background: #2c2214; color: var(--gold); border: 1px solid var(--gold-dark); border-radius: 4px; padding: 7px 12px; font-family: sans-serif; font-size: 0.8rem; cursor: pointer; }
     .btn-mini:hover { background: var(--gold); color: #111; }
     .name-input { background: #0e0e0e; border: 1px solid var(--border-color); color: #ede6d4; border-radius: 4px; padding: 7px 8px; font-family: sans-serif; font-size: 0.8rem; width: 120px; }
@@ -228,7 +303,7 @@
     .lb-table.lbmode-speedrun th:nth-child(4), .lb-table.lbmode-speedrun td:nth-child(4) { display: none; }
     .lb-table.lbmode-completionist th:nth-child(4), .lb-table.lbmode-completionist td:nth-child(4) { display: none; }
     .lb-table th { text-align: left; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: #888; padding: 8px 10px; border-bottom: 1px solid var(--border-color); }
-    .lb-table td { padding: 10px; border-bottom: 1px solid #1d1a13; font-size: 0.92rem; }
+    .lb-table td { padding: 10px; border-bottom: 1px solid #1d1a13; font-size: 0.92rem; white-space: nowrap; }
     .lb-rank { font-family: 'Cinzel', serif; color: var(--gold); width: 42px; }
     .lb-rank.gold { color: #ffd24a; } .lb-rank.silver { color: #cfd2d6; } .lb-rank.bronze { color: #cd7f32; }
     .lb-name { display: flex; align-items: center; gap: 8px; }
@@ -387,8 +462,10 @@
   <button class="sb-item" onclick="openModal('settings')"><span class="sb-ic">⚙️</span><span class="sb-label" id="sb-settings-label">Einstellungen</span></button>
   <button class="sb-item" onclick="openModal('halloffame')"><span class="sb-ic">👑</span><span class="sb-label" id="sb-hof-label">Hall of Fame</span></button>
   <button class="sb-item" onclick="openModal('achievements')"><span class="sb-ic">⭐</span><span class="sb-label" id="btn-ach-text">Achievements</span></button>
+  <button class="sb-item" onclick="openModal('stats')"><span class="sb-ic">📊</span><span class="sb-label" id="sb-stats-label">Statistik</span></button>
   <button class="sb-item" onclick="openModal('eldendex')"><span class="sb-ic">📖</span><span class="sb-label" id="btn-dex-text">Eldendex</span></button>
   <button class="sb-item" onclick="openModal('unlocks')"><span class="sb-ic">🔓</span><span class="sb-label" id="sb-unlocks-label">Freischaltungen</span></button>
+  <button class="sb-item" onclick="openModal('idle')"><span class="sb-ic">⚔️</span><span class="sb-label" id="sb-idle-label">Elden Idle</span></button>
   <button class="sb-item" onclick="openModal('patchnotes')"><span class="sb-ic">📜</span><span class="sb-label" id="sb-patch-label">Patch Notes</span></button>
   <div class="sb-spacer"></div>
   <div class="sb-brand">ELDEN ROGUE</div>
@@ -399,7 +476,9 @@
   <span id="souls-badge-value">0</span>
 </div>
 
-<div id="version-tag" onclick="openModal('patchnotes')" title="Patch Notes">v1.5.3</div>
+<div class="todo-card" id="todo-card"></div>
+
+<div id="version-tag" onclick="openModal('patchnotes')" title="Patch Notes">v1.6</div>
 
 
 <div class="menu-wrap">
@@ -420,6 +499,8 @@
     <button class="btn-main btn-tower" id="btn-tower"><span id="btn-tower-label">Battle Tower</span></button>
     <a href="game.html?challenge=autobattle" class="btn-main btn-autobattle" id="btn-autobattle" onclick="return checkOverwrite('game.html?challenge=autobattle')">Auto-Battle</a>
   </div>
+
+  <a href="game.html" id="btn-daily" class="btn-main btn-daily reveal d3">🗓️ <span id="daily-label">Täglicher Seed</span></a>
 
   <div class="btn-row reveal d4">
     <button class="btn-secondary" onclick="openModal('seelenschmiede')">
@@ -461,7 +542,8 @@
       <li id="info-l4"><b>Roundtable:</b> Gib gesammelte Seelen für dauerhafte Upgrades aus.</li>
       <li id="info-l5"><b>Sammeln &amp; Steigern:</b> Achievements und den Eldendex findest du links im Menü.</li>
     </ul>
-    <button class="btn-mini" onclick="closeModals()" style="display:block; margin:14px auto 0;">Verstanden</button>
+    <button class="btn-mini" id="info-tutorial-btn" onclick="openModal('onboarding')" style="display:block; margin:14px auto 0;">🎓 Tutorial ansehen</button>
+    <button class="btn-mini" onclick="closeModals()" style="display:block; margin:8px auto 0;">Verstanden</button>
   </div>
 </div>
 
@@ -521,6 +603,21 @@
       </div>
       <div id="set-code-result" style="width:100%; font-family:sans-serif; font-size:0.78rem; margin-top:6px; min-height:1em;"></div>
     </div>
+    <div class="set-row" style="flex-wrap:wrap;">
+      <div>
+        <div class="set-label" id="set-discord-label">Discord verknüpfen</div>
+        <div class="set-sub" id="set-discord-sub">Rollen für deine Erfolge — automatisch</div>
+      </div>
+      <button class="btn-mini" id="set-discord-btn" onclick="erzeugeDiscordCode()">Code erzeugen</button>
+      <div id="set-discord-result" style="width:100%; font-family:sans-serif; font-size:0.78rem; margin-top:6px; min-height:1em;"></div>
+    </div>
+    <div class="set-row">
+      <div>
+        <div class="set-label" id="set-todo-label">Erste-Schritte-Liste</div>
+        <div class="set-sub" id="set-todo-sub">Die To-Do-Karte im Hauptmenü wieder einblenden</div>
+      </div>
+      <button class="btn-mini" id="set-todo-btn" onclick="todoShowAgain(this)">Wieder anzeigen</button>
+    </div>
   </div>
 </div>
 
@@ -569,11 +666,12 @@
   <div class="modal-box">
     <button class="modal-close" onclick="closeModals()">&times;</button>
     <div class="modal-title" id="lb-title">Bestenliste</div>
-    <div style="display:flex; justify-content:flex-end; margin:-4px 0 8px;">
-      <select id="lb-patch" onchange="ladeBestenliste()" style="background:#111; color:var(--gold); border:1px solid var(--gold-dark); padding:3px 10px; font-family:'Cinzel',serif; font-size:0.7rem; letter-spacing:1px; border-radius:3px; cursor:pointer;"><option value="1.5" selected>PATCH v1.5</option><option value="1.4">PATCH v1.4</option><option value="1.3">PATCH v1.3</option></select>
+    <div style="display:flex; justify-content:flex-end; gap:8px; margin:-4px 0 8px;">
+      <select id="lb-date" onchange="ladeBestenliste()" style="display:none; background:#111; color:var(--gold); border:1px solid var(--gold-dark); padding:3px 10px; font-family:'Cinzel',serif; font-size:0.7rem; letter-spacing:1px; border-radius:3px; cursor:pointer;"></select>
+      <select id="lb-patch" onchange="ladeBestenliste()" style="background:#111; color:var(--gold); border:1px solid var(--gold-dark); padding:3px 10px; font-family:'Cinzel',serif; font-size:0.7rem; letter-spacing:1px; border-radius:3px; cursor:pointer;"><option value="1.6" selected>PATCH v1.6</option><option value="1.5">PATCH v1.5</option><option value="1.4">PATCH v1.4</option><option value="1.3">PATCH v1.3</option></select>
     </div>
     <div id="lb-cat-tabs" class="lb-tabs"></div>
-    <div id="lb-area" style="min-height:470px; display:flex; flex-direction:column;">
+    <div id="lb-area" style="height:520px; display:flex; flex-direction:column;">
       <div id="lb-status" class="muted">Lade Bestenliste…</div>
       <table class="lb-table hidden" id="lb-table">
         <thead><tr><th>#</th><th id="th-player">Befleckter</th><th id="th-stage">Etappe</th><th id="th-bosses">Bosse</th><th style="text-align:right;" id="th-score">Score</th></tr></thead>
@@ -595,6 +693,7 @@
 
     <div class="stat-grid" id="stat-grid"></div>
     <div class="ach-progress" id="ach-progress"></div>
+    <div id="class-feats"></div>
     <div class="ach-grid" id="ach-grid"></div>
   </div>
 </div>
@@ -651,6 +750,38 @@
   </div>
 </div>
 
+<div class="modal-bg" id="modal-stats">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModals()">&times;</button>
+    <div class="modal-title" id="stats-title">📊 Statistik</div>
+    <div id="stats-body"></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modal-idle">
+  <div class="modal-box" style="max-width:1040px;">
+    <button class="modal-close" onclick="closeModals()">&times;</button>
+    <div class="modal-title" id="idle-title">⚔️ Elden Idle</div>
+    <div id="idle-body"></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modal-onboarding">
+  <div class="modal-box" style="max-width:560px;">
+    <div id="onb-icon" style="font-size:2.6rem;text-align:center;margin-bottom:6px;">🔥</div>
+    <div class="modal-title" id="onb-title" style="margin-bottom:12px;"></div>
+    <div id="onb-body"></div>
+    <div id="onb-dots" style="display:flex;justify-content:center;gap:7px;margin:20px 0 16px;"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+      <button class="btn-mini" id="onb-skip" onclick="closeOnboarding()" style="opacity:0.7;">Überspringen</button>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-mini" id="onb-prev" onclick="onbGo(-1)">Zurück</button>
+        <button class="btn-mini" id="onb-next" onclick="onbGo(1)">Weiter</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
   // ?wipe=1 — lokalen Spielstand komplett zurücksetzen (zum Testen; Cloud bleibt unberührt).
   // Loggt zusätzlich aus, sonst holt der Login-Merge den alten Stand sofort zurück.
@@ -693,6 +824,11 @@
 
     document.getElementById("btn-dex-text").innerText = t("dex_title");
     document.getElementById("dex-title").innerText = t("dex_title");
+    // Statistik + Onboarding (eigene Labels, im i18n noch nicht als Keys hinterlegt)
+    var _en = lang === 'en';
+    var elStats = document.getElementById("sb-stats-label"); if (elStats) elStats.innerText = _en ? "Stats" : "Statistik";
+    var elStatsT = document.getElementById("stats-title"); if (elStatsT) elStatsT.innerText = _en ? "📊 Statistics" : "📊 Statistik";
+    var elTut = document.getElementById("info-tutorial-btn"); if (elTut) elTut.innerText = _en ? "🎓 View tutorial" : "🎓 Tutorial ansehen";
     // Battle Tower button + guide
     document.getElementById("btn-tower-label").innerText = t("tower_btn").replace("🏯 ", "");
     document.getElementById("tg-title").innerHTML = '<img src="images/icons/Godfrey Icon.webp" class="btn-ico" onerror="this.style.display=\'none\'">' + t("tower_guide_title").replace("🗼 ", "").replace("🏯 ", "");
@@ -754,10 +890,11 @@
   var LB_CATS = [
     ["normal",       "lb_cat_normal"],
     ["hard",         "lb_cat_hard"],
+    ["daily",        "lb_cat_daily"],
+    ["idle",         "lb_cat_idle"],
     ["speedrun",     "lb_cat_speedrun"],
     ["completionist","lb_cat_completionist"],
     ["tower",        "lb_cat_tower"],
-    ["noarmor",      "challenge_noarmor"],
     ["autobattle",   "challenge_autobattle"]
   ];
   var lbKategorieAktiv = "normal";
@@ -792,6 +929,9 @@
     if (m) m.classList.add("open");
     if (name === "bestenliste") { fuelleLbKategorien(); ladeBestenliste(); }
     if (name === "achievements") ladeAchievements();
+    if (name === "stats") ladeStats();
+    if (name === "idle") renderIdle();
+    if (name === "onboarding") renderOnboarding(0);
     if (name === "eldendex") ladeEldendex();
     if (name === "patchnotes") ladePatchNotes();
     if (name === "unlocks") ladeUnlocks();
@@ -907,6 +1047,28 @@
 
     // Patch-Historie: neuester Eintrag zuerst. Neue Patches oben ergänzen.
     var PATCHES = [
+      { ver:"1.6 — Land des Schattens", sections: [
+        { icon:"🆕", title: shopL("Neu","New"), items: [
+          shopL("<b>Das komplette DLC „Land des Schattens“:</b> Ein neues Endgame öffnet sich nach dem <b>zweiten Sieg über Mohg</b>. Neue Gebiete, neue Bosse, versteckte Geheimnisse und mehrere Enden — den Rest findest du selbst heraus. 👀", "<b>The full „Land of Shadow“ DLC:</b> A new endgame opens after your <b>second victory over Mohg</b>. New areas, new bosses, hidden secrets and multiple endings — find out the rest yourself. 👀"),
+          shopL("<b>Neue Achievements</b> für die DLC-Bosse und beide Enden — alles sauber im Eldendex.", "<b>New achievements</b> for the DLC bosses and both endings — all neatly in the Eldendex."),
+          shopL("<b>Täglicher Seed ist jetzt fair:</b> alle Roundtable-Upgrades & -Ausrüstung sind deaktiviert – jeder startet mit Basis-Stats.", "<b>The daily seed is now fair:</b> all Roundtable upgrades & gear are disabled — everyone starts on base stats.")
+        ]},
+        { icon:"✨", title: shopL("Verbesserungen","Improvements"), items: [
+          shopL("<b>Roundtable-Truhen:</b> jetzt <b>10× auf einmal</b> öffnen (−10% Rabatt).", "<b>Roundtable chests:</b> now open <b>10× at once</b> (−10% discount)."),
+          shopL("<b>Deutlich weniger Text</b> zwischen den Etappen – Boss-Siege sagen nur noch „X besiegt“.", "<b>Far less text</b> between stages — boss wins simply say „X defeated“."),
+          shopL("<b>Bestenliste</b> bleibt beim Kategorie-Wechsel gleich groß (kein Springen mehr).", "<b>Leaderboard</b> keeps a fixed size when switching categories (no more jumping).")
+        ]},
+        { icon:"⚖️", title: shopL("Balance","Balance"), items: [
+          shopL("<b>Battle Tower deutlich schwerer</b> – und der „unsterblich“-Build ist Geschichte: Schaden skaliert jetzt mit deiner Max-HP, HP-Stacking trivialisiert nichts mehr.", "<b>Battle Tower is significantly harder</b> — and the „unkillable“ build is gone: damage now scales with your max HP, HP-stacking trivialises nothing anymore."),
+          shopL("<b>DLC-Endbosse sind echte Walls:</b> ein Treffer kostet immer denselben Anteil deiner Leiste, egal wie viel HP du hast.", "<b>DLC endbosses are real walls:</b> a hit always costs the same share of your bar, no matter how much HP you have."),
+          shopL("Das Spiel ist insgesamt <b>~15% härter</b>.", "The game is <b>~15% harder</b> overall.")
+        ]},
+        { icon:"🐛", title: shopL("Käfer","Bugs"), items: [
+          shopL("<b>Login-Warnung</b> erschien fälschlich, obwohl man eingeloggt war – behoben.", "<b>Login warning</b> falsely appeared even when signed in — fixed."),
+          shopL("<b>Mohgwyn-Dynastie</b> schaltet jetzt erst frei, wenn man wirklich den Weg in die Kanalisation findet.", "<b>Mohgwyn Dynasty</b> now only unlocks once you truly find the way into the sewers."),
+          shopL("Diverse fehlende/falsche Bilder behoben (u. a. Radahn Phase 2).", "Fixed various missing/incorrect images (incl. Radahn phase 2).")
+        ]}
+      ]},
       { ver:"1.5.3", sections: [
         { icon:"🆕", title: shopL("Neu","New"), items: [
           shopL("<b>Berg Gelmir:</b> Ein alternativer Pfad statt Leyndell. Stelle dich <b>Rykard, Herr der Blasphemie</b> (jetzt mit 2 Phasen!). Freigeschaltet über eine geheime <b>Rya-Quest</b>.", "<b>Mount Gelmir:</b> An alternative path instead of Leyndell. Face <b>Rykard, Lord of Blasphemy</b> (now with 2 phases!). Unlocked via a secret <b>Rya questline</b>."),
@@ -1103,7 +1265,12 @@
         mohgwyn:["Mohgwyn-Dynastie","Mohgwyn Dynasty"], leyndell:["Leyndell","Leyndell"],
         mountaintops:["Gipfel der Riesen","Mountaintops"], farumazula:["Farum Azula","Farum Azula"],
         ashencapital:["Aschene Hauptstadt","Ashen Capital"], haligtree:["Haligtree","Haligtree"],
-        minibosse:["Minibosse & Dungeons","Minibosses & Dungeons"]
+        minibosse:["Minibosse & Dungeons","Minibosses & Dungeons"],
+        gravesite:["Gräberebene","Gravesite Plain"], ensis:["Castle Ensis","Castle Ensis"],
+        waldgebiet:["Waldgebiet","Woodlands"], gruselwald:["Gruselwald","Eerie Woods"],
+        messmer:["Festung von Messmer","Messmer's Fortress"], garten:["Garten","Garden"],
+        rauh:["Ruinen von Rauh","Ruins of Rauh"], enirilim:["Enir-Ilim","Enir-Ilim"],
+        finger:["Gebiet der Finger","Realm of the Fingers"]
       };
       var regOrder = [], regMap = {};
       cat.items.forEach(function(it){
@@ -1275,6 +1442,9 @@
   function itemImgHtml(typ, item, size){ var src = typ==="waffe" ? weaponImg(item.name) : (ARMOR_IMG[item.name]||""); var fb = typ==="waffe" ? "🗡️" : "🛡️"; if(!src) return '<span style="font-size:'+size+'px;line-height:1;">'+fb+'</span>'; return '<img src="'+src+'" alt="" style="width:'+size+'px;height:'+size+'px;object-fit:contain;" onerror="imgFallback(this,&#39;'+fb+'&#39;,'+size+')">'; }
   var CHEST_COST = 300;   // Preis pro Truhe (Duplikat erstattet die Hälfte)
   var PITY_THRESHOLD = 4; // nach so vielen Duplikaten in Folge ist die nächste Truhe garantiert ein NEUES Item
+  var CHEST_BULK = 10;          // "10× öffnen"
+  var CHEST_BULK_RABATT = 0.10; // 10% Rabatt auf den Gesamtpreis beim 10er-Kauf
+  function chestBulkKosten(){ return Math.round(CHEST_COST * CHEST_BULK * (1 - CHEST_BULK_RABATT)); }
   function pityGet(m, typ){ if(!m.chestPity||typeof m.chestPity!=="object") m.chestPity={waffe:0,ruestung:0}; return m.chestPity[typ]||0; }
   function pitySet(m, typ, v){ if(!m.chestPity||typeof m.chestPity!=="object") m.chestPity={waffe:0,ruestung:0}; m.chestPity[typ]=v; }
   function lockedWeapons(m){ return ALL_WEAPONS.filter(function(w){ return m.unlockedWeapons.indexOf(w.name) < 0; }); }
@@ -1282,13 +1452,17 @@
 
   function rollRaritaet(){ var r = Math.random(); return r < 0.50 ? "common" : r < 0.75 ? "rare" : r < 0.90 ? "epic" : "legendary"; }  // 50/25/15/10
 
-  // Eine einzelne Ziehung (mutiert m: Seelen, Item-Liste, Pech-Schutz) und liefert das Ergebnis.
-  function _truheZiehen(m, typ) {
+  function oeffneTruhe(typ) {
+    var m = ladeMeta();
+    if (m.seelen < CHEST_COST) return;
     var all = typ === "waffe" ? ALL_WEAPONS : ALL_ARMOR;
     var liste = typ === "waffe" ? m.unlockedWeapons : (m.unlockedArmor = m.unlockedArmor || []);
     var locked = all.filter(function(x){ return liste.indexOf(x.name) < 0; });
+
+    // Pech-Schutz: nach PITY_THRESHOLD Duplikaten in Folge ist die nächste Truhe garantiert neu.
     var pity = pityGet(m, typ);
     var pityAktiv = pity >= PITY_THRESHOLD && locked.length > 0;
+
     var item;
     if (pityAktiv) {
       // garantiert neu – bevorzugt in der ausgewürfelten Seltenheit, sonst irgendein gesperrtes Item
@@ -1300,37 +1474,79 @@
       if (!pool.length) pool = all;
       item = pool[Math.floor(Math.random() * pool.length)];
     }
+
     var owned = liste.indexOf(item.name) >= 0;
     m.seelen -= CHEST_COST;
     var refund = 0;
     if (owned) { refund = Math.floor(CHEST_COST / 2); m.seelen += refund; pitySet(m, typ, Math.min(PITY_THRESHOLD, pity + 1)); }
     else { liste.push(item.name); pitySet(m, typ, 0); }
-    return { item: item, owned: owned, refund: refund, pityAktiv: pityAktiv };
-  }
-
-  function oeffneTruhe(typ) {
-    var m = ladeMeta();
-    if (m.seelen < CHEST_COST) return;
-    var r = _truheZiehen(m, typ);
     speichereMeta(m);
-    chestReveal(typ, r.item, r.owned, r.refund, r.pityAktiv);
+    chestReveal(typ, item, owned, refund, pityAktiv);
   }
   window.oeffneTruhe = oeffneTruhe;
 
-  // Mehrere Truhen auf einmal (5 / 10). Stoppt, sobald die Seelen nicht mehr reichen.
-  function oeffneTruhen(typ, anzahl) {
+  // 10 Truhen auf einmal — 10% Rabatt auf den Gesamtpreis. Pech-Schutz zählt pro Zug ganz normal weiter.
+  function oeffneTruhe10(typ) {
     var m = ladeMeta();
-    if (m.seelen < CHEST_COST) return;
-    var ergebnisse = [];
-    for (var i = 0; i < anzahl; i++) {
-      if (m.seelen < CHEST_COST) break;
-      ergebnisse.push(_truheZiehen(m, typ));
+    var kosten = chestBulkKosten();
+    if (m.seelen < kosten) return;
+    var all = typ === "waffe" ? ALL_WEAPONS : ALL_ARMOR;
+    var liste = typ === "waffe" ? m.unlockedWeapons : (m.unlockedArmor = m.unlockedArmor || []);
+    if (all.filter(function (x) { return liste.indexOf(x.name) < 0; }).length === 0) return;   // schon komplett
+    m.seelen -= kosten;
+    var res = [], refundGesamt = 0;
+    for (var i = 0; i < CHEST_BULK; i++) {
+      var locked = all.filter(function (x) { return liste.indexOf(x.name) < 0; });
+      var pity = pityGet(m, typ);
+      var pityAktiv = pity >= PITY_THRESHOLD && locked.length > 0;
+      var item;
+      if (pityAktiv) {
+        var lp = locked.filter(function (x) { return x.rarity === rollRaritaet(); });
+        if (!lp.length) lp = locked;
+        item = lp[Math.floor(Math.random() * lp.length)];
+      } else {
+        var pool = all.filter(function (x) { return x.rarity === rollRaritaet(); });
+        if (!pool.length) pool = all;
+        item = pool[Math.floor(Math.random() * pool.length)];
+      }
+      var owned = liste.indexOf(item.name) >= 0;
+      var refund = 0;
+      if (owned) { refund = Math.floor(CHEST_COST / 2); m.seelen += refund; refundGesamt += refund; pitySet(m, typ, Math.min(PITY_THRESHOLD, pity + 1)); }
+      else { liste.push(item.name); pitySet(m, typ, 0); }
+      res.push({ item: item, dup: owned, pity: pityAktiv });
     }
     speichereMeta(m);
-    if (ergebnisse.length === 1) { var r = ergebnisse[0]; chestReveal(typ, r.item, r.owned, r.refund, r.pityAktiv); }
-    else chestRevealBulk(typ, ergebnisse);
+    chestReveal10(typ, res, refundGesamt, kosten);
   }
-  window.oeffneTruhen = oeffneTruhen;
+  window.oeffneTruhe10 = oeffneTruhe10;
+
+  function chestReveal10(typ, res, refundGesamt, kosten) {
+    var body = document.getElementById("shop-body"); if (!body) return;
+    updateShopButtonSouls();
+    body.innerHTML = '<div style="text-align:center;padding:24px 0;">'
+      + '<img src="' + CHEST_IMG + '" alt="" style="width:160px;display:inline-block;animation:chestShake 0.5s ease-in-out 3;">'
+      + '<div style="color:#cda34f;font-family:sans-serif;margin-top:8px;letter-spacing:1px;">' + shopL("10 Truhen öffnen sich…", "10 chests open…") + '</div></div>';
+    setTimeout(function () {
+      var neu = res.filter(function (r) { return !r.dup; }).length;
+      var cards = res.map(function (r) {
+        var col = RARITY_COL[r.item.rarity];
+        return '<div style="background:#0f0f0f;border:1px solid ' + (r.dup ? '#333' : col) + ';border-radius:8px;padding:7px 4px;text-align:center;' + (r.dup ? 'opacity:0.5;' : 'box-shadow:0 0 10px ' + col + '55;') + '">'
+          + '<div style="filter:drop-shadow(0 0 6px ' + col + ');">' + itemImgHtml(typ, r.item, 42) + '</div>'
+          + '<div style="color:' + col + ';font-size:0.66rem;font-family:Georgia,serif;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + r.item.name + '</div>'
+          + '<div style="font-size:0.58rem;font-weight:bold;letter-spacing:0.5px;color:' + (r.dup ? '#8a7f68' : '#7fe0a4') + ';">' + (r.dup ? shopL("Duplikat", "Dupe") : shopL("NEU", "NEW")) + '</div>'
+          + '</div>';
+      }).join("");
+      body.innerHTML = '<div style="padding:12px 0;">'
+        + '<div style="text-align:center;color:#cda34f;font-family:Cinzel,serif;letter-spacing:2px;font-size:1.1rem;">10× ' + shopL("geöffnet", "opened") + '</div>'
+        + '<div style="text-align:center;color:#9aa0a6;font-family:sans-serif;font-size:0.8rem;margin:4px 0 12px;">'
+          + '<b style="color:#7fe0a4;">' + neu + '</b> ' + shopL("neu", "new") + ' · <b>' + (res.length - neu) + '</b> ' + shopL("Duplikate", "dupes")
+          + (refundGesamt > 0 ? ' · <b style="color:#cda34f;">+' + refundGesamt + '</b> ' + shopL("erstattet", "refunded") : '')
+          + ' · ' + shopL("Kosten", "Cost") + ': <b>' + kosten + '</b> <span style="color:#7fe0a4;">(−10%)</span></div>'
+        + '<div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px;">' + cards + '</div>'
+        + '<div style="text-align:center;"><button class="btn-modal-action" style="margin-top:14px;" onclick="renderShop()">' + shopL("Weiter", "Continue") + '</button></div>'
+        + '</div>';
+    }, 1650);
+  }
 
   function chestReveal(typ, item, dup, refund, pityWar) {
     var body = document.getElementById("shop-body"); if (!body) return;
@@ -1357,39 +1573,6 @@
         + '<div style="color:#9aa0a6;font-size:0.85rem;margin-top:6px;">' + stats + '</div>'
         + '<div style="color:' + (dup?'#cda34f':'#777') + ';font-size:0.78rem;margin-top:12px;font-family:sans-serif;">' + unten + '</div>'
         + '<button class="btn-modal-action" style="margin-top:14px;" onclick="renderShop()">' + shopL("Weiter","Continue") + '</button></div>';
-    }, 1650);
-  }
-
-  // Zusammenfassung nach dem Öffnen mehrerer Truhen auf einmal
-  function chestRevealBulk(typ, res) {
-    var body = document.getElementById("shop-body"); if (!body) return;
-    updateShopButtonSouls();
-    body.innerHTML = '<div style="text-align:center;padding:24px 0;">'
-      + '<img src="' + CHEST_IMG + '" alt="" style="width:150px;display:inline-block;animation:chestShake 0.5s ease-in-out 3;">'
-      + '<div style="color:#cda34f;font-family:sans-serif;margin-top:8px;letter-spacing:1px;">' + shopL(res.length + " Truhen öffnen sich…", res.length + " chests open…") + '</div></div>';
-    setTimeout(function(){
-      var neu = res.filter(function(r){ return !r.owned; }).length;
-      var dups = res.length - neu;
-      var totalRefund = res.reduce(function(a, r){ return a + r.refund; }, 0);
-      var cells = res.map(function(r){
-        var col = RARITY_COL[r.item.rarity];
-        var rand = r.owned ? "#5a5a5a" : col;
-        var tag = r.owned
-          ? '<span style="color:#888;">' + shopL("Dup","Dup") + '</span>'
-          : '<span style="color:' + col + ';font-weight:bold;">' + (r.pityAktiv ? "★ " : "") + shopL("NEU","NEW") + '</span>';
-        return '<div style="width:78px;text-align:center;padding:6px 4px;border:1px solid ' + rand + ';border-radius:6px;background:rgba(0,0,0,0.3);' + (r.owned?'opacity:0.6;':'filter:drop-shadow(0 0 6px '+col+');') + '">'
-          + itemImgHtml(typ, r.item, 42)
-          + '<div style="color:' + (r.owned?'#aaa':col) + ';font-size:0.6rem;line-height:1.1;margin-top:4px;height:24px;overflow:hidden;">' + r.item.name + '</div>'
-          + '<div style="font-size:0.58rem;text-transform:uppercase;letter-spacing:0.5px;margin-top:2px;">' + tag + '</div></div>';
-      }).join("");
-      body.innerHTML = '<div style="text-align:center;padding:10px 0 4px;">'
-        + '<div style="font-size:0.78rem;color:#cda34f;text-transform:uppercase;letter-spacing:2px;font-family:sans-serif;">' + shopL(res.length + " Truhen geöffnet", res.length + " chests opened") + '</div>'
-        + '<div style="font-family:sans-serif;font-size:0.82rem;color:#bbb;margin-top:6px;">'
-        +   '<span style="color:#54d98c;font-weight:bold;">' + neu + ' ' + shopL("neu","new") + '</span> · '
-        +   '<span style="color:#888;">' + dups + ' ' + shopL("Duplikate","duplicates") + '</span>'
-        +   (totalRefund > 0 ? ' · <span style="color:#cda34f;">+' + totalRefund + ' ' + shopL("erstattet","refunded") + '</span>' : '') + '</div>'
-        + '<div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:14px 0;max-height:260px;overflow-y:auto;">' + cells + '</div>'
-        + '<button class="btn-modal-action" onclick="renderShop()">' + shopL("Weiter","Continue") + '</button></div>';
     }, 1650);
   }
 
@@ -1457,6 +1640,29 @@
   window.updateShopButtonSouls = updateShopButtonSouls;
 
   /* ===== Aktions-Codes einlösen (Codes legt der Admin in Firestore unter codes/{CODE} an) ===== */
+  /* Discord-Verknüpfung: Code erzeugen, den man im Discord per /verify eingibt */
+  function erzeugeDiscordCode() {
+    var en = _menuIsEn();
+    var out = document.getElementById("set-discord-result");
+    if (!window.ER || !ER.currentUser || !ER.currentUser()) {
+      if (out) out.innerHTML = '<span style="color:#e74c3c;">' + (en ? "Please sign in with Google first." : "Bitte melde dich zuerst mit Google an.") + '</span>';
+      return;
+    }
+    if (out) out.textContent = en ? "Generating code…" : "Erzeuge Code…";
+    ER.generateDiscordCode(function (r) {
+      if (!out) return;
+      if (r.ok) {
+        out.innerHTML = (en ? "Your code: " : "Dein Code: ") +
+          '<b style="color:var(--gold); letter-spacing:2px; font-size:1.05rem;">' + r.code + '</b><br>' +
+          (en ? "Type <b>/verify " + r.code + "</b> on the Discord server — your roles are assigned automatically. Valid for 15 minutes."
+              : "Tippe <b>/verify " + r.code + "</b> auf dem Discord-Server — deine Rollen kommen automatisch. Gültig für 15 Minuten.");
+      } else {
+        out.innerHTML = '<span style="color:#e74c3c;">' + (en ? "Failed — are you online and signed in?" : "Fehlgeschlagen — bist du online und angemeldet?") + '</span>';
+      }
+    });
+  }
+  window.erzeugeDiscordCode = erzeugeDiscordCode;
+
   function einloeseCode() {
     var en = _menuIsEn();
     var input = document.getElementById("set-code-input");
@@ -1523,25 +1729,26 @@
     var gesamt = typ === "waffe" ? ALL_WEAPONS.length : ALL_ARMOR.length;
     var frei = gesamt - pool.length;
     var titel = typ === "waffe" ? shopL("Waffentruhe","Weapon Chest") : shopL("Rüstungstruhe","Armor Chest");
-    var leer = pool.length === 0;
+    var leer = pool.length === 0; var ok = m.seelen >= CHEST_COST && !leer;
+    var rechts = leer ? '<span style="color:#54d98c;font-weight:bold;font-size:0.8rem;">' + shopL("KOMPLETT","COMPLETE") + '</span>'
+      : '<span style="color:' + (ok?'#cda34f':'#777') + ';font-weight:bold;white-space:nowrap;">' + CHEST_COST + '</span>';
     var inner = '<img src="' + CHEST_IMG + '" alt="" style="width:58px;height:46px;object-fit:contain;flex-shrink:0;">'
       + '<div style="flex:1;"><strong style="color:#ede6d4;">' + titel + '</strong><br>'
-      + '<span style="color:#9aa0a6;font-size:0.78rem;">' + (leer ? shopL("Alle gesammelt","All collected") : shopL("Zufälliges Item","Random item")) + ' · ' + frei + '/' + gesamt + '</span></div>'
-      + (leer ? '<span style="color:#54d98c;font-weight:bold;font-size:0.8rem;">' + shopL("KOMPLETT","COMPLETE") + '</span>' : '');
-    var card = '<div style="display:flex;align-items:center;gap:12px;text-align:left;background:rgba(0,0,0,0.3);border:1px solid ' + (leer?'#4a6':'#333') + ';border-radius:6px;padding:10px 12px;margin-bottom:8px;">' + inner + '</div>';
-    // Mengen-Buttons ×1 / ×5 / ×10 (Kosten = 300 pro Truhe)
-    var btnRow = "";
-    if (!leer) {
-      btnRow = '<div style="display:flex;gap:8px;justify-content:center;margin-bottom:10px;">' + [1,5,10].map(function(n){
-        var kosten = CHEST_COST * n;
-        var ok = m.seelen >= kosten;
-        var fn = n === 1 ? ("oeffneTruhe('"+typ+"')") : ("oeffneTruhen('"+typ+"',"+n+")");
-        return '<button class="btn-mini" ' + (ok ? ('onclick="'+fn+'"') : 'disabled') + ' style="flex:1;padding:7px 4px;line-height:1.2;' + (ok?'':'opacity:0.4;') + '">'
-          + '<span style="font-size:0.95rem;font-weight:bold;">×' + n + '</span><br>'
-          + '<span style="font-size:0.62rem;color:#cda34f;">' + kosten + '</span></button>';
-      }).join("") + '</div>';
-    }
-    return card + btnRow + pityBarHtml(typ, m);
+      + '<span style="color:#9aa0a6;font-size:0.78rem;">' + (leer ? shopL("Alle gesammelt","All collected") : shopL("Zufälliges Item","Random item")) + ' · ' + frei + '/' + gesamt + '</span></div>' + rechts;
+    return zeile(inner, { click: ok?("oeffneTruhe('"+typ+"')"):null, dim: !ok&&!leer, border: leer?'#4a6':'#333' }) + truheBulkBtn(typ, m) + pityBarHtml(typ, m);
+  }
+
+  // "10× öffnen" mit 10% Rabatt — nur solange es noch was zu sammeln gibt
+  function truheBulkBtn(typ, m) {
+    var pool = typ === "waffe" ? lockedWeapons(m) : lockedArmor(m);
+    if (pool.length === 0) return "";
+    var kosten = chestBulkKosten(), voll = CHEST_COST * CHEST_BULK, ok = m.seelen >= kosten;
+    return '<button ' + (ok ? 'onclick="oeffneTruhe10(\'' + typ + '\')"' : 'disabled') + ' style="width:100%;margin:6px 0 2px;background:#1b1b1b;border:1px solid ' + (ok ? '#5a4a2a' : '#2c2c2c') + ';border-radius:6px;padding:7px 10px;color:' + (ok ? '#cda34f' : '#666') + ';font-family:sans-serif;font-size:0.8rem;cursor:' + (ok ? 'pointer' : 'not-allowed') + ';display:flex;align-items:center;justify-content:center;gap:8px;">'
+      + '<b>10× ' + shopL("öffnen", "open") + '</b>'
+      + '<span style="text-decoration:line-through;color:#6b6b6b;font-size:0.74rem;">' + voll + '</span>'
+      + '<span style="font-weight:bold;">' + kosten + '</span>'
+      + '<span style="background:rgba(46,204,113,0.18);border:1px solid rgba(46,204,113,0.5);color:#7fe0a4;border-radius:10px;padding:1px 7px;font-size:0.7rem;font-weight:bold;">−10%</span>'
+      + '</button>';
   }
 
   function renderShop() {
@@ -1676,24 +1883,77 @@
 
     // Spaltenkonfiguration je Board-Typ
     var thStage = document.getElementById("th-stage"), thBosses = document.getElementById("th-bosses"), thScore = document.getElementById("th-score");
+    var dateSel = document.getElementById("lb-date"); if (dateSel) dateSel.style.display = "none";   // Tages-Dropdown nur beim Daily-Board
     table.classList.remove("lbmode-speedrun", "lbmode-completionist", "lbmode-score");
     if (lbKategorie === "speedrun") {
       table.classList.add("lbmode-speedrun");
       thStage.innerText = t("lb_th_mode");             // Spalte 3 = Modus (Normal/Hard)
       thScore.innerText = t("lb_th_time");
-      if (patchSel) patchSel.style.display = "none";   // Speedrun-Board ist patch-übergreifend
+      if (patchSel) patchSel.style.visibility = "hidden";   // Speedrun-Board ist patch-übergreifend (Platz bleibt -> Modal gleich groß)
     } else if (lbKategorie === "completionist") {
       table.classList.add("lbmode-completionist");
       thStage.innerText = t("lb_th_date");
       thScore.innerText = t("lb_th_achievements");
-      if (patchSel) patchSel.style.display = "none";
+      if (patchSel) patchSel.style.visibility = "hidden";
+    } else if (lbKategorie === "daily") {
+      table.classList.add("lbmode-score");
+      thStage.innerText = t("lb_th_stage");
+      thBosses.innerText = t("lb_th_bosses");
+      thScore.innerText = t("lb_th_score");
+      if (patchSel) patchSel.style.visibility = "hidden";   // Daily-Board gilt pro Tag, nicht pro Patch
+      if (dateSel) { fuelleDailyDaten(dateSel); dateSel.style.display = ""; }   // Tages-Auswahl einblenden
+    } else if (lbKategorie === "idle") {
+      table.classList.add("lbmode-score");
+      thStage.innerText = _menuIsEn() ? "Bosses" : "Bosse";      // Anzahl angeworbener Bosse
+      thBosses.innerText = "/min";                               // aktuelle Seelen-Rate
+      thScore.innerText = _menuIsEn() ? "Souls" : "Seelen";      // erwirtschaftete Seelen (Sortierung)
+      if (patchSel) patchSel.style.visibility = "hidden";
     } else {
       table.classList.add("lbmode-score");
       var istTower = (lbKategorie === "tower");
       thStage.innerText = istTower ? t("lb_th_akt") : t("lb_th_stage");
       thBosses.innerText = t("lb_th_bosses");
       thScore.innerText = t("lb_th_score");
-      if (patchSel) patchSel.style.display = "";
+      if (patchSel) patchSel.style.visibility = "visible";
+    }
+
+    // Täglicher-Seed-Board: eigener Abruf für den gewählten Tag (Standard = heute)
+    if (lbKategorie === "daily") {
+      lbPage = 0;
+      var heuteKey = (ER.dailyKey ? ER.dailyKey() : dailyKeyFor(new Date()));
+      var dk = (dateSel && dateSel.value) ? dateSel.value : heuteKey;
+      var seedDay = dailySeedFor(dk);
+      ER.getDailyLeaderboard(50, function (rows, online) {
+        if (!rows || rows.length === 0) {
+          document.getElementById("lb-pagenav").style.visibility = "hidden";
+          status.textContent = online
+            ? (dk === heuteKey
+                ? (_menuIsEn() ? "No one has played today's seed yet — be the first! (🎲 " + seedDay + ")" : "Heute hat den Seed noch niemand gespielt — sei der Erste! (🎲 " + seedDay + ")")
+                : (_menuIsEn() ? "No entries for this day (🎲 " + seedDay + ")" : "Keine Einträge für diesen Tag (🎲 " + seedDay + ")"))
+            : (window.i18n ? t("lb_no_entries_local") : "Noch keine lokalen Läufe. Spiel eine Runde!");
+          return;
+        }
+        _lbRows = rows; renderLbPage();
+        status.classList.add("hidden"); table.classList.remove("hidden");
+      }, dk);
+      return;
+    }
+
+    // Elden-Idle-Board: meiste passiv erwirtschaftete Seelen
+    if (lbKategorie === "idle") {
+      lbPage = 0;
+      ER.getIdleLeaderboard(50, function (rows, online) {
+        if (!rows || rows.length === 0) {
+          document.getElementById("lb-pagenav").style.visibility = "hidden";
+          status.textContent = online
+            ? (_menuIsEn() ? "No Souls farmed yet — set up your Elden Idle!" : "Noch keine Seelen erfarmt — leg dir dein Elden Idle an!")
+            : (window.i18n ? t("lb_no_entries_local") : "Noch keine lokalen Läufe. Spiel eine Runde!");
+          return;
+        }
+        _lbRows = rows; renderLbPage();
+        status.classList.add("hidden"); table.classList.remove("hidden");
+      });
+      return;
     }
 
     lbPage = 0;
@@ -1785,17 +2045,36 @@
     // Translated Stats mapping
     let isDe = !window.i18n || window.i18n.getLang() === 'de';
 
-    statGrid.innerHTML = `
-      <div class="stat-box"><div class="v">${s.fightsWon || 0}</div><div class="l">${isDe ? 'Kämpfe gewonnen' : 'Battles Won'}</div></div>
-      <div class="stat-box"><div class="v">${s.bossesKilled || 0}</div><div class="l">${isDe ? 'Bosse besiegt' : 'Bosses Slain'}</div></div>
-      <div class="stat-box"><div class="v">${s.deaths || 0}</div><div class="l">${isDe ? 'Tode' : 'Deaths'}</div></div>
-      <div class="stat-box"><div class="v">${s.runsStarted || 0}</div><div class="l">${isDe ? 'Runs gestartet' : 'Runs Started'}</div></div>
-      <div class="stat-box"><div class="v">${s.dungeonsCleared || 0}</div><div class="l">Dungeons</div></div>
-      <div class="stat-box"><div class="v">${s.bestScore || 0}</div><div class="l">${isDe ? 'Bester Score' : 'Best Score'}</div></div>`;
+    // Persönliche Statistik gibt's jetzt nur noch im Discord (/stats) — hier nur ein Hinweis.
+    statGrid.style.display = "block";
+    statGrid.innerHTML =
+      '<div style="text-align:center;padding:6px 4px;font-family:sans-serif;color:#cdbfa3;font-size:0.85rem;line-height:1.5;">' +
+      '📊 ' + (isDe ? 'Deine Statistik gibt\'s in unserem <a href="https://discord.gg/mUSzTDw8Ns" target="_blank" style="color:var(--gold);font-weight:bold;">Discord</a> — tippe dort <b>/stats</b>.'
+                    : 'Your stats live in our <a href="https://discord.gg/mUSzTDw8Ns" target="_blank" style="color:var(--gold);font-weight:bold;">Discord</a> — type <b>/stats</b> there.') +
+      '</div>';
 
     var list = ER.getAchievements();
     var done = list.filter(function (a) { return a.unlocked; }).length;
     document.getElementById("ach-progress").textContent = (isDe ? "Freigeschaltet: " : "Unlocked: ") + done + " / " + list.length;
+
+    // Klassen-Tafel (Completion-Marks pro Klasse — v1: einfache Liste)
+    var cfWrap = document.getElementById("class-feats");
+    if (cfWrap && ER.getClassFeats) {
+      var feats = ER.getClassFeats();
+      var klassen = [["schwertkaempfer", isDe ? "Vagabund" : "Vagabond"], ["samurai", "Samurai"], ["nackt", isDe ? "Bettler" : "Wretch"]];
+      var marks = [["normal", "Normal"], ["hard", "Hard"], ["malenia", "Malenia"], ["mohgwyn", "Mohgwyn"], ["speed5", isDe ? "Unter 5 Min" : "Sub 5 min"]];
+      cfWrap.innerHTML =
+        '<div style="font-family:Cinzel,serif; color:var(--gold); font-size:0.95rem; letter-spacing:1px; margin:14px 0 8px;">' + (isDe ? "Klassen-Tafel" : "Class Deeds") + '</div>' +
+        klassen.map(function (k) {
+          var f = feats[k[0]] || {};
+          return '<div style="display:flex; align-items:center; gap:8px; background:#0f0f0f; border:1px solid var(--border-color); border-radius:6px; padding:8px 12px; margin-bottom:6px; flex-wrap:wrap;">' +
+            '<b style="font-family:sans-serif; font-size:0.82rem; color:#ede6d4; min-width:86px;">' + k[1] + '</b>' +
+            marks.map(function (m) {
+              var on = !!f[m[0]];
+              return '<span style="font-family:sans-serif; font-size:0.74rem; padding:3px 8px; border-radius:10px; border:1px solid ' + (on ? "var(--gold)" : "#333") + '; color:' + (on ? "var(--gold)" : "#555") + ';">' + (on ? "✓ " : "· ") + m[1] + '</span>';
+            }).join("") + '</div>';
+        }).join("");
+    }
     document.getElementById("ach-grid").innerHTML = list.map(function (a) {
       return '<div class="ach-card ' + (a.unlocked ? "" : "locked") + '">' +
         '<div class="ic">' + (a.unlocked ? a.icon : "🔒") + '</div>' +
@@ -1835,7 +2114,7 @@
       var desc = en ? u.desc.en : u.desc.de;
       var hint = en ? u.hint.en : u.hint.de;
       var how = u.how ? (en ? u.how.en : u.how.de) : hint;
-      var icHtml = u.img ? '<img src="' + u.img + '" style="width:34px;height:34px;object-fit:contain;filter:drop-shadow(0 0 6px rgba(205,163,79,0.35));" onerror="this.replaceWith(document.createTextNode(\'' + u.icon + '\'))">' : u.icon;
+      var icHtml = u.img ? '<img src="' + u.img + '" style="width:38px;height:38px;object-fit:cover;border-radius:7px;filter:drop-shadow(0 0 6px rgba(205,163,79,0.35));" onerror="this.replaceWith(document.createTextNode(\'' + u.icon + '\'))">' : u.icon;
       if (u.unlocked) {
         return '<div class="ach-card">' +
           '<div class="ic">' + icHtml + '</div>' +
@@ -1886,10 +2165,364 @@
     closeModals(); m.classList.add("open");
   }
   
+  /* ===================== STATISTIK-PANEL ===================== */
+  // Nutzt die bereits im Hintergrund geführten ER-Stats (eldenrogue-online.js) und macht sie sichtbar.
+  // Persönliche Statistik lebt jetzt im Discord (/stats). Das Panel funnelt nur noch dorthin.
+  function ladeStats() {
+    var body = document.getElementById("stats-body"); if (!body) return;
+    var en = (typeof _menuIsEn === "function") ? _menuIsEn() : false;
+    body.innerHTML =
+      '<div style="text-align:center;padding:12px 6px 4px;font-family:sans-serif;">' +
+        '<div style="font-size:2.4rem;margin-bottom:8px;">📊</div>' +
+        '<p class="info-lead" style="margin:0 auto 8px;max-width:430px;">' +
+          (en ? "Your personal stats now live on our Discord." : "Deine persönliche Statistik gibt's jetzt auf unserem Discord.") + '</p>' +
+        '<p style="color:#cdbfa3;font-size:0.88rem;line-height:1.6;max-width:450px;margin:0 auto 18px;">' +
+          (en ? "Join the server, link your account (Settings → Connect Discord) and type <b style=\"color:var(--gold)\">/stats</b> to see your numbers — or <b style=\"color:var(--gold)\">/leaderboard</b> for the top players."
+              : "Tritt dem Server bei, verknüpfe dein Konto (Einstellungen → Discord verknüpfen) und tippe <b style=\"color:var(--gold)\">/stats</b> für deine Zahlen — oder <b style=\"color:var(--gold)\">/leaderboard</b> für die Top-Spieler.") + '</p>' +
+        '<a href="https://discord.gg/mUSzTDw8Ns" target="_blank" class="btn-social btn-discord" style="display:inline-flex;">💬 ' + (en ? "Join Discord" : "Discord beitreten") + '</a>' +
+      '</div>';
+  }
+  window.ladeStats = ladeStats;
+
+  /* ===================== ONBOARDING / TUTORIAL ===================== */
+  var ONB_KEY = "eldenRogueOnboardingSeen";
+  var _onbStep = 0;
+  var ONB_STEPS = [
+    {
+      icon: "🔥",
+      t: ["Willkommen in Elden Rogue", "Welcome to Elden Rogue"],
+      lead: [
+        "Elden Rogue ist ein Roguelike im Elden-Ring-Universum. Jeder Run wird neu gewürfelt — Karte, Gegner und Beute sind jedes Mal anders.",
+        "Elden Rogue is a roguelike set in the Elden Ring universe. Every run is freshly generated — the map, enemies and loot differ every time."
+      ],
+      list: [
+        ["Sterben gehört dazu. Aus den gesammelten Seelen schaltest du dauerhafte Upgrades frei und kommst beim nächsten Versuch weiter.",
+         "Dying is part of it. Spend the souls you gather on permanent upgrades and push further on your next attempt."]
+      ]
+    },
+    {
+      icon: "🗺️",
+      t: ["Die Karte", "The Map"],
+      lead: [
+        "Du bahnst dir deinen Weg durch ein verzweigtes Netz aus Knoten. Welchen Pfad du nimmst, entscheidest du selbst.",
+        "You carve your way through a branching web of nodes. Which path you take is up to you."
+      ],
+      list: [
+        ["<b>⚔️ Kampf &amp; Elite</b> — normale Gegner und stärkere Elite-Feinde.", "<b>⚔️ Fight &amp; Elite</b> — regular enemies and tougher elites."],
+        ["<b>🕯️ Ort der Gnade</b> — heilen, speichern und beim Händler einkaufen.", "<b>🕯️ Site of Grace</b> — heal, save and shop with the merchant."],
+        ["<b>👹 Boss</b> — am Ende jedes Gebiets wartet ein Halbgott.", "<b>👹 Boss</b> — a demigod waits at the end of every region."],
+        ["<b>🎁 Beute &amp; Talismane</b> — Waffen, Rüstung und Talismane für deinen Build.", "<b>🎁 Loot &amp; Talismans</b> — weapons, armor and talismans for your build."],
+        ["<b>🗡️ Invasoren</b> — andere Befleckte fallen in deinen Run ein.", "<b>🗡️ Invaders</b> — other Tarnished invade your run."]
+      ]
+    },
+    {
+      icon: "⚔️",
+      t: ["Der Kampf", "Combat"],
+      lead: [
+        "Kämpfe laufen rundenweise. Du greifst an, weichst aus oder trinkst Estus, um dich zu heilen.",
+        "Fights are turn-based. You attack, dodge, or drink Estus to heal."
+      ],
+      list: [
+        ["Achte auf Affinitäten: Manche Gegner sind gegen bestimmte Schadensarten resistent oder anfällig — die richtige Waffe macht den Unterschied.",
+         "Mind affinities: some enemies resist or are weak to certain damage types — the right weapon makes all the difference."],
+        ["Deine Ausweichchance entscheidet, ob ein Treffer dich verfehlt. Talismane und Große Runen verbessern sie.",
+         "Your dodge chance decides whether a hit misses you. Talismans and Great Runes improve it."]
+      ]
+    },
+    {
+      icon: "⚜️",
+      t: ["Stärker werden", "Getting Stronger"],
+      lead: [
+        "Zwischen den Runs wirst du dauerhaft mächtiger — hier läuft dein langfristiger Fortschritt zusammen.",
+        "Between runs you grow permanently stronger — this is where your long-term progress lives."
+      ],
+      list: [
+        ["<b>⚜️ Roundtable</b> — gib Seelen für dauerhafte Upgrades aus.", "<b>⚜️ Roundtable</b> — spend souls on permanent upgrades."],
+        ["<b>⭐ Achievements &amp; 📖 Eldendex</b> — halten fest, was du geschafft und welche Bosse du entdeckt hast.", "<b>⭐ Achievements &amp; 📖 Eldendex</b> — track your deeds and every boss you've discovered."],
+        ["<b>🔓 Freischaltungen</b> — neue Modi, Klassen und Bosse öffnen sich, je öfter du durchspielst.", "<b>🔓 Unlocks</b> — new modes, classes and bosses open up the more you clear the game."]
+      ]
+    },
+    {
+      icon: "🌑",
+      t: ["Geheimnisse & DLC", "Secrets & DLC"],
+      lead: [
+        "Elden Rogue steckt voller Geheimnisse — versteckte Wege, optionale Bosse und ein komplettes DLC warten auf alle, die tief genug graben.",
+        "Elden Rogue is full of secrets — hidden paths, optional bosses and a whole DLC await those who dig deep enough."
+      ],
+      list: [
+        ["Aber pass auf: Das DLC ist bewusst brutal schwer. Sei bereit.", "But beware: the DLC is deliberately brutal. Be ready."],
+        ["Viel Erfolg, Befleckter.", "Good luck, Tarnished."]
+      ]
+    }
+  ];
+
+  function renderOnboarding(step) {
+    _onbStep = Math.max(0, Math.min(ONB_STEPS.length - 1, step || 0));
+    var en = (typeof _menuIsEn === "function") ? _menuIsEn() : false;
+    var st = ONB_STEPS[_onbStep];
+    document.getElementById("onb-icon").textContent = st.icon;
+    document.getElementById("onb-title").textContent = en ? st.t[1] : st.t[0];
+    var html = '<p class="info-lead" style="text-align:left;margin:0 0 8px;">' + (en ? st.lead[1] : st.lead[0]) + '</p>';
+    if (st.list && st.list.length) {
+      html += '<ul class="tower-guide-list" style="margin:6px 0 0;">'
+        + st.list.map(function (li) { return '<li>' + (en ? li[1] : li[0]) + '</li>'; }).join("")
+        + '</ul>';
+    }
+    document.getElementById("onb-body").innerHTML = html;
+    document.getElementById("onb-dots").innerHTML = ONB_STEPS.map(function (_, i) {
+      return '<span style="width:8px;height:8px;border-radius:50%;background:' + (i === _onbStep ? "var(--gold)" : "#3a3a3a") + ';"></span>';
+    }).join("");
+    var prev = document.getElementById("onb-prev");
+    prev.style.visibility = (_onbStep === 0) ? "hidden" : "visible";
+    prev.textContent = en ? "Back" : "Zurück";
+    var last = (_onbStep === ONB_STEPS.length - 1);
+    document.getElementById("onb-next").textContent = last ? (en ? "Let's go!" : "Los geht's!") : (en ? "Next" : "Weiter");
+    document.getElementById("onb-skip").textContent = en ? "Skip" : "Überspringen";
+  }
+  function onbGo(dir) {
+    if (_onbStep === ONB_STEPS.length - 1 && dir > 0) { closeOnboarding(); return; }
+    renderOnboarding(_onbStep + dir);
+  }
+  function closeOnboarding() {
+    try { localStorage.setItem(ONB_KEY, "1"); } catch (e) {}
+    closeModals();
+  }
+  window.renderOnboarding = renderOnboarding;
+  window.onbGo = onbGo;
+  window.closeOnboarding = closeOnboarding;
+
   // Call initialization logic for translations once
   renderStaticText();
   updateLangSwitcherButtons();
   try { updateShopButtonSouls(); } catch(e) {}
+
+  // Erstbesuch: Tutorial automatisch zeigen (nur wenn noch nie gesehen UND kein laufender Run)
+  (function () {
+    var seen = null, hasSave = null;
+    try { seen = localStorage.getItem(ONB_KEY); } catch (e) {}
+    try { hasSave = localStorage.getItem("eldenRogueSave"); } catch (e) {}
+    if (!seen && !hasSave) { setTimeout(function () { try { openModal("onboarding"); } catch (e) {} }, 450); }
+  })();
+
+  /* ===== To-Do / "Erste Schritte"-Liste im Hauptmenü ===== */
+  var TODO_DISCORD_KEY = "eldenRogueTodoDiscord";
+  var TODO_HIDE_KEY = "eldenRogueTodoHidden";
+  var _todoTutOpen = false;
+  function todoLoggedIn() { try { return !!(window.ER && ER.currentUser && ER.currentUser()); } catch (e) { return false; } }
+  function todoDiscordIsDone() { try { return localStorage.getItem(TODO_DISCORD_KEY) === "1"; } catch (e) { return false; } }
+  function _todoItem(num, done, clickable, title, sub, onclick) {
+    return '<div class="todo-item' + (done ? " done" : "") + (clickable ? " clickable" : "") + (num === "🎮" ? " todo-fun" : "") + '"' + (onclick ? ' onclick="' + onclick + '"' : "") + '>' +
+      '<span class="todo-chk">' + (done ? "✓" : "") + '</span>' +
+      '<div class="todo-txt"><b>' + title + '</b><small>' + sub + '</small></div></div>';
+  }
+  function _todoTut(en) {
+    return '<div class="todo-tut">' +
+      '<div class="todo-step" style="margin-bottom:11px;"><a href="https://discord.gg/mUSzTDw8Ns" target="_blank" class="todo-discord-btn"><img src="images/icons/discord-logo-discord-logo-transparent-discord-icon-transparent-free-free-png.webp" alt="" onerror="this.style.display=\'none\'">' + (en ? "Join the Discord server" : "Discord-Server beitreten") + '</a></div>' +
+      '<div class="todo-step">2) <button class="btn-mini" onclick="todoGenCode()">' + (en ? "Generate link code" : "Verknüpfungs-Code erzeugen") + '</button><div id="todo-code" class="todo-code"></div></div>' +
+      '<div class="todo-step">3) ' + (en ? "On your server, type <b>/verify YOURCODE</b> — your roles are assigned automatically." : "Tippe auf dem Server <b>/verify DEINCODE</b> — deine Rollen kommen automatisch.") + '</div>' +
+      '<button class="btn-mini todo-done" onclick="todoDiscordDone()">✓ ' + (en ? "Mark as done" : "Als erledigt markieren") + '</button></div>';
+  }
+  function renderTodo() {
+    var card = document.getElementById("todo-card"); if (!card) return;
+    try { if (localStorage.getItem(TODO_HIDE_KEY) === "1") { card.style.display = "none"; return; } } catch (e) {}
+    card.style.display = "";
+    var en = (typeof _menuIsEn === "function") ? _menuIsEn() : false;
+    var s1 = todoLoggedIn(), s2 = todoDiscordIsDone(), s3 = s1 && s2;
+    var allDone = s1 && s2;
+    card.innerHTML =
+      '<div class="todo-top"><span>' + (allDone ? (en ? "✨ You're all set!" : "✨ Alles startklar!") : (en ? "✨ First steps" : "✨ Erste Schritte")) + '</span>' +
+        '<button class="todo-x" title="' + (en ? "Hide" : "Ausblenden") + '" onclick="todoHide()">✕</button></div>' +
+      _todoItem("1", s1, !s1, en ? "Sign in with Google" : "Mit Google anmelden", en ? "Cloud saves, leaderboard & achievements" : "Cloud-Speicher, Bestenliste & Achievements", s1 ? "" : "todoLoginClick()") +
+      _todoItem("2", s2, true, en ? "Join Discord & verify" : "Discord beitreten & verifizieren", (en ? "Get your roles — guide " : "Hol dir deine Rollen — Anleitung ") + (_todoTutOpen ? "▴" : "▾"), "todoDiscordToggle()") +
+      (_todoTutOpen ? _todoTut(en) : "") +
+      _todoItem("🎮", s3, false, en ? "Just have fun!" : "Einfach Spaß haben!", en ? "Start a run and become Elden Lord" : "Starte einen Run und werde Elden Lord", "");
+  }
+  function todoLoginClick() { if (todoLoggedIn()) return; if (window.ER && ER.signInWithGoogle) ER.signInWithGoogle().catch(function () {}); }
+  function todoDiscordToggle() { _todoTutOpen = !_todoTutOpen; renderTodo(); }
+  function todoGenCode() {
+    var out = document.getElementById("todo-code"); if (!out) return;
+    var en = (typeof _menuIsEn === "function") ? _menuIsEn() : false;
+    if (!todoLoggedIn()) { out.innerHTML = '<span style="color:#e74c3c;">' + (en ? "Please sign in first (step 1)." : "Bitte zuerst anmelden (Schritt 1).") + '</span>'; return; }
+    if (!(window.ER && ER.generateDiscordCode)) { out.textContent = en ? "Not available offline." : "Offline nicht verfügbar."; return; }
+    out.textContent = en ? "Generating…" : "Erzeuge…";
+    ER.generateDiscordCode(function (r) {
+      if (r && r.ok) out.innerHTML = (en ? "Your code: " : "Dein Code: ") + '<b style="color:var(--gold);letter-spacing:2px;font-size:1.05rem;">' + r.code + '</b> <span style="color:#8a7f68;">(' + (en ? "valid 15 min" : "15 Min gültig") + ')</span>';
+      else out.innerHTML = '<span style="color:#e74c3c;">' + (en ? "Failed — online & signed in?" : "Fehlgeschlagen — online & angemeldet?") + '</span>';
+    });
+  }
+  function todoDiscordDone() { try { localStorage.setItem(TODO_DISCORD_KEY, "1"); } catch (e) {} renderTodo(); }
+  function todoHide() { try { localStorage.setItem(TODO_HIDE_KEY, "1"); } catch (e) {} var c = document.getElementById("todo-card"); if (c) c.style.display = "none"; }
+  function todoShowAgain(btn) {
+    try { localStorage.removeItem(TODO_HIDE_KEY); } catch (e) {}
+    renderTodo();
+    if (btn) { var en = (typeof _menuIsEn === "function") ? _menuIsEn() : false; btn.textContent = en ? "Shown ✓" : "Angezeigt ✓"; }
+  }
+  window.todoLoginClick = todoLoginClick; window.todoDiscordToggle = todoDiscordToggle; window.todoGenCode = todoGenCode; window.todoDiscordDone = todoDiscordDone; window.todoHide = todoHide; window.todoShowAgain = todoShowAgain;
+  if (window.ER && ER.onUserChange) ER.onUserChange(function () { renderTodo(); });
+  document.addEventListener("languageChanged", function () { renderTodo(); });
+  renderTodo();
+
+  /* ===== Täglicher Seed (weltweit gleich, datums-basiert) ===== */
+  function dailyKeyFor(d) { return "" + d.getUTCFullYear() + String(d.getUTCMonth() + 1).padStart(2, "0") + String(d.getUTCDate()).padStart(2, "0"); }
+  function dailySeedFor(key) {
+    var h = 1779033703 ^ key.length;
+    for (var i = 0; i < key.length; i++) { h = Math.imul(h ^ key.charCodeAt(i), 3432918353); h = (h << 13) | (h >>> 19); }
+    var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", s = "";
+    for (var j = 0; j < 6; j++) { h = Math.imul(h ^ (h >>> 16), 2246822507); h >>>= 0; s += chars[h % 36]; }
+    return s;
+  }
+  function dailySeedStr() { return dailySeedFor(dailyKeyFor(new Date())); }
+  // Tages-Dropdown des Daily-Boards mit den letzten 14 Tagen (Datum + Seed) füllen
+  function fuelleDailyDaten(sel) {
+    if (!sel) return; var en = (typeof _menuIsEn === "function") ? _menuIsEn() : false; var cur = sel.value; var html = "";
+    for (var i = 0; i < 14; i++) {
+      var d = new Date(Date.now() - i * 86400000); var key = dailyKeyFor(d);
+      var label = (i === 0) ? (en ? "Today" : "Heute") : (i === 1) ? (en ? "Yesterday" : "Gestern") : d.toLocaleDateString(en ? "en-US" : "de-DE", { day: "2-digit", month: "2-digit" });
+      html += '<option value="' + key + '">🎲 ' + label + " · " + dailySeedFor(key) + '</option>';
+    }
+    sel.innerHTML = html; if (cur) sel.value = cur;
+  }
+  function wireDaily() {
+    var btn = document.getElementById("btn-daily"); if (!btn) return;
+    var seed = dailySeedStr();
+    var en = (typeof _menuIsEn === "function") ? _menuIsEn() : false;
+    var url = "game.html?seed=" + seed;
+    btn.href = url;
+    var lbl = document.getElementById("daily-label");
+    if (lbl) lbl.textContent = (en ? "Daily Seed" : "Täglicher Seed") + " · " + seed;
+    btn.onclick = function () { return checkOverwrite(url); };
+  }
+  wireDaily();
+  document.addEventListener("languageChanged", wireDaily);
+
+  /* ===== Elden Idle: besiegte Bosse (ab jetzt, Hard) farmen passiv SEELEN pro Stunde. Max 2 Std offline. ===== */
+  var IDLE_OFFLINE_MIN = 120;   // Offline-Kapazität in Minuten (2 Std) — belohnt auch Wenig-Spieler, ohne uferlos zu sein
+  // rate = Seelen pro STUNDE (bewusst wenig — reine passive Nebeneinnahme). Keine Synergien mehr.
+  var IDLE_ROSTER = [
+    { key:"Godrick, der Verpflanzte",             kurz:"Godrick",       rate:2,   kosten:0,     img:"images/godrick.webp" },
+    { key:"Sternengeißel Radahn",                 kurz:"Radahn",        rate:5,   kosten:40,    img:"images/radahn.webp" },
+    { key:"Rennala, Königin des Vollmonds",       kurz:"Rennala",       rate:8,   kosten:80,    img:"images/bosse/rennala.jpg" },
+    { key:"Rykard, Herr der Blasphemie",          kurz:"Rykard",        rate:10,  kosten:160,   img:"images/bosse/rykardp1.jpg" },
+    { key:"Morgott, der Omenkönig",               kurz:"Morgott",       rate:14,  kosten:320,   img:"images/Morgott.webp" },
+    { key:"Feuerriese",                           kurz:"Feuerriese",    rate:17,  kosten:600,   img:"images/firegiant.avif" },
+    { key:"Maliketh, die Schwarze Klinge",        kurz:"Maliketh",      rate:22,  kosten:1000,  img:"images/maliketh.jpg" },
+    { key:"Mohg, Fürst des Blutes",               kurz:"Mohg",          rate:27,  kosten:1600,  img:"images/bosse/Titel-8-fc80008000ffff_1920x1080.avif" },
+    { key:"Malenia, Blade of Miquella",           kurz:"Malenia",       rate:34,  kosten:2600,  img:"images/maleniap1.webp" },
+    { key:"Göttliches Tanzlöwenbiest",            kurz:"Tanzlöwe",      rate:42,  kosten:4500,  img:"images/bosse/tanzloewe.jpg" },
+    { key:"Rellana, Ritterin der Zwillingsmonde", kurz:"Rellana",       rate:52,  kosten:7500,  img:"images/bosse/rellana.png" },
+    { key:"Midra, Herr der Wahnsinnigen Flamme",  kurz:"Midra",         rate:64,  kosten:12000, img:"images/bosse/midra.png" },
+    { key:"Romina, Heilige der Knospe",           kurz:"Romina",        rate:76,  kosten:20000, img:"images/bosse/romina.png" },
+    { key:"Radahn, Gemahl Miquellas",             kurz:"Gemahl Radahn", rate:94,  kosten:40000, img:"images/bosse/pcr.webp" },
+    { key:"Metyr, Mutter der Finger",             kurz:"Metyr",         rate:120, kosten:90000, img:"images/bosse/metyr.webp" }
+  ];
+  // Offline-Kapazitaets-Ausbau (relativ teuer): Stufe 0=2h (Basis), dann 4h/8h/12h
+  var IDLE_CAP_TIERS = [ {std:2, kosten:0}, {std:4, kosten:8000}, {std:8, kosten:25000}, {std:12, kosten:60000} ];
+  function idleCapLevel(){ try { var l=(ladeMeta().idle||{}).capLevel||0; return Math.max(0, Math.min(IDLE_CAP_TIERS.length-1, l)); } catch(e){ return 0; } }
+  function idleCapMin(){ return IDLE_CAP_TIERS[idleCapLevel()].std * 60; }   // aktuelle Offline-Kapazitaet in Minuten
+  function idleRosterByKey(k){ for (var i=0;i<IDLE_ROSTER.length;i++) if (IDLE_ROSTER[i].key===k) return IDLE_ROSTER[i]; return null; }
+  // Ab jetzt zählen: ein Boss wird fürs Gefolge nur freigeschaltet, wenn man ihn AB SOFORT im Hard Mode legt (game.html -> meta.idleUnlocked). Kein rückwirkendes Freischalten.
+  function idleBeaten(k){ try { return (ladeMeta().idleUnlocked||[]).indexOf(k) >= 0; } catch (e) { return false; } }
+  function idleHardUnlocked(){ try { return !!(window.ER && ER.isUnlocked && ER.isUnlocked("hard_mode")); } catch (e) { return false; } }
+  function getIdle(){ var m=ladeMeta(); var d=m.idle||{}; return { earned:d.earned||0, owned:(d.owned||[]).slice(), slots:(d.slots||[null,null]).slice(), lastTs:d.lastTs||Date.now(), capLevel:d.capLevel||0 }; }
+  function saveIdle(idle){ var m=ladeMeta(); m.idle={ earned:idle.earned||0, rate:idleRate(idle).rate, owned:idle.owned, slots:idle.slots, lastTs:idle.lastTs, capLevel:idle.capLevel||0 }; speichereMeta(m); }
+  // Rate = Seelen pro STUNDE, einfach die Summe der beiden Slots (keine Synergie mehr)
+  function idleRate(idle){ var r=0; idle.slots.forEach(function(k){ if(!k) return; var b=idleRosterByKey(k); if(b) r+=b.rate; }); return { rate:r, syn:false }; }
+  function idleSeelen(){ return Math.floor(ladeMeta().seelen||0); }
+  // Offline-Ertrag beim Öffnen gutschreiben -> direkt in die Seelen (Kappung = ausgebaute Offline-Kapazität, Rate ist pro Stunde)
+  function idleAccrue(idle){ var now=Date.now(); if(!idle.lastTs) idle.lastTs=now; var capMin=IDLE_CAP_TIERS[Math.max(0,Math.min(IDLE_CAP_TIERS.length-1, idle.capLevel||0))].std*60; var min=Math.min((now-idle.lastTs)/60000, capMin); var g=Math.max(0, Math.floor(min/60*idleRate(idle).rate)); idle.lastTs=now; idle.earned=(idle.earned||0)+g; var m=ladeMeta(); m.seelen=(m.seelen||0)+g; m.idle={ earned:idle.earned, rate:idleRate(idle).rate, owned:idle.owned, slots:idle.slots, lastTs:idle.lastTs, capLevel:idle.capLevel||0 }; speichereMeta(m); return g; }   // liest die BESTEHENDEN Seelen frisch und ADDIERT nur (g>=0) — nie ueberschreiben/senken
+  // Live gutgeschriebene GANZE Seelen dauerhaft übernehmen (kein Verlust/Doppeln: lastTs exakt vorrücken)
+  function idleCommit(){ if(!_idle) return; var rate=idleRate(_idle).rate; if(rate<=0) return; var whole=Math.floor((Date.now()-_idle.lastTs)/3600000*rate); if(whole<1) return; var m=ladeMeta(); m.seelen=(m.seelen||0)+whole; _idle.earned=(_idle.earned||0)+whole; _idle.lastTs+=whole/rate*3600000; m.idle={ earned:_idle.earned, rate:rate, owned:_idle.owned, slots:_idle.slots, lastTs:_idle.lastTs, capLevel:_idle.capLevel||0 }; speichereMeta(m); }
+  // Offline-Kapazität ausbauen (relativ teuer, mit Seelen)
+  function idleBuyCap(){ if(!_idle) return; var lvl=idleCapLevel(); if(lvl>=IDLE_CAP_TIERS.length-1) return; var next=IDLE_CAP_TIERS[lvl+1]; idleCommit(); var m=ladeMeta(); if((m.seelen||0)<next.kosten) return; m.seelen-=next.kosten; _idle.capLevel=lvl+1; m.idle={ earned:_idle.earned, rate:idleRate(_idle).rate, owned:_idle.owned, slots:_idle.slots, lastTs:_idle.lastTs, capLevel:_idle.capLevel }; speichereMeta(m); renderIdleBody(0); }
+  function idleGrpName(g,en){ var m={sturm:en?"Storm":"Sturm",gestirn:en?"Stars":"Gestirn",mond:en?"Moon":"Mond",gott:en?"God-Eater":"Gottverschlinger",omen:"Omen",feuer:en?"Fire":"Feuer",klinge:en?"Blade":"Klinge",haligtree:"Haligtree",dlc:en?"Shadow":"Schatten",wahnsinn:en?"Frenzy":"Wahnsinn",aussen:en?"Outer Gods":"Äußere Götter"}; return m[g]||g; }
+
+  var _idle=null, _idleTimer=null;
+  function renderIdle(){
+    var body=document.getElementById("idle-body"); if(!body) return;
+    var en=(typeof _menuIsEn==="function")?_menuIsEn():false;
+    if(!idleHardUnlocked()){
+      body.innerHTML='<div style="text-align:center;padding:16px 8px;font-family:sans-serif;"><div style="font-size:2.2rem;margin-bottom:8px;">🔒</div><p class="info-lead">'+(en?"<b>Elden Idle</b> unlocks once you've finished the game and unlocked <b>Hard Mode</b>.":"<b>Elden Idle</b> schaltet sich frei, sobald du das Spiel einmal durchgespielt und den <b>Hard Mode</b> freigeschaltet hast.")+'</p></div>';
+      return;
+    }
+    _idle=getIdle();
+    var gained=idleAccrue(_idle);
+    renderIdleBody(gained>=1?gained:0);
+    idleStartTick();
+  }
+  function renderIdleBody(gained){
+    var body=document.getElementById("idle-body"); if(!body||!_idle) return;
+    var en=(typeof _menuIsEn==="function")?_menuIsEn():false;
+    var rt=idleRate(_idle);
+    var seelen=idleSeelen();
+    function n(x){ return Math.floor(x).toLocaleString(en?"en-US":"de-DE"); }
+    var perStd=en?" /h":" /Std";
+    var soulIc='<img src="images/icons/lords-rune-tools-elden-ring-wiki-guide.png" class="idle-soul-ic" alt="" onerror="this.replaceWith(document.createTextNode(\'◆\'))">';
+    // Oben: die beiden aktiven Slots (nur andeuten — kein Name, nur Bild). Klick auf einen belegten Slot nimmt den Boss raus.
+    var slotsHtml="";
+    for(var s=0;s<2;s++){
+      var k=_idle.slots[s]; var b=k?idleRosterByKey(k):null;
+      slotsHtml+='<div class="idle-slot'+(b?" filled":"")+'"'+(b?' title="'+(en?"remove":"entfernen")+'" onclick="idleClearSlot('+s+')"':'')+'>'+
+        (b? '<button class="idle-x" tabindex="-1">✕</button><img src="'+b.img+'" onerror="this.style.display=\'none\'"><div class="idle-slot-rt">'+b.rate+perStd+'</div>'
+           : '<div class="idle-slot-empty">'+(en?"empty slot":"leerer Slot")+'</div>')+
+        '</div>';
+    }
+    // Offline-Kapazitäts-Ausbau (relativ teuer)
+    var capLvl=idleCapLevel(), curCap=IDLE_CAP_TIERS[capLvl].std, capHtml;
+    if(capLvl>=IDLE_CAP_TIERS.length-1){
+      capHtml='<div class="idle-cap"><div class="idle-cap-info">'+(en?"Offline capacity: ":"Offline-Kapazität: ")+'<b>'+curCap+(en?" h":" Std")+'</b></div><span class="idle-cap-max">'+(en?"fully upgraded":"voll ausgebaut")+'</span></div>';
+    } else {
+      var nextCap=IDLE_CAP_TIERS[capLvl+1];
+      capHtml='<div class="idle-cap"><div class="idle-cap-info">'+(en?"Offline capacity: ":"Offline-Kapazität: ")+'<b>'+curCap+(en?" h":" Std")+'</b> — '+(en?"longer = more passive Souls while away":"länger = mehr passive Seelen, während du weg bist")+'</div>'+
+        '<button class="idle-cap-buy" id="idle-cap-buy" data-kosten="'+nextCap.kosten+'"'+(seelen>=nextCap.kosten?"":" disabled")+' onclick="idleBuyCap()">'+(en?"Expand to ":"Ausbau auf ")+nextCap.std+(en?" h · ":" Std · ")+soulIc+" "+n(nextCap.kosten)+'</button></div>';
+    }
+    // Darunter: scrollfreies Boss-Grid, Preis unten auf dem Bild (keine Namen — nur das Bild deutet an)
+    var rosterHtml=IDLE_ROSTER.map(function(b){
+      var beaten=idleBeaten(b.key), owned=_idle.owned.indexOf(b.key)>=0, slotted=_idle.slots.indexOf(b.key)>=0;
+      var cls, price;
+      if(slotted){ cls="slotted"; price=en?"active":"aktiv"; }
+      else if(owned){ cls="owned"; price=en?"Available":"Verfügbar"; }
+      else if(!beaten){ cls="locked"; price="🔒"; }
+      else { cls="buy"+(seelen>=b.kosten?"":" poor"); price=(b.kosten===0?(en?"Free":"Gratis"):soulIc+" "+n(b.kosten)); }
+      var cardCls="idle-card"+(slotted?" slotted":(owned?" owned":(!beaten?" locked":"")));
+      return '<div class="'+cardCls+'" onclick="idleCard(\''+b.key+'\')">'+
+               '<div class="idle-imgwrap"><img class="idle-card-img" src="'+b.img+'" onerror="this.style.visibility=\'hidden\'">'+
+                 '<div class="idle-price '+cls+'" data-kosten="'+b.kosten+'">'+price+'</div></div>'+
+               '<div class="idle-card-rt">'+b.rate+perStd+'</div>'+
+             '</div>';
+    }).join("");
+    body.innerHTML=
+      (gained?'<div class="idle-away">'+(en?"While you were away: ":"Während du weg warst: ")+'<b>+'+n(gained)+(en?' Souls':' Seelen')+'</b></div>':'')+
+      '<div class="idle-top"><div class="idle-runen-box">'+soulIc+' <span id="idle-runen">'+n(seelen)+'</span> <span class="idle-runen-lbl">'+(en?"Souls":"Seelen")+'</span></div>'+
+        '<div class="idle-rate-box">+'+n(rt.rate)+perStd+'</div></div>'+
+      '<div class="idle-slots">'+slotsHtml+'</div>'+
+      capHtml+
+      '<div class="idle-hint">'+(en?"Place two bosses in the slots — they passively produce Souls, even while you're away (up to your offline capacity). Tap a boss to recruit or slot; tap a slotted boss to remove.":"Setz zwei Bosse in die Slots — sie produzieren passiv Seelen, auch wenn du weg bist (bis zu deiner Offline-Kapazität). Tipp einen Boss an zum Anwerben/Einsetzen; tipp einen aktiven Boss an zum Entfernen.")+'</div>'+
+      '<div class="idle-roster">'+rosterHtml+'</div>';
+  }
+  // Ein Klick auf eine Boss-Karte schaltet um: aktiv -> raus, besitzt -> rein, sonst kaufen
+  function idleCard(key){ if(!_idle) return; var b=idleRosterByKey(key); if(!b) return;
+    var si=_idle.slots.indexOf(key);
+    if(si>=0){ idleClearSlot(si); return; }                         // schon aktiv -> aus dem Slot nehmen
+    if(_idle.owned.indexOf(key)>=0){ idleToSlot(key); return; }     // besitzt -> in freien Slot
+    if(!idleBeaten(key)) return;                                    // noch nicht besiegt
+    idleBuy(key);                                                   // sonst kaufen
+  }
+  function idleBuy(key){ if(!_idle) return; var b=idleRosterByKey(key); if(!b||!idleBeaten(key)||_idle.owned.indexOf(key)>=0) return; idleCommit(); var m=ladeMeta(); if((m.seelen||0)<b.kosten) return; m.seelen-=b.kosten; _idle.owned.push(key); m.idle={ earned:_idle.earned, rate:idleRate(_idle).rate, owned:_idle.owned, slots:_idle.slots, lastTs:_idle.lastTs, capLevel:_idle.capLevel||0 }; speichereMeta(m); renderIdleBody(0); }
+  function idleToSlot(key){ if(!_idle||_idle.owned.indexOf(key)<0||_idle.slots.indexOf(key)>=0) return; idleCommit(); var i=_idle.slots.indexOf(null); if(i<0) return; _idle.slots[i]=key; saveIdle(_idle); renderIdleBody(0); }
+  function idleClearSlot(i){ if(!_idle) return; idleCommit(); _idle.slots[i]=null; saveIdle(_idle); renderIdleBody(0); }
+  function idleUpdateBalance(){ if(!_idle) return;
+    var rate=idleRate(_idle).rate;
+    var pending = rate>0 ? Math.floor((Date.now()-_idle.lastTs)/3600000*rate) : 0;   // seit letztem Commit live dazugekommen (Rate ist pro Stunde)
+    var shown = idleSeelen() + pending;
+    var en=(typeof _menuIsEn==="function")?_menuIsEn():false;
+    var el=document.getElementById("idle-runen"); if(el) el.textContent=shown.toLocaleString(en?"en-US":"de-DE");
+    var mb=document.getElementById("souls-badge-value"); if(mb) mb.textContent=shown.toLocaleString("de-DE");   // Menue-Seelen-Anzeige synchron mitziehen
+    // Kauf-Karten live einfärben, sobald man sie sich leisten kann (ohne Neu-Render)
+    document.querySelectorAll("#idle-body .idle-price.buy").forEach(function(p){ var k=parseInt(p.getAttribute("data-kosten")||"0",10); p.classList.toggle("poor", shown < k); });
+    var cb=document.getElementById("idle-cap-buy"); if(cb){ cb.disabled = shown < parseInt(cb.getAttribute("data-kosten")||"0",10); }
+  }
+  function idleStartTick(){ if(_idleTimer) clearInterval(_idleTimer); var ctr=0; _idleTimer=setInterval(function(){ var modal=document.getElementById("modal-idle"); if(!modal||!modal.classList.contains("open")||!_idle){ if(_idle) idleCommit(); if(window.updateShopButtonSouls) try{ updateShopButtonSouls(); }catch(e){} clearInterval(_idleTimer); _idleTimer=null; return; } if(++ctr>=5){ ctr=0; idleCommit(); } idleUpdateBalance(); },1000); }
+  window.idleCard=idleCard; window.idleClearSlot=idleClearSlot; window.idleBuyCap=idleBuyCap; window.renderIdle=renderIdle;
 </script>
 
 <script>
@@ -2150,6 +2783,14 @@ function localizeMenuExtras(){
   set("set-speedrun-sub", "Neben ein Pop-up klicken = nichts nehmen & weiter", "Click beside a pop-up = take nothing & continue");
   set("set-timer-label", "Timer anzeigen", "Show timer");
   set("set-timer-sub", "Laufzeit-Anzeige im Spiel", "In-game run timer display");
+  set("set-discord-label", "Discord verknüpfen", "Link Discord");
+  set("set-discord-sub", "Rollen für deine Erfolge — automatisch", "Roles for your feats — automatic");
+  set("set-discord-btn", "Code erzeugen", "Generate code");
+  set("sb-idle-label", "Elden Idle", "Elden Idle");
+  set("idle-title", "⚔️ Elden Idle", "⚔️ Elden Idle");
+  set("set-todo-label", "Erste-Schritte-Liste", "First-steps list");
+  set("set-todo-sub", "Die To-Do-Karte im Hauptmenü wieder einblenden", "Show the to-do card in the main menu again");
+  set("set-todo-btn", "Wieder anzeigen", "Show again");
   _updateSpeedrunBtn();
   _updateTimerBtn();
   setH("info-l1", "<b>Modus wählen:</b> Starte einen <b>Normalen</b> Run. Den <b>Hard Mode</b> schaltest du frei, sobald du einmal durchgespielt hast.", "<b>Pick a mode:</b> Start a <b>Normal</b> run. <b>Hard Mode</b> unlocks once you've finished the game.");
@@ -2187,7 +2828,7 @@ function showNextUnlock() {
   var u = _unlockQueue.shift(); if (!u) return;
   var en = _menuIsEn();
   document.getElementById("ur-kicker").innerText = en ? "🔓 NEW UNLOCK" : "🔓 NEU FREIGESCHALTET";
-  document.getElementById("ur-icon").innerHTML = u.img ? '<img src="' + u.img + '" style="width:76px;height:76px;object-fit:contain;filter:drop-shadow(0 0 18px rgba(205,163,79,0.6));" onerror="this.replaceWith(document.createTextNode(\'' + (u.icon || "🔓") + '\'))">' : (u.icon || "🔓");
+  document.getElementById("ur-icon").innerHTML = u.img ? '<img src="' + u.img + '" style="width:100px;height:100px;object-fit:cover;border-radius:12px;box-shadow:0 0 18px rgba(205,163,79,0.5);border:1px solid rgba(205,163,79,0.4);" onerror="this.replaceWith(document.createTextNode(\'' + (u.icon || "🔓") + '\'))">' : (u.icon || "🔓");
   document.getElementById("ur-name").innerText = en ? u.name.en : u.name.de;
   document.getElementById("ur-desc").innerText = en ? u.desc.en : u.desc.de;
   document.getElementById("ur-btn").innerText = _unlockQueue.length ? (en ? "Next ▸" : "Weiter ▸") : (en ? "Let's go!" : "Los geht's!");

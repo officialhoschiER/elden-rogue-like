@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Elden Rogue — Admin-Statistik</title>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <style>
+    :root { --gold:#c9a86a; --gold-dark:#7a5c22; --panel:#141210; --border:#2a2317; --bg:#0b0a08; }
+    * { box-sizing: border-box; }
+    body { margin:0; background: var(--bg); color:#e8dec0; font-family: system-ui, sans-serif; padding: 24px; }
+    h1 { font-family: 'Cinzel', serif; color: var(--gold); letter-spacing: 3px; font-size: 1.5rem; margin: 0 0 4px; }
+    .sub { color:#8a7f68; font-size: 0.85rem; margin-bottom: 22px; }
+    .gate { max-width: 460px; margin: 12vh auto; text-align:center; background: var(--panel); border:1px solid var(--gold-dark); border-radius:10px; padding: 32px; }
+    .gate h1 { justify-content:center; }
+    button { background:#2c2214; color:var(--gold); border:1px solid var(--gold-dark); border-radius:6px; padding:10px 18px; font-size:0.9rem; cursor:pointer; }
+    button:hover { background: var(--gold); color:#111; }
+    .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px; }
+    .cards { display:grid; grid-template-columns: repeat(auto-fill, minmax(150px,1fr)); gap:12px; margin-bottom:26px; }
+    .card { background: var(--panel); border:1px solid var(--border); border-radius:8px; padding:14px; text-align:center; }
+    .card .v { font-family:'Cinzel',serif; color: var(--gold); font-size: 1.9rem; line-height:1.1; }
+    .card .l { color:#8a7f68; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.6px; margin-top:5px; }
+    .card.hl { border-color: var(--gold-dark); background:#191510; }
+    h2 { font-family:'Cinzel',serif; color: var(--gold); font-size:1.05rem; letter-spacing:1.5px; margin: 26px 0 12px; border-bottom:1px solid var(--border); padding-bottom:6px; }
+    table { width:100%; border-collapse: collapse; font-size:0.88rem; }
+    th, td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--border); }
+    th { color:#8a7f68; font-weight:600; text-transform:uppercase; font-size:0.68rem; letter-spacing:0.6px; }
+    td.num, th.num { text-align:right; font-variant-numeric: tabular-nums; }
+    tr.dlc td:first-child::before { content:"✦ "; color: var(--gold); }
+    .bar { height:6px; background:#241d12; border-radius:4px; overflow:hidden; margin-top:4px; }
+    .bar > span { display:block; height:100%; background: linear-gradient(90deg, var(--gold-dark), var(--gold)); }
+    .muted { color:#6a6250; font-size:0.8rem; }
+    .err { color:#e07a6a; background:#2a1512; border:1px solid #7a2a1f; border-radius:6px; padding:12px; margin-top:12px; }
+  </style>
+</head>
+<body>
+  <div id="gate" class="gate">
+    <h1>ELDEN ROGUE</h1>
+    <div class="sub">Admin-Statistik</div>
+    <div id="gate-msg" class="muted">Bitte anmelden.</div>
+    <div style="margin-top:18px;">
+      <button id="login-btn">Mit Google anmelden</button>
+      <button id="logout-btn" style="display:none;">Abmelden</button>
+    </div>
+  </div>
+
+  <div id="dash" style="display:none;">
+    <div class="topbar">
+      <div>
+        <h1>Community-Statistik</h1>
+        <div class="sub" id="dash-sub">—</div>
+      </div>
+      <div>
+        <button id="reload-btn">↻ Neu laden</button>
+        <button id="logout-btn2">Abmelden</button>
+      </div>
+    </div>
+    <div id="dash-body"><div class="muted">Lade Daten…</div></div>
+  </div>
+
+  <script>
+    // Nur diese Konten sehen die Daten. Weicher Schutz (Client-seitig) — für ein Fan-Projekt ausreichend.
+    var ADMIN_EMAILS = ["officialhoschi@gmail.com"];
+
+    var FIREBASE_CONFIG = {
+      apiKey: "AIzaSyBwgP06wTi9uygJxiJA_w5aP-M5JyMule8",
+      authDomain: "elden-rogue.firebaseapp.com",
+      projectId: "elden-rogue",
+      storageBucket: "elden-rogue.firebasestorage.app",
+      messagingSenderId: "156704144299",
+      appId: "1:156704144299:web:49ae7f6d3a6afd14b9f0ee"
+    };
+    firebase.initializeApp(FIREBASE_CONFIG);
+    var auth = firebase.auth();
+    var db = firebase.firestore();
+
+    var gate = document.getElementById("gate");
+    var dash = document.getElementById("dash");
+    var gateMsg = document.getElementById("gate-msg");
+
+    document.getElementById("login-btn").onclick = function () {
+      auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(function (e) {
+        gateMsg.innerHTML = '<span class="err">Login fehlgeschlagen: ' + (e.message || e) + '</span>';
+      });
+    };
+    function logout() { auth.signOut(); }
+    document.getElementById("logout-btn").onclick = logout;
+    document.getElementById("logout-btn2").onclick = logout;
+    document.getElementById("reload-btn").onclick = function () { ladeDaten(); };
+
+    auth.onAuthStateChanged(function (u) {
+      if (!u) {
+        gate.style.display = "block"; dash.style.display = "none";
+        gateMsg.textContent = "Bitte anmelden.";
+        document.getElementById("login-btn").style.display = "";
+        document.getElementById("logout-btn").style.display = "none";
+        return;
+      }
+      if (ADMIN_EMAILS.indexOf((u.email || "").toLowerCase()) === -1) {
+        gate.style.display = "block"; dash.style.display = "none";
+        gateMsg.innerHTML = '<span class="err">Kein Zugriff für ' + u.email + '.</span>';
+        document.getElementById("login-btn").style.display = "none";
+        document.getElementById("logout-btn").style.display = "";
+        return;
+      }
+      gate.style.display = "none"; dash.style.display = "block";
+      ladeDaten();
+    });
+
+    function num(x) { return (x || 0).toLocaleString("de-DE"); }
+
+    // Bosse, die als "DLC" markiert werden (Anzeige-Häkchen)
+    var DLC_BOSSE = {
+      "Göttliches Tanzlöwenbiest": 1, "Rellana, Ritterin der Zwillingsmonde": 1,
+      "Midra, Herr der Wahnsinnigen Flamme": 1, "Romina, Heilige der Knospe": 1,
+      "Verheißener Gemahl Radahn": 1, "Radahn, Gemahl Miquellas": 1, "Metyr, Mutter der Finger": 1
+    };
+
+    // Welche Stat-Summen im Überblick zeigen (Schlüssel im stats-Objekt -> Label)
+    var SUM_FELDER = [
+      ["fightsWon", "Kämpfe gewonnen"], ["bossesKilled", "Bosse besiegt"],
+      ["elitesKilled", "Eliten besiegt"], ["minibossesKilled", "Minibosse"],
+      ["invadersKilled", "Invasoren besiegt"], ["deaths", "Tode"],
+      ["runsStarted", "Runs gestartet"], ["gamesCompleted", "Runs abgeschlossen"],
+      ["dungeonsCleared", "Dungeons"], ["weaponsFound", "Waffen gefunden"],
+      ["armorsFound", "Rüstungen"], ["talismansFound", "Talismane"],
+      ["flasksDrunk", "Estus getrunken"], ["maleniaKills", "Malenia-Siege"],
+      ["hardModeCompletions", "Hard-Abschlüsse"], ["mohgwynVisits", "Mohgwyn-Besuche"]
+    ];
+
+    function ladeDaten() {
+      var body = document.getElementById("dash-body");
+      body.innerHTML = '<div class="muted">Lade Daten…</div>';
+      db.collection("users").get().then(function (snap) {
+        var spieler = 0, aktiv30 = 0;
+        var summen = {};
+        var bossPlayers = {}, bossKills = {};
+        var achPlayers = {};
+        var furthestSum = 0, furthestN = 0;
+        var jetzt = Date.now(), MS30 = 30 * 24 * 3600 * 1000;
+
+        snap.forEach(function (docSnap) {
+          var d = docSnap.data() || {};
+          var s = d.stats || {};
+          spieler++;
+
+          // Aktivität (updatedAt kann Timestamp oder Zahl sein)
+          var ts = 0;
+          try { ts = d.updatedAt && d.updatedAt.toMillis ? d.updatedAt.toMillis() : (typeof d.updatedAt === "number" ? d.updatedAt : 0); } catch (e) {}
+          if (ts && (jetzt - ts) < MS30) aktiv30++;
+
+          SUM_FELDER.forEach(function (f) { summen[f[0]] = (summen[f[0]] || 0) + (s[f[0]] || 0); });
+
+          if (typeof s.furthestStage === "number") { furthestSum += s.furthestStage; furthestN++; }
+
+          var bk = s.bossKills || {};
+          Object.keys(bk).forEach(function (name) {
+            var c = bk[name] || 0;
+            if (c > 0) { bossKills[name] = (bossKills[name] || 0) + c; bossPlayers[name] = (bossPlayers[name] || 0) + 1; }
+          });
+
+          var ach = d.achievements || s.achievements || [];
+          if (Array.isArray(ach)) ach.forEach(function (id) { achPlayers[id] = (achPlayers[id] || 0) + 1; });
+        });
+
+        // ---- Überblickskarten ----
+        var cards =
+          card(num(spieler), "Spieler gesamt", true) +
+          card(num(aktiv30), "Aktiv (30 Tage)", true) +
+          card(num(summen.runsStarted), "Runs gestartet") +
+          card(num(summen.gamesCompleted), "Runs abgeschlossen") +
+          card(num(summen.deaths), "Tode gesamt") +
+          card(num(summen.bossesKilled), "Bosse besiegt") +
+          card(num(summen.fightsWon), "Kämpfe gewonnen") +
+          card(furthestN ? (furthestSum / furthestN).toFixed(1) : "0", "Ø weiteste Ebene");
+
+        // ---- Boss-Tabelle (nach Spielerzahl) ----
+        var bossRows = Object.keys(bossPlayers).map(function (name) {
+          return { name: name, players: bossPlayers[name], kills: bossKills[name] || 0 };
+        }).sort(function (a, b) { return b.players - a.players; });
+        var maxPlayers = bossRows.length ? bossRows[0].players : 1;
+        var bossTable = bossRows.map(function (r) {
+          var pct = Math.round((r.players / spieler) * 100);
+          return '<tr class="' + (DLC_BOSSE[r.name] ? "dlc" : "") + '">' +
+            '<td>' + esc(r.name) + '</td>' +
+            '<td class="num">' + num(r.players) + ' <span class="muted">(' + pct + '%)</span>' +
+              '<div class="bar"><span style="width:' + Math.round((r.players / maxPlayers) * 100) + '%"></span></div></td>' +
+            '<td class="num">' + num(r.kills) + '</td></tr>';
+        }).join("");
+        if (!bossTable) bossTable = '<tr><td colspan="3" class="muted">Noch keine Boss-Kills in der Cloud.</td></tr>';
+
+        // ---- Community-Summen ----
+        var sumTable = SUM_FELDER.map(function (f) {
+          return '<tr><td>' + f[1] + '</td><td class="num">' + num(summen[f[0]]) + '</td></tr>';
+        }).join("");
+
+        document.getElementById("dash-sub").textContent =
+          spieler + " Konten in der Cloud · Stand " + new Date().toLocaleString("de-DE");
+
+        body.innerHTML =
+          '<div class="cards">' + cards + '</div>' +
+          '<h2>Wer hat welchen Boss bezwungen?</h2>' +
+          '<table><thead><tr><th>Boss</th><th class="num">Spieler (Anteil)</th><th class="num">Kills gesamt</th></tr></thead><tbody>' + bossTable + '</tbody></table>' +
+          '<h2>Community-Summen</h2>' +
+          '<table><thead><tr><th>Wert</th><th class="num">Gesamt über alle Spieler</th></tr></thead><tbody>' + sumTable + '</tbody></table>' +
+          '<p class="muted" style="margin-top:22px;">Liest alle <code>users</code>-Dokumente direkt im Browser. Bei sehr vielen Spielern (Tausende) besser auf ein tägliches Aggregat per Cloud Function umstellen.</p>';
+      }).catch(function (e) {
+        body.innerHTML = '<div class="err">Konnte die Daten nicht laden: ' + (e.message || e) +
+          '<br><br>Wenn hier „Missing or insufficient permissions" steht, müssen die Firestore-Regeln Lesezugriff auf die <code>users</code>-Collection erlauben (die Online-Bestenliste liest sie bereits, also klappt es meistens).</div>';
+      });
+    }
+
+    function card(v, l, hl) { return '<div class="card' + (hl ? " hl" : "") + '"><div class="v">' + v + '</div><div class="l">' + l + '</div></div>'; }
+    function esc(s) { return String(s).replace(/[&<>]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]; }); }
+  </script>
+</body>
+</html>

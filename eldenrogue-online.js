@@ -27,8 +27,9 @@
   };
 
   const ONLINE = !!FIREBASE_CONFIG.apiKey && typeof firebase !== "undefined";
-  const PATCH = "1.5"; // aktuelle Spielversion – wird an neue Bestenlisten-Einträge angehängt
+  const PATCH = "1.6"; // aktuelle Spielversion – wird an neue Bestenlisten-Einträge angehängt
   let fbAuth = null, fbDB = null, currentUser = null;
+  let authReady = false;   // true, sobald Firebase den Login-Status EINMAL geliefert hat (verhindert falsche "nicht angemeldet"-Warnungen während der async-Wiederherstellung)
   const userListeners = [];
 
   if (ONLINE) {
@@ -38,11 +39,14 @@
       fbDB = firebase.firestore();
       fbAuth.onAuthStateChanged(function (u) {
         currentUser = u;
+        authReady = true;          // ab jetzt ist der Login-Status verlässlich
         initialSyncDone = false;   // erst wieder pushen, wenn der Cloud-Stand des (neuen) Kontos gemergt wurde
         if (u) cloudSyncOnLogin();
         userListeners.forEach(function (cb) { try { cb(u); } catch (e) {} });
       });
-    } catch (e) { console.warn("[ER] Firebase-Init fehlgeschlagen:", e); }
+    } catch (e) { console.warn("[ER] Firebase-Init fehlgeschlagen:", e); authReady = true; }
+  } else {
+    authReady = true;   // Offline-Modus: es gibt keinen async-Login, der Status ist sofort bekannt
   }
 
   /* ====== GLOBALE EVENTS (z.B. Doppel-Seelen-Wochenende) ======
@@ -102,6 +106,8 @@
     bestTimeMs: 0, bestTimeMeta: null, allAchDate: 0, allAchCount: 0,
     // --- Eldendex: entdeckte Katalog-IDs ---
     discovered: {},
+    // --- Completion-Marks: { schwertkaempfer: { normal:true, hard:true, malenia:true, mohgwyn:true, speed5:true }, ... } ---
+    classFeats: {},
     // --- Bestwerte pro Patch: { "1_3": { normal:{score,stage,bosses}, hard:{...} }, "1_4": {...} } ---
     patchBest: {},
     bossKills: {}
@@ -130,6 +136,16 @@
     "Morgott, der Omenkönig",
     "Feuerriese",
     "Maliketh, die Schwarze Klinge"
+  ];
+  // DLC-Regionsbosse (ohne die beiden End-Bosse Radahn/Metyr, die eigene Achievements haben)
+  const DLC_BOSSE = [
+    "Göttliches Tanzlöwenbiest",
+    "Rellana, Ritterin der Zwillingsmonde",
+    "Sonnenblume",
+    "Midra, Herr der Wahnsinnigen Flamme",
+    "Messmer der Pfähler",
+    "Gaius",
+    "Romina, Heilige der Knospe"
   ];
 
   /* ====== ELDENDEX-KATALOG (einzige Quelle der Wahrheit) ======
@@ -240,6 +256,31 @@
     { id:"Dragonkin Soldier",                     cat:"gegner", reg:"minibosse", name:"Dragonkin Soldier",                     img:"images/Gegner/miniboss_dragonkin_soldier.png" },
     { id:"Putrid Tree Spirit",                    cat:"gegner", reg:"minibosse", name:"Putrid Tree Spirit",                    img:"images/Gegner/putrid_tree_spirit.webp" },
     { id:"Dungeon Skelett",                       cat:"gegner", reg:"minibosse", name:"Dungeon Skelett",                       img:"images/Gegner/skeleton.webp" },
+    // --- DLC-Gegner: Land des Schattens ---
+    { id:"Geisterflammen-Drache",  cat:"gegner", reg:"gravesite",  name:"Geisterflammen-Drache",  img:"images/Gegner/GRAVESITE_ELITE.jpg" },
+    { id:"Lamenter",               cat:"gegner", reg:"gravesite",  name:"Lamenter",               img:"images/Gegner/GRAVESITE_WAECHTER.png" },
+    { id:"Schwertmeister Onze",    cat:"gegner", reg:"gravesite",  name:"Schwertmeister Onze",    img:"images/Gegner/GRAVESITE_INVADER.webp" },
+    { id:"Karianischer Ritter",    cat:"gegner", reg:"ensis",      name:"Karianischer Ritter",    img:"images/Gegner/carian-elite-knight-v0-rszypmang49d1.webp" },
+    { id:"Kampfmagier von Ensis",  cat:"gegner", reg:"ensis",      name:"Kampfmagier von Ensis",  img:"images/Gegner/ENSIS_WAECHTER.webp" },
+    { id:"Zwillingsmond-Adept",    cat:"gegner", reg:"ensis",      name:"Zwillingsmond-Adept",    img:"images/Gegner/ENSIS_INVADER.webp" },
+    { id:"Runenbär",               cat:"gegner", reg:"waldgebiet", name:"Runenbär",               img:"images/Gegner/WALD_ELITE.webp" },
+    { id:"Schwarzklingen-Runenbär",cat:"gegner", reg:"waldgebiet", name:"Schwarzklingen-Runenbär",img:"images/Gegner/WALD_WAECHTER.jpg" },
+    { id:"Verirrter Jäger",        cat:"gegner", reg:"waldgebiet", name:"Verirrter Jäger",        img:"images/Gegner/WALD_INVADER.jpg" },
+    { id:"Fingercreeper",          cat:"gegner", reg:"waldgebiet", name:"Fingercreeper",          img:"images/Gegner/fingercreeper.jpg" },
+    { id:"Aging Untouchable",      cat:"gegner", reg:"gruselwald", name:"Aging Untouchable",      img:"images/icons/4026614_full.webp" },
+    { id:"Messmers Speerträger",   cat:"gegner", reg:"messmer",    name:"Messmers Speerträger",   img:"images/Gegner/MESSMER_ELITE.png" },
+    { id:"Flammenritter",          cat:"gegner", reg:"messmer",    name:"Flammenritter",          img:"images/Gegner/MESSMER_WAECHTER.webp" },
+    { id:"Anhänger Messmers",      cat:"gegner", reg:"messmer",    name:"Anhänger Messmers",      img:"images/Gegner/MESSMER_INVADER.webp" },
+    { id:"Blütenwächter",          cat:"gegner", reg:"garten",     name:"Blütenwächter",          img:"images/Gegner/GARTEN_ELITE.jpg" },
+    { id:"Steinerner Hüter",       cat:"gegner", reg:"garten",     name:"Steinerner Hüter",       img:"images/Gegner/GARTEN_WAECHTER.png" },
+    { id:"Pilger des Gartens",     cat:"gegner", reg:"garten",     name:"Pilger des Gartens",     img:"images/Gegner/GARTEN_INVADER.jpg" },
+    { id:"Ulkerbestie",            cat:"gegner", reg:"rauh",       name:"Ulkerbestie",            img:"images/Gegner/rauh_Elite.png" },
+    { id:"Roter Wolf des Champions",cat:"gegner", reg:"rauh",      name:"Roter Wolf des Champions",img:"images/Gegner/rauh_Wächter.webp" },
+    { id:"Rakshasa",               cat:"gegner", reg:"rauh",       name:"Rakshasa",               img:"images/Gegner/rauh_invader.jpg" },
+    { id:"Wächter von Enir-Ilim",  cat:"gegner", reg:"enirilim",   name:"Wächter von Enir-Ilim",  img:"images/Gegner/enir_elite.webp" },
+    { id:"Hornbewehrter Wächter",  cat:"gegner", reg:"enirilim",   name:"Hornbewehrter Wächter",  img:"images/Gegner/enir_wächter.png" },
+    { id:"Anhänger Miquellas",     cat:"gegner", reg:"enirilim",   name:"Anhänger Miquellas",     img:"images/Gegner/enir_invader.png" },
+    { id:"Fingerwurm",             cat:"gegner", reg:"finger",     name:"Fingerwurm",             img:"images/Gegner/wurm.avif" },
     // --- Bosse (id = exakter gegnerName) — Reihenfolge = Story-/Spielfortschritt ---
     { id:"Godrick, der Verpflanzte",          cat:"bosse", name:"Godrick, der Verpflanzte",          img:"images/bosse/godrick.webp" },
     { id:"Sternengeißel Radahn",              cat:"bosse", name:"Sternengeißel Radahn",              img:"images/bosse/radahn.webp" },
@@ -259,9 +300,20 @@
     { id:"Godfrey, der Erste Eldenlord",      cat:"bosse", name:"Godfrey, der Erste Eldenlord",      img:"images/bosse/godfrey.webp" },
     { id:"Radagon von der Goldenen Ordnung",  cat:"bosse", name:"Radagon von der Goldenen Ordnung",  img:"images/bosse/radagon.jpg" },
     { id:"Eldenbiest",                        cat:"bosse", name:"Eldenbiest",                        img:"images/bosse/eldenbeast.jpg" },
+    // --- DLC: Land des Schattens ---
+    { id:"Göttliches Tanzlöwenbiest",         cat:"bosse", name:"Göttliches Tanzlöwenbiest",         img:"images/bosse/tanzloewe.jpg" },
+    { id:"Rellana, Ritterin der Zwillingsmonde", cat:"bosse", name:"Rellana, Ritterin der Zwillingsmonde", img:"images/bosse/rellana.png" },
+    { id:"Sonnenblume",                       cat:"bosse", name:"Sonnenblume",                       img:"images/bosse/sonnenblume.png" },
+    { id:"Midra, Herr der Wahnsinnigen Flamme", cat:"bosse", name:"Midra, Herr der Wahnsinnigen Flamme", img:"images/bosse/midra.png" },
+    { id:"Messmer der Pfähler",               cat:"bosse", name:"Messmer der Pfähler",               img:"images/bosse/messmer.webp" },
+    { id:"Gaius",                             cat:"bosse", name:"Gaius",                             img:"images/bosse/Gauis.png" },
+    { id:"Romina, Heilige der Knospe",        cat:"bosse", name:"Romina, Heilige der Knospe",        img:"images/bosse/romina.png" },
+    { id:"Verheißener Gemahl Radahn",         cat:"bosse", name:"Verheißener Gemahl Radahn",         img:"images/bosse/PCR1.jpg" },
+    { id:"Radahn, Gemahl Miquellas",          cat:"bosse", name:"Radahn, Gemahl Miquellas",          img:"images/bosse/PCR2.jpg" },
+    { id:"Metyr, Mutter der Finger",          cat:"bosse", name:"Metyr, Mutter der Finger",          img:"images/bosse/metyr.webp" },
     { id:"Blaidd, der Halbwolf",              cat:"bosse", name:"Blaidd, der Halbwolf",              img:"images/Gegner/blaidd.avif" },
     { id:"Cemetery Shade",                    cat:"bosse", name:"Cemetery Shade",                    img:"images/bosse/catacomb_boss.jpg" },
-    { id:"Promised Consort Radahn",           cat:"bosse", name:"Promised Consort Radahn",           img:"images/bosse/pcr.webp" }
+    { id:"Baby PCR",                          cat:"bosse", name:"Baby PCR",                          img:"images/bosse/pcr.webp" }
   ];
   const ELDENDEX_IDS = ELDENDEX.map(function (e) { return e.id; });
 
@@ -288,6 +340,17 @@
     { id: "fall_death", name: "Hätte eine Katze sein sollen", icon: "🕳️", desc: "Stürze in der Kanalisation in den Abgrund.", check: s => (s.fallDeaths || 0) >= 1 },
     { id: "mohg",       name: "Miquellas Erwachen",     icon: "🩸", desc: "Besiege Mohg, Fürst des Blutes, und erwecke Miquella.", check: s => (s.bossKills["Mohg, Fürst des Blutes"] || 0) >= 1 },
     { id: "all_bosses", name: "Götterdämmerung",        icon: "🌒", desc: "Besiege jeden Halbgott mindestens einmal.", check: s => HAUPTBOSSE.every(b => (s.bossKills[b] || 0) >= 1) },
+    /* --- DLC: Schatten des Erdbaums --- */
+    { id: "dlc_tanzloewe", name: "Sturm von Belurat",    icon: "🦁", desc: "Besiege das Göttliche Tanzlöwenbiest auf der Gräberebene.", check: s => ((s.bossKills || {})["Göttliches Tanzlöwenbiest"] || 0) >= 1 },
+    { id: "dlc_rellana",   name: "Zwillingsmonde",       icon: "🌗", desc: "Besiege Rellana, Ritterin der Zwillingsmonde, in Castle Ensis.", check: s => ((s.bossKills || {})["Rellana, Ritterin der Zwillingsmonde"] || 0) >= 1 },
+    { id: "dlc_sonnenblume", name: "Verblühte Sonne",    icon: "🌻", desc: "Besiege die Sonnenblume im Waldgebiet.", check: s => ((s.bossKills || {})["Sonnenblume"] || 0) >= 1 },
+    { id: "dlc_midra",     name: "Wahnsinnige Flamme",   icon: "😵‍💫", desc: "Besiege Midra, Herrn der Wahnsinnigen Flamme, im Gruselwald.", check: s => ((s.bossKills || {})["Midra, Herr der Wahnsinnigen Flamme"] || 0) >= 1 },
+    { id: "dlc_messmer",   name: "Flamme des Pfählers",  icon: "🔥", desc: "Besiege Messmer den Pfähler in seiner gekippten Festung.", check: s => ((s.bossKills || {})["Messmer der Pfähler"] || 0) >= 1 },
+    { id: "dlc_gaius",     name: "Der Wildschweinritter", icon: "🐗", desc: "Besiege Gaius im Garten.", check: s => ((s.bossKills || {})["Gaius"] || 0) >= 1 },
+    { id: "dlc_romina",    name: "Fäulnis der Knospe",   icon: "🦋", desc: "Besiege Romina, Heilige der Knospe, in den Ruinen von Rauh.", check: s => ((s.bossKills || {})["Romina, Heilige der Knospe"] || 0) >= 1 },
+    { id: "dlc_all_bosses", name: "Herr des Schattenlands", icon: "🌑", desc: "Besiege jeden Boss des Land des Schattens mindestens einmal.", check: s => DLC_BOSSE.every(b => ((s.bossKills || {})[b] || 0) >= 1) },
+    { id: "dlc_consort", name: "Gemahl des Gestirns",   icon: "🌘", desc: "END-BOSS: Besiege den Verheißenen Gemahl Radahn am Ende von Enir-Ilim (Haupt-Ende des Schattenlands).", check: s => ((s.bossKills || {})["Radahn, Gemahl Miquellas"] || 0) >= 1 },
+    { id: "dlc_metyr",   name: "Mutter der Finger",      icon: "🖐️", desc: "GEHEIM-ENDE: Lüfte das tiefste Geheimnis des Schattenlands und besiege Metyr.", check: s => ((s.bossKills || {})["Metyr, Mutter der Finger"] || 0) >= 1 },
     /* --- Runs / Abschluss --- */
     { id: "elden_lord", name: "Elden Lord",             icon: "👑", desc: "Schließe einen Run ab und werde Elden Lord.", check: s => s.gamesCompleted >= 1 },
     { id: "complete_10",name: "Veteran",                icon: "🎖️", desc: "Schließe 10 Runs ab.",                  check: s => s.gamesCompleted >= 10 },
@@ -328,7 +391,7 @@
     { id: "tower_10",     name: "Aufstrebend",        icon: "🪜", desc: "Erreiche Etage 5 im Battle Tower.",          check: s => (s.towerBestFloor || 0) >= 5 },
     { id: "tower_25",     name: "Turmwächter",        icon: "🗼", desc: "Erreiche Etage 10 im Battle Tower.",         check: s => (s.towerBestFloor || 0) >= 10 },
     { id: "tower_15",     name: "Hoch hinaus",        icon: "⛰️", desc: "Erreiche Etage 15 im Battle Tower.",         check: s => (s.towerBestFloor || 0) >= 15 },
-    { id: "tower_master", name: "Meister des Turms",  icon: "👑", desc: "Bezwinge alle 20 Etagen und Promised Consort Radahn.", check: s => !!(s.challengesCompleted && s.challengesCompleted.tower) },
+    { id: "tower_master", name: "Meister des Turms",  icon: "👑", desc: "Bezwinge alle 20 Etagen und Baby PCR.", check: s => !!(s.challengesCompleted && s.challengesCompleted.tower) },
     /* --- Eldendex --- */
     { id: "true_100", name: "Nashy", icon: "📖", desc: "Entdecke jeden Eintrag im Eldendex.", check: s => ELDENDEX.every(function (e) { return dexIstGesehen(e, s); }) }
   ];
@@ -364,19 +427,19 @@
       how:  { de: "Lege als Vagabund zu Run-Beginn deine Rüstung ab (aus dem Slot ziehen) und schließe den Run ab.", en: "As Vagabond, drag your armor out of its slot at the start of a run and finish the run." },
       check: s => (s.normalNoArmorClears || 0) >= 1,
       progress: null },
-    { id: "gelmir", icon: "🌋", secret: true,   // geheim — Ryas Halskette (nur Samurai, in Liurnia) soll ein Rätsel bleiben
+    { id: "gelmir", icon: "🌋", img: "images/background/gelmir.webp", secret: true,   // geheim — Ryas Halskette (nur Samurai, in Liurnia) soll ein Rätsel bleiben
       name: { de: "Der Berg Gelmir", en: "Mount Gelmir" },
       desc: { de: "Ein alternativer Pfad statt Leyndell — der brennende Berg mit Rykard, Herrn der Blasphemie.", en: "An alternative path instead of Leyndell — the burning mount with Rykard, Lord of Blasphemy." },
       hint: { de: "Jemand in den Seen vermisst etwas Kostbares …", en: "Someone in the lakes misses something precious …" },
       how:  { de: "Finde als Samurai in Liurnia Ryas Halskette und bringe sie ihr zurück — sie lädt dich nach Haus Vulkan ein.", en: "As Samurai, find Rya's necklace in Liurnia and return it to her — she invites you to Volcano Manor." },
       check: s => (s.ryaInvites || 0) >= 1 || ((s.bossKills || {})["Rykard, Herr der Blasphemie"] || 0) >= 1,   // Grace: wer Rykard schon besiegt hat, behält den Pfad
       progress: null },
-    { id: "mohgwyn", icon: "🩸", secret: true,   // geheim — der Kanalisations-Knoten in Leyndell soll überraschen
+    { id: "mohgwyn", icon: "🩸", img: "images/background/mohgwyn.avif", secret: true,   // geheim — der Kanalisations-Knoten in Leyndell soll überraschen
       name: { de: "Die Mohgwyn-Dynastie", en: "Mohgwyn Dynasty" },
       desc: { de: "Die Kanalisation der Hauptstadt, Mohg und ein Pfad, der mit Miquellas Erwachen endet.", en: "The capital's sewers, Mohg, and a path that ends with Miquella's awakening." },
       hint: { de: "Ein weiteres Geheimnis schlummert in der Tiefe …", en: "Another secret slumbers in the depths …" },
-      how:  { de: "Besiege Rykard, Herrn der Blasphemie, am Berg Gelmir — danach findet der Bettler die Kanalisation in Leyndell.", en: "Defeat Rykard, Lord of Blasphemy, on Mount Gelmir — afterwards the Wretch can find the sewers in Leyndell." },
-      check: s => ((s.bossKills || {})["Rykard, Herr der Blasphemie"] || 0) >= 1,
+      how:  { de: "Besiege zuerst Rykard am Berg Gelmir (dann taucht die Kanalisation in Leyndell auf) und bezwinge dort als Bettler Mohg, das Omen.", en: "First defeat Rykard on Mount Gelmir (the sewers then appear in Leyndell), and as the Wretch defeat Mohg, the Omen, down there." },
+      check: s => ((s.bossKills || {})["Mohg, das Omen"] || 0) >= 1,   // erst der Sewers-Boss (= Medaille) zaehlt, NICHT schon der Rykard-Kill
       progress: null }
   ];
   function unlockInfo() {
@@ -421,6 +484,19 @@
     return { id: a.id, icon: a.icon, name: nm, desc: ds };
   }
 
+  const WORKER_URL = "https://elden-rogue-discord.hoschi.workers.dev";
+  // Pingt den Discord-Bot-Worker, damit die Rollen des eingeloggten Spielers SOFORT neu geprüft werden.
+  function pingDiscordRoles() {
+    if (!ONLINE || !currentUser) return;
+    try {
+      fetch(WORKER_URL + "/api/roles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ uid: currentUser.uid })
+      }).catch(function () {});
+    } catch (e) {}
+  }
+
   function checkAchievements() {
     var s = getStats();
     var unlocked = getUnlocked();
@@ -436,12 +512,20 @@
       neu.forEach(function (a) { if (typeof window.onERAchievement === "function") { try { window.onERAchievement(locAch(a)); } catch (e) {} } });
       pushCloud = true;
     }
-    // 100%-Club: sobald ALLE Achievements erspielt sind, Datum + Anzahl EINMALIG festhalten
-    // (läuft unabhängig von neu, damit auch Bestands-Completionisten beim nächsten Check erfasst werden)
-    if (unlocked.length >= ACHIEVEMENTS.length && !(s.allAchDate > 0)) {
+    // 100%-Club: NUR die tatsächlich gültigen (aktuell definierten) Achievements zählen —
+    // unlocked kann veraltete/entfernte IDs enthalten und wäre sonst fälschlich "voll".
+    var haveCount = 0;
+    ACHIEVEMENTS.forEach(function (a) { if (unlocked.indexOf(a.id) >= 0) haveCount++; });
+    if (haveCount >= ACHIEVEMENTS.length && !(s.allAchDate > 0)) {
       s.allAchDate = Date.now(); s.allAchCount = ACHIEVEMENTS.length; saveStats(s); pushCloud = true;
+    } else if (s.allAchDate > 0 && haveCount < ACHIEVEMENTS.length && (s.allAchCount || 0) >= ACHIEVEMENTS.length) {
+      // Selbstheilung: früher fälschlich als 100% markiert (hatte nie wirklich alle) -> wieder entfernen.
+      // Bleibt bestehen, falls seither NEUE Achievements dazukamen (allAchCount < aktueller Anzahl = legitim historisch).
+      s.allAchDate = 0; s.allAchCount = 0; saveStats(s); pushCloud = true;
     }
     if (pushCloud) cloudPush();
+    // Echtzeit-Rollen: nach neuen Erfolgen kurz warten (bis der Cloud-Push landet) und dann den Bot pingen
+    if (neu.length && ONLINE && currentUser) setTimeout(pingDiscordRoles, 2500);
     return neu;
   }
 
@@ -458,6 +542,26 @@
   function patchKey(p) { return String(p || PATCH).replace(/\./g, "_"); } // "1.5" -> "1_5"
   function leererPatchSlot() { var o = {}; LB_KATEGORIEN.forEach(function (c) { o[c] = { score: 0, stage: 0, bosses: 0 }; }); return o; }
 
+  /* ====== SKILL-BASIERTES PUNKTESYSTEM (v1.5) ======
+     SCORE = ( BASIS + SKILL + ZEIT ) × Schwierigkeit
+       BASIS = Ebene × 800  +  Boss-Wert (nach Stärke = Ebene beim Kill × 120)
+       SKILL = Riposten × 200  +  Schwäche-Treffer × 15
+       ZEIT  = gedeckelter Tempo-Bonus, max +10 % der Basis (Richtzeit 75 s/Ebene)
+       ×     = Normal 1.0 | Hard 1.5
+     Reine Funktion – wird von endRun (Rangliste), Hall of Fame und der Daily-Wertung genutzt. */
+  function berechneScore(r) {
+    r = r || {};
+    var stage = r.stage || 0;
+    var basis = stage * 800 + (r.bossScore || 0);
+    var skill = (r.ripostes || 0) * 200 + (r.weakHits || 0) * 15;
+    var parSec = Math.max(60, stage * 75);
+    var elapsed = (r.timeMs || 0) / 1000;
+    var tempo = elapsed > 0 ? Math.max(0, Math.min(1, (parSec - elapsed) / parSec)) : 0;
+    var zeit = Math.round(basis * 0.10 * tempo);
+    var mult = normDiff(r.difficulty) === "hard" ? 1.5 : 1.0;
+    return Math.max(0, Math.round((basis + skill + zeit) * mult));
+  }
+
   /* ====== 5) ÖFFENTLICHE API (window.ER) ====== */
   const ER = {
     ACHIEVEMENTS: ACHIEVEMENTS,
@@ -467,7 +571,7 @@
     startRun: function (difficulty, category) {
       var diff = normDiff(difficulty);
       var cat = normCat(category || diff);
-      saveRun({ stage: 1, bosses: 0, fights: 0, difficulty: diff, category: cat, hadDeath: false });
+      saveRun({ stage: 1, bosses: 0, fights: 0, ripostes: 0, weakHits: 0, bossScore: 0, timeMs: 0, startTs: Date.now(), difficulty: diff, category: cat, hadDeath: false });
       bump("runsStarted");
       setMax("furthestStage", 1);
       setMax(diff === "hard" ? "furthestStageHard" : "furthestStageNormal", 1);
@@ -476,7 +580,7 @@
       var r = getRun();
       var diff = normDiff(r.difficulty);
       var cat = normCat(r.category || diff);
-      var score = (r.stage || 0) * 1000 + (r.bosses || 0) * 200 + (r.fights || 0) * 10;
+      var score = berechneScore(r);
       // kombiniert (für die Stat-Anzeige) ...
       setMax("bestScore", score);
       setMax("bestRunBosses", r.bosses || 0);
@@ -496,7 +600,7 @@
       }
       submitToBoard(score, { stage: r.stage || 0, bosses: r.bosses || 0, fights: r.fights || 0, difficulty: diff, category: cat });
       // Zähler zurücksetzen – Schwierigkeit, Kategorie & hadDeath bleiben bis zum nächsten startRun erhalten
-      saveRun({ stage: 0, bosses: 0, fights: 0, difficulty: diff, category: cat, hadDeath: r.hadDeath });
+      saveRun({ stage: 0, bosses: 0, fights: 0, ripostes: 0, weakHits: 0, bossScore: 0, timeMs: 0, difficulty: diff, category: cat, hadDeath: r.hadDeath });
       return score;
     },
 
@@ -555,6 +659,27 @@
     },
     bestTower: function () { return getStats().towerBestFloor || 0; },
 
+    /* --- Completion-Marks: was wurde mit welcher Klasse geschafft? ---
+       Feats: normal, hard, malenia, mohgwyn, speed5 (Run unter 5 Minuten) */
+    classFeat: function (klasse, feat) {
+      if (!klasse || !feat) return;
+      var s = getStats();
+      s.classFeats = s.classFeats || {};
+      s.classFeats[klasse] = s.classFeats[klasse] || {};
+      if (s.classFeats[klasse][feat]) return;   // idempotent, kein Cloud-Spam
+      s.classFeats[klasse][feat] = true;
+      saveStats(s);
+      cloudPush();
+    },
+    getClassFeats: function () {
+      var s = getStats();
+      var feats = JSON.parse(JSON.stringify(s.classFeats || {}));
+      // Retro-Kompatibilität: bisherige Normal-Clears (classesNormalDone) zählen als Normal-Mark
+      var done = s.classesNormalDone || {};
+      for (var k in done) { if (done[k]) { feats[k] = feats[k] || {}; if (!feats[k].normal) feats[k].normal = true; } }
+      return feats;
+    },
+
     /* --- Freischaltungen (Progression) --- */
     getUnlocks: function () { return unlockInfo(); },
     isUnlocked: function (id) { return isUnlockedId(id); },
@@ -579,6 +704,19 @@
     /* --- Aktions-Codes einlösen (codes/{CODE} in Firestore, vom Admin in der Konsole angelegt) ---
        Dokument-Felder: { aktiv: true, seelen: 1000, bis: <Timestamp/Millis, optional> }
        cb bekommt: {ok:true, seelen:N, code:C} oder {ok:false, grund:"offline"|"schon"|"ungueltig"|"abgelaufen"} */
+    /* --- Discord-Verknüpfung: 6-stelligen Code erzeugen und ins eigene
+       Cloud-Profil schreiben. Der Discord-Bot (discord-rollen/) sucht den Code
+       per /verify und vergibt Rollen anhand der Achievements. --- */
+    generateDiscordCode: function (cb) {
+      cb = cb || function () {};
+      if (!ONLINE || !fbDB || !currentUser) { cb({ ok: false, grund: "offline" }); return; }
+      var chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789", code = "";
+      for (var i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+      fbDB.collection("users").doc(currentUser.uid).set({ discordLinkCode: code, discordLinkTs: Date.now() }, { merge: true })
+        .then(function () { cloudPush(); cb({ ok: true, code: code }); })
+        .catch(function () { cb({ ok: false, grund: "fehler" }); });
+    },
+
     redeemCode: function (code, cb) {
       cb = cb || function () {};
       code = String(code || "").trim().toUpperCase();
@@ -653,6 +791,7 @@
 
     /* --- Auth --- */
     onUserChange: function (cb) { userListeners.push(cb); try { cb(currentUser); } catch (e) {} },
+    authReady: function () { return authReady; },   // hat Firebase den Login-Status schon geliefert?
     currentUser: function () { return currentUser; },
     signInWithGoogle: function () {
       if (!ONLINE) { alert("Online-Login ist noch nicht konfiguriert (Firebase fehlt). Siehe FIREBASE_SETUP.md."); return Promise.reject("offline"); }
@@ -720,6 +859,129 @@
         cb(localBoard(limit, cat, pk), false);
       }
     }
+  };
+
+  /* ====== 5b) SEED-RUNS: Fortschritt zählt nicht ======
+     Bei einem manuell eingegebenen Seed (geteilter Run) werden alle Fortschritts-
+     Mutationen zentral abgeschaltet: keine Achievements, keine Stats, keine
+     Bestenlisten, kein Eldendex. Lese-Funktionen bleiben unberührt. */
+  var seedRunAktiv = false;
+  ER.setSeedRun = function (v) { seedRunAktiv = !!v; };
+  ER.isSeedRun = function () { return seedRunAktiv; };
+  [
+    "startRun", "endRun", "fightWon", "bossKilled", "eliteKilled", "minibossKilled",
+    "invaderKilled", "death", "dungeonCleared", "talismanFound", "weaponFound",
+    "armorFound", "blaiddDefeat", "blaiddQuestComplete", "gameCompleted",
+    "recordCompletionTime", "maleniaKilled", "ryaInvite", "mohgwynVisited",
+    "gelmirVisited", "fallDeath", "maleniaRunCompleted", "legendaryRunCompleted",
+    "flaskDrunk", "reachStage", "towerReached", "hardCompleted", "challengeCompleted",
+    "discover", "classFeat"
+  ].forEach(function (name) {
+    var orig = ER[name];
+    if (typeof orig !== "function") return;
+    ER[name] = function () { if (seedRunAktiv) return; return orig.apply(ER, arguments); };
+  });
+
+  /* ====== 5c) SKILL-ZÄHLER + ZEIT (ungewrappt: laufen auch im Seed-/Daily-Run,
+     damit die Daily-Wertung dieselbe Formel benutzen kann) ====== */
+  ER.skillRiposte  = function () { runBump("ripostes"); };                                        // Stagger gebrochen -> Konter gelandet
+  ER.skillWeakness = function () { runBump("weakHits"); };                                        // Gegner an seiner Schwäche getroffen
+  ER.addBossValue  = function (stage) { var r = getRun(); r.bossScore = (r.bossScore || 0) + Math.max(1, stage || 1) * 120; saveRun(r); };
+  ER.recordRunTime = function (ms) { var r = getRun(); r.timeMs = Math.round(ms || 0); saveRun(r); };
+  ER.computeScore  = berechneScore;
+  ER.isDevMode     = istDevUmgebung;   // dev/Test -> Läufe zählen nicht für die geteilte Bestenliste
+  // Manueller, dauerhafter Dev-Schalter pro Browser (schlaegt die Auto-Erkennung) — z.B. ER.setDevMode(true) auf der Test-Seite
+  ER.setDevMode = function (on) {
+    try { localStorage.setItem("er_devMode", on ? "1" : "0"); } catch (e) {}
+    try { if (!on) { var b = document.getElementById("er-dev-badge"); if (b) b.remove(); } else if (typeof zeigeDevBadge === "function") zeigeDevBadge(); } catch (e) {}
+    try { console.log("%c[ER] Dev-Modus manuell " + (on ? "AN (Laeufe zaehlen NICHT)" : "AUS (Laeufe zaehlen wieder)"), "color:#c080ff;font-weight:bold;"); } catch (e) {}
+    return on;
+  };
+  // DEV-Reset: leert das lokale Testprofil komplett UND entfernt (falls eingeloggt) die
+  // Cloud-Ranglisten-Werte + Stats aus dem eigenen Firestore-Doc. Nur in der Dev-Umgebung.
+  ER.devResetProfile = function () {
+    if (!istDevUmgebung()) { try { console.warn("[ER] devResetProfile: nur in der DEV-Umgebung erlaubt."); } catch (e) {} return false; }
+    ["eldenRogueStats", "eldenRogueAchievements", "eldenRogueSeenUnlocks", "eldenRogueRun",
+     "eldenRogueSave", "eldenRogueMeta", "eldenRogueHallOfFame", "eldenRogueLocalBoard"
+    ].forEach(function (k) { try { localStorage.removeItem(k); } catch (e) {} });
+    var cloudGeleert = false;
+    if (ONLINE && fbDB && currentUser && firebase.firestore && firebase.firestore.FieldValue) {
+      try {
+        var del = firebase.firestore.FieldValue.delete();
+        var doc = { stats: del, achievements: del, metaStr: del, hofStr: del, seenStr: del, runStr: del,
+                    idleRunen: del, idleOwned: del, idleRate: del, allAchDate: del, allAchCount: del };
+        LB_CLOUD_FELDER.forEach(function (k) { doc[k] = del; });
+        fbDB.collection("users").doc(currentUser.uid).set(doc, { merge: true });
+        cloudGeleert = true;
+      } catch (e) { try { console.warn("[ER] devResetProfile Cloud:", e); } catch (_) {} }
+    }
+    initialSyncDone = false;   // beim naechsten Login sauber neu mergen
+    try { console.log("%c[ER] Testprofil zurueckgesetzt. Cloud geleert: " + cloudGeleert, "color:#c080ff;font-weight:bold;"); } catch (e) {}
+    return { lokal: true, cloud: cloudGeleert };
+  };
+
+  /* ====== 5d) TÄGLICHER SEED – eigene Rangliste (bester Score pro Tag) ====== */
+  function heutigerDailyKey() {
+    var d = new Date();
+    return "" + d.getUTCFullYear() + String(d.getUTCMonth() + 1).padStart(2, "0") + String(d.getUTCDate()).padStart(2, "0");
+  }
+  ER.dailyKey = heutigerDailyKey;
+  ER.submitDaily = function (dateKey, seed, score, meta) {
+    score = Math.round(score || 0); if (score <= 0) return;
+    dateKey = dateKey || heutigerDailyKey();
+    var s = getStats();
+    s.dailyBest = s.dailyBest || {};
+    var slot = s.dailyBest[dateKey];
+    if (!slot || score > (slot.score || 0)) {
+      s.dailyBest[dateKey] = { score: score, seed: seed || "", stage: (meta && meta.stage) || 0, bosses: (meta && meta.bosses) || 0, klasse: (meta && meta.klasse) || "", ts: Date.now() };
+      var keys = Object.keys(s.dailyBest).sort();
+      while (keys.length > 14) { delete s.dailyBest[keys.shift()]; }   // Doc schlank halten: nur ~2 Wochen
+      saveStats(s);
+      cloudPush();
+    }
+  };
+  ER.getDailyLeaderboard = function (limit, cb, dateKey) {
+    limit = limit || 20; dateKey = dateKey || heutigerDailyKey();
+    var field = "dailyBest." + dateKey + ".score";
+    if (ONLINE && fbDB) {
+      fbDB.collection("users").orderBy(field, "desc").limit(limit).get()
+        .then(function (snap) {
+          var rows = [];
+          snap.forEach(function (d) {
+            var x = d.data(); var box = (x.dailyBest && x.dailyBest[dateKey]) ? x.dailyBest[dateKey] : null;
+            if (!box || !(box.score > 0)) return;
+            rows.push({ name: x.displayName || "Befleckter", photo: x.photoURL || "", score: box.score, stage: box.stage || 0, bosses: box.bosses || 0, klasse: box.klasse || "" });
+          });
+          cb(rows, true);
+        })
+        .catch(function (e) { console.warn("[ER] Daily-Board:", e); cb(localDaily(dateKey), false); });
+    } else { cb(localDaily(dateKey), false); }
+  };
+  function localDaily(dateKey) {
+    var s = getStats(); var box = s.dailyBest && s.dailyBest[dateKey];
+    if (!box || !(box.score > 0)) return [];
+    return [{ name: ER.getPlayerName(), photo: "", score: box.score, stage: box.stage || 0, bosses: box.bosses || 0, klasse: box.klasse || "" }];
+  }
+
+  /* ====== 5e) GEFOLGE (IDLE) – Rangliste nach erwirtschafteten Runen ====== */
+  function idleSelbst() {
+    try { var m = JSON.parse(localStorage.getItem("eldenRogueMeta") || "{}"); var i = m.idle;
+      if (i && i.earned > 0) return [{ name: ER.getPlayerName(), photo: "", score: Math.round(i.earned), stage: (i.owned || []).length, bosses: Math.round(i.rate || 0) }];
+    } catch (e) {}
+    return [];
+  }
+  ER.getIdleLeaderboard = function (limit, cb) {
+    limit = limit || 20;
+    if (ONLINE && fbDB) {
+      fbDB.collection("users").orderBy("idleRunen", "desc").limit(limit).get()
+        .then(function (snap) {
+          var rows = [];
+          snap.forEach(function (d) { var x = d.data(); if (!(x.idleRunen > 0)) return;
+            rows.push({ name: x.displayName || "Befleckter", photo: x.photoURL || "", score: x.idleRunen, stage: x.idleOwned || 0, bosses: x.idleRate || 0 }); });
+          cb(rows, true);
+        })
+        .catch(function (e) { console.warn("[ER] Gefolge-Board:", e); cb(idleSelbst(), false); });
+    } else { cb(idleSelbst(), false); }
   };
 
   /* ====== 6) LOKALE BESTENLISTE ====== */
@@ -837,6 +1099,54 @@
     return m;
   }
 
+  /* ====== DEV-/TEST-UMGEBUNG ======
+     Läufe auf lokalem Server oder dem Cloudflare-Pages-Test-Deploy (dev-Branch)
+     dürfen die GETEILTE Bestenliste nicht verfälschen. Alles andere (Speichern,
+     Geräte-Sync, Progression, Achievements) funktioniert zum Testen normal weiter.
+     Live bleibt officialhoschier.github.io (oder eine echte Domain) unberührt. */
+  function istDevUmgebung() {
+    try {
+      // Manueller Override (pro Browser, dauerhaft): ER.setDevMode(true/false) -> schlaegt die Auto-Erkennung
+      var f = null; try { f = localStorage.getItem("er_devMode"); } catch (e) {}
+      if (f === "1") return true;
+      if (f === "0") return false;
+      if (location.protocol === "file:") return true;
+      var h = (location.hostname || "").toLowerCase();
+      if (h === "localhost" || h === "127.0.0.1" || h === "0.0.0.0" || h === "") return true;
+      if (/\.pages\.dev$/i.test(h)) return true;      // Cloudflare-Pages Test-Deploy (auch Preview-Subdomains)
+      if (/^192\.168\.|^10\.|\.local$/i.test(h)) return true;   // lokales Netz / mDNS
+      return false;
+    } catch (e) { return false; }
+  }
+  // Diese Top-Level-Felder speisen die geteilten Ranglisten -> auf dev NICHT schreiben.
+  var LB_CLOUD_FELDER = [
+    "bestScore", "bestRunBosses", "furthestStage",
+    "bestScoreNormal", "bestScoreHard", "bestRunBossesNormal", "bestRunBossesHard",
+    "furthestStageNormal", "furthestStageHard", "lb",
+    "bestTimeMs", "bestTimeMeta", "dailyBest",
+    "idleRunen", "idleOwned", "idleRate", "allAchDate", "allAchCount"
+  ];
+  // Diese Felder INNERHALB von stats.* speisen die Ranglisten (lb wird daraus rekonstruiert) -> auf dev ebenfalls nicht hochladen.
+  var LB_STATS_FELDER = [
+    "patchBest", "bestScore", "bestScoreNormal", "bestScoreHard",
+    "bestRunBosses", "bestRunBossesNormal", "bestRunBossesHard",
+    "furthestStage", "furthestStageNormal", "furthestStageHard",
+    "bestTimeMs", "bestTimeMeta", "dailyBest", "allAchDate", "allAchCount"
+  ];
+  function zeigeDevBadge() {
+    if (!istDevUmgebung() || typeof document === "undefined") return;
+    function inject() {
+      if (document.getElementById("er-dev-badge")) return;
+      var b = document.createElement("div"); b.id = "er-dev-badge";
+      b.textContent = "🛠 DEV — Läufe zählen nicht für die Bestenliste";
+      b.style.cssText = "position:fixed;left:8px;bottom:8px;z-index:99999;background:rgba(40,20,60,0.92);color:#e0b0ff;border:1px solid #a060e0;border-radius:6px;padding:4px 10px;font:600 11px/1.3 sans-serif;letter-spacing:0.4px;pointer-events:none;box-shadow:0 2px 10px rgba(0,0,0,0.5);";
+      (document.body || document.documentElement).appendChild(b);
+    }
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", inject); else inject();
+  }
+  if (istDevUmgebung()) { try { console.log("%c[ER] DEV-Umgebung erkannt — Läufe zählen NICHT für die geteilte Bestenliste.", "color:#c080ff;font-weight:bold;"); } catch (e) {} }
+  zeigeDevBadge();
+
   function cloudPush() {
     if (!ONLINE || !fbDB || !currentUser) return;
     var s = getStats();
@@ -863,8 +1173,17 @@
     // Speedrun-Board (Sortierung aufsteigend) — Feld nur schreiben, wenn es eine echte Zeit gibt,
     // sonst würde eine 0 die Bestenliste anführen.
     if (s.bestTimeMs > 0) { doc.bestTimeMs = s.bestTimeMs; doc.bestTimeMeta = s.bestTimeMeta || null; }
+    // Täglicher-Seed-Board (nach dailyBest.<datum>.score sortiert) – Top-Level für die Query
+    if (s.dailyBest && Object.keys(s.dailyBest).length) doc.dailyBest = s.dailyBest;
+    // Gefolge-/Idle-Rangliste: meiste erwirtschaftete Runen (Top-Level für orderBy)
+    try { var __m = JSON.parse(localStorage.getItem("eldenRogueMeta") || "{}"); var __i = __m.idle;
+      if (__i && (__i.earned > 0)) { doc.idleRunen = Math.round(__i.earned); doc.idleOwned = (__i.owned || []).length; doc.idleRate = Math.round(__i.rate || 0); }
+    } catch (e) {}
     // 100%-Achievements-Board (Sortierung nach Datum, wer zuerst alles hatte)
     if (s.allAchDate > 0) { doc.allAchDate = s.allAchDate; doc.allAchCount = s.allAchCount || 0; }
+    else if (firebase.firestore && firebase.firestore.FieldValue) {   // Selbstheilung: fälschlichen Eintrag aus der Cloud entfernen
+      doc.allAchDate = firebase.firestore.FieldValue.delete(); doc.allAchCount = firebase.firestore.FieldValue.delete();
+    }
     // Geräte-Sync: lokale Stände als JSON-Strings spiegeln — aber erst NACH dem Login-Merge,
     // damit ein frisches Gerät den Cloud-Stand nicht mit leeren Daten überschreibt.
     if (initialSyncDone) {
@@ -874,7 +1193,21 @@
       try { var us = localStorage.getItem("eldenRogueSeenUnlocks"); if (us) doc.seenStr = us; } catch (e) {}
       try { doc.runStr = localStorage.getItem("eldenRogueSave") || ""; } catch (e) {}   // "" = kein aktiver Run (löscht beendete Runs auch in der Cloud)
     }
-    try { fbDB.collection("users").doc(currentUser.uid).set(doc, { merge: true }); } catch (e) { console.warn("[ER] cloudPush:", e); }
+    // Dev-/Test-Umgebung: Ranglisten-Felder NICHT schreiben (merge lässt evtl. echte Live-Werte unberührt).
+    // Auch die QUELLEN in stats.* entfernen, sonst laesst sich lb spaeter daraus rekonstruieren.
+    if (istDevUmgebung()) {
+      LB_CLOUD_FELDER.forEach(function (k) { delete doc[k]; });
+      if (doc.stats && typeof doc.stats === "object") { var sc = Object.assign({}, doc.stats); LB_STATS_FELDER.forEach(function (k) { delete sc[k]; }); doc.stats = sc; }
+    }
+    // Schreiben mit EINEM Retry: schlägt der erste Push fehl (Netz/Token-Hänger), nach 4s nochmal —
+    // sonst ginge z.B. ein frischer Spiel-Abschluss still verloren (nur console.warn, kein erneuter Versuch).
+    try {
+      var ref = fbDB.collection("users").doc(currentUser.uid);
+      ref.set(doc, { merge: true }).catch(function (e) {
+        console.warn("[ER] cloudPush (1. Versuch):", e);
+        setTimeout(function () { try { if (currentUser) ref.set(doc, { merge: true }).catch(function (e2) { console.warn("[ER] cloudPush (Retry):", e2); }); } catch (_) {} }, 4000);
+      });
+    } catch (e) { console.warn("[ER] cloudPush:", e); }
   }
 
   function cloudSyncOnLogin() {
@@ -896,6 +1229,14 @@
               else if (!(kk in localObj)) mergedObj[kk] = cloudObj[kk];
             });
             merged[k] = mergedObj;
+          } else if (k === "classFeats") {
+            // verschachtelt: pro Klasse vereinen (Cloud ∪ Lokal), true gewinnt
+            var lf = local.classFeats || {}, cf = cs.classFeats || {};
+            var outFeats = {};
+            Object.keys(cf).concat(Object.keys(lf)).forEach(function (kk) {
+              outFeats[kk] = Object.assign({}, cf[kk] || {}, lf[kk] || {});
+            });
+            merged.classFeats = outFeats;
           } else if (k === "patchBest") {
             merged.patchBest = mergePatchBest(local.patchBest || {}, cs.patchBest || {});
           } else if (k === "hardNoDeath") {

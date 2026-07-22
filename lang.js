@@ -133,7 +133,7 @@
       tower_guide_l2: "<b>Ein Leben:</b> Stirbst du, ist der Aufstieg vorbei – Neustart ab Etage 1. Deine HP tragen zwischen den Etagen mit.",
       tower_guide_l3: "<b>Nach jedem Boss</b> gewährt dir Melina einen dauerhaften Segen (Schaden, Max-HP, Flakon, Ausweichen …). Alle 5 Etagen aktivierst du zusätzlich eine <b>Große Rune</b>.",
       tower_guide_l4: "<b>Verhängnis-Etagen</b> (30 %): ein Fluch gilt für die <b>ganze Etage</b> – z.&nbsp;B. zähere Gegner, Scharlachfäule oder halbe Flakons. Wird oben angezeigt.",
-      tower_guide_l5: "<b>Etage 20: Promised Consort Radahn</b> – bezwinge ihn und werde Meister des Turms.",
+      tower_guide_l5: "<b>Etage 20: Baby PCR</b> – bezwinge ihn und werde Meister des Turms.",
       tower_guide_l6: "Der Turm ist <b>brutal</b>: Du brauchst einen gut gelevelten Charakter (Roundtable) und etwas Glück. Deine Roundtable-Upgrades zählen voll.",
       tower_guide_start: "Turm betreten ⚔️",
       tower_guide_close: "Zurück",
@@ -172,13 +172,13 @@
       quest_opt_roll_sub: "Hebt deine Ausweich-Rolle auf 65% an (Hard Cap: 75%).",
 
       // Boss Defeat Text Blocks
-      boss_godrick_win: "Godrick ist zerschmettert!\nDu erbeutest seine Große Rune.\n\nEin neuer Pfad öffnet sich: Das vom Scharlach verrottete Ödland... CAELID!",
-      boss_radahn_win: "Du hast Radahn bezwungen!\nDas Schicksal setzt sich wieder in Bewegung.\n\nDein nächstes Ziel ist die goldene Hauptstadt... LEYNDELL!",
-      boss_morgott_win: "Morgott löst sich in Goldstaub auf!\nDu erhältst Morgotts Große Rune (Verdoppelt dein maximales Leben).\n\nDer Weg führt dich nun hinauf in die eisigen, gefährlichen Höhen...\nMOUNTAINTOPS OF THE GIANTS!",
-      boss_giant_win: "Der letzte Riese bricht im Schnee zusammen!\n\n🎒 Dein Waffen-Lager fasst ab jetzt 2 Waffen!\n\nEin Riss im Raum wirft dich in das zerfallende, zeitlose Himmelsreich...\nCRUMBLING FARUM AZULA!",
-      boss_maliketh_win: "Maliketh ist gefallen. Die Rune des Todes ist entfesselt!\n\n💍 Du kannst ab jetzt einen 4. Talisman tragen!\n\nDie Hauptstadt brennt. Kehre zurück zur Aschehauptstadt!",
-      boss_gideon_win: "Gideon wurde zum Schweigen gebracht.\n\nDer Weg zum Eldenthron ist frei. Mach dich bereit für den finalen Aufstieg!",
-      boss_godfrey_win: "Godfrey hat dir Respekt gezollt und ist gefallen.\n\nDu spürst eine letzte rettende Gnade vor dir, bevor du das Innere des Erdenbaums betrittst...",
+      boss_godrick_win: "",
+      boss_radahn_win: "",
+      boss_morgott_win: "",
+      boss_giant_win: "",
+      boss_maliketh_win: "",
+      boss_gideon_win: "",
+      boss_godfrey_win: "",
       boss_beast_win: "GOTT GESCHLACHTET.\n\nDu hast die Goldene Ordnung bezwungen und die Scherben vereint. Du bist der neue Elden Lord! GGG!",
       enemy_elite_win: "Der Wächter schwindet.\nDeine maximale Lebenskraft erhöht sich um +10% (+{hp} HP)!",
       enemy_skeleton_win: "Das Skelett zerbröselt zu wirrer Asche. Der Weg ist frei!",
@@ -214,6 +214,20 @@
       no_armor: "Keine Rüstung",
       status_heading: "STATUS",
 
+      // Seed-System & Ergebnis teilen
+      seed_label: "Seed",
+      seed_placeholder: "Seed eingeben…",
+      seed_apply: "Übernehmen",
+      seed_run_warn: "Seed-Run: Achievements, Fortschritt, Bestenlisten & Seelen sind deaktiviert.",
+      seed_badge: "Seed-Run — zählt nicht",
+      daily_fair_warn: "Täglicher Seed: alle Roundtable-Upgrades & -Ausrüstung deaktiviert — faire Rangliste für alle.",
+      daily_badge: "Täglicher Seed — fair (Roundtable aus)",
+      seed_copied: "Seed-Link kopiert!",
+      share_result: "Ergebnis kopieren",
+      share_copied: "✓ Kopiert!",
+      share_fallen: "Gefallen in",
+      share_victory: "ELDEN LORD",
+
       // Hard Mode & Challenge Achievements
       ach_complete_10_nm: "Veteran", ach_complete_10_ds: "Schließe 10 Runs ab.",
       ach_complete_25_nm: "Legende", ach_complete_25_ds: "Schließe 25 Runs ab.",
@@ -248,6 +262,11 @@
       node_17: "Etwas glitzert im seichten Wasser…",
       node_18: "Eine vermummte Gestalt wartet am Wegesrand…",
       node_19: "Jump and Run voraus! Der Boden wirkt brüchig…",
+      node_20: "Ein uralter Torbogen. Was passiert wohl, wenn man hindurchspringt?",
+      node_21: "Das ist kein Baum. Etwas mit viel zu vielen Fingern kauert dort und wartet.",
+      node_22: "Eine gesichtslose steinerne Statue. Man könnte davor niederknien.",
+      node_23: "Ein rostiger Hebel, tief in die Mauer getrieben. Er sieht aus, als würde er etwas Großes bewegen.",
+      node_24: "Ein gewaltiger Finger ragt aus dem Boden. Blas hinein, damit er erklingt (zählt Richtung Metyr).",
       tal_desc_katze: "Verringert Fallschaden erheblich. Wirkt im Kampf… nutzlos.",
       tal_langschwanzkatzen_talisman: "Langschwanzkatzen-Talisman",
       fortress_victory_title: "🏰 Festung erobert!",
@@ -292,12 +311,15 @@
       lb_mode_hard: "Hard",
       lb_cat_normal: "Normal",
       lb_cat_hard: "Hard",
+      lb_cat_daily: "🎲 Täglich",
+      lb_cat_idle: "⚔️ Elden Idle",
       lb_cat_tower: "Battle Tower",
       lb_cat_speedrun: "Speedrun",
       lb_cat_completionist: "100% Club",
       lb_th_time: "Zeit",
       lb_th_date: "Erreicht am",
       lb_th_achievements: "Erfolge",
+      lb_th_mode: "Modus",
 
       talisman_found_title: "Friedhof geplündert!",
       talisman_cursed_title: "Verfluchter Talisman!",
@@ -563,7 +585,7 @@
       tower_guide_l2: "<b>One life:</b> if you die, the ascent is over — restart from floor 1. Your HP carries between floors.",
       tower_guide_l3: "<b>After every boss</b> Melina grants a permanent blessing (damage, max HP, flask, dodge …). Every 5 floors you also activate a <b>Great Rune</b>.",
       tower_guide_l4: "<b>Curse floors</b> (30%): a curse applies to the <b>whole floor</b> — e.g. tougher enemies, Scarlet Rot or half flasks. Shown at the top.",
-      tower_guide_l5: "<b>Floor 20: Promised Consort Radahn</b> — defeat him to become Master of the Tower.",
+      tower_guide_l5: "<b>Floor 20: Baby PCR</b> — defeat him to become Master of the Tower.",
       tower_guide_l6: "The tower is <b>brutal</b>: you need a well-leveled character (Roundtable) and a bit of luck. Your Roundtable upgrades carry in fully.",
       tower_guide_start: "Enter the Tower ⚔️",
       tower_guide_close: "Back",
@@ -602,13 +624,13 @@
       quest_opt_roll_sub: "Sets base dodge roll to 65% (hard cap: 75%).",
 
       // Boss Defeat Text Blocks
-      boss_godrick_win: "Godrick is shattered!\nYou claim his Great Rune.\n\nA new pathway opens into the scarlet-rotted blighted wastes... CAELID!",
-      boss_radahn_win: "Starscourge Radahn has been conquered!\nThe stars align, and fate resumes its course.\n\nYour next destination is the golden capital... LEYNDELL!",
-      boss_morgott_win: "Morgott dissolves into golden dust!\nYou receive Morgott's Great Rune (Doubles your maximum life force).\n\nThe path leads up into the frozen, dangerous heights... MOUNTAINTOPS OF THE GIANTS!",
-      boss_giant_win: "The last Giant collapses into the snow!\n\n🎒 Your weapon storage capacity expanded to 2 slots!\n\nA fracture in space hurls you into the crumbling, timeless sky realm... CRUMBLING FARUM AZULA!",
-      boss_maliketh_win: "Maliketh has fallen. Destined Death is unleashed!\n\n💍 You can now equip a 4th Talisman slot!\n\nThe Royal Capital burns. Return to the Capital of Ash!",
-      boss_gideon_win: "Sir Gideon Ofnir has been silenced.\n\nThe path to the Elden Throne is clear. Prepare for the final ascent!",
-      boss_godfrey_win: "Godfrey has granted you his respect and perished.\n\nA final guiding grace awaits right outside the Erdtree core...",
+      boss_godrick_win: "",
+      boss_radahn_win: "",
+      boss_morgott_win: "",
+      boss_giant_win: "",
+      boss_maliketh_win: "",
+      boss_gideon_win: "",
+      boss_godfrey_win: "",
       boss_beast_win: "GOD SLAIN.\n\nYou have shattered the Golden Order and mended the Ring. You stand as the new Elden Lord! GGG!",
       enemy_elite_win: "The Guardian fades.\nYour maximum health increased by +10% (+{hp} HP)!",
       enemy_skeleton_win: "The skeleton crumbles to dust. The path is clear!",
@@ -644,6 +666,20 @@
       no_armor: "No Armor",
       status_heading: "STATUS",
 
+      // Seed system & sharing
+      seed_label: "Seed",
+      seed_placeholder: "Enter seed…",
+      seed_apply: "Apply",
+      seed_run_warn: "Seed run: achievements, progress, leaderboards & souls are disabled.",
+      seed_badge: "Seed run — doesn't count",
+      daily_fair_warn: "Daily seed: all Roundtable upgrades & gear are disabled — a fair leaderboard for everyone.",
+      daily_badge: "Daily seed — fair (Roundtable off)",
+      seed_copied: "Seed link copied!",
+      share_result: "Copy result",
+      share_copied: "✓ Copied!",
+      share_fallen: "Fallen in",
+      share_victory: "ELDEN LORD",
+
       // Hard Mode & Challenge Achievements
       ach_complete_10_nm: "Veteran", ach_complete_10_ds: "Complete 10 runs.",
       ach_complete_25_nm: "Legend", ach_complete_25_ds: "Complete 25 runs.",
@@ -678,6 +714,11 @@
       node_17: "Something glitters in the shallow water…",
       node_18: "A hooded figure waits by the wayside…",
       node_19: "Jump and Run ahead! The ground looks brittle…",
+      node_20: "An ancient archway. What might happen if you leap through it?",
+      node_21: "That is not a tree. Something with far too many fingers crouches there, waiting.",
+      node_22: "A faceless stone statue. One could kneel before it.",
+      node_23: "A rusted lever driven deep into the wall. It looks like it moves something big.",
+      node_24: "A giant finger juts from the ground. Blow into it to make it sound (counts toward Metyr).",
       tal_desc_katze: "Greatly reduces fall damage. Utterly useless in combat… it seems.",
       tal_langschwanzkatzen_talisman: "Longtail Cat Talisman",
       fortress_victory_title: "🏰 Fortress Conquered!",
@@ -722,12 +763,15 @@
       lb_mode_hard: "Hard",
       lb_cat_normal: "Normal",
       lb_cat_hard: "Hard",
+      lb_cat_daily: "🎲 Daily",
+      lb_cat_idle: "⚔️ Elden Idle",
       lb_cat_tower: "Battle Tower",
       lb_cat_speedrun: "Speedrun",
       lb_cat_completionist: "100% Club",
       lb_th_time: "Time",
       lb_th_date: "Reached on",
       lb_th_achievements: "Feats",
+      lb_th_mode: "Mode",
 
       talisman_found_title: "Graveyard Plundered!",
       talisman_cursed_title: "Cursed Talisman!",
@@ -880,7 +924,8 @@
     },
     t: function (key, placeholders) {
       let dict = TRANSLATIONS[currentLang] || TRANSLATIONS["de"];
-      let text = dict[key] || TRANSLATIONS["de"][key] || key;
+      // Existenz statt Wahrheitswert prüfen: ein bewusst LEERER Text ("") soll leer bleiben, nicht auf den Key-Namen zurückfallen.
+      let text = (key in dict) ? dict[key] : ((key in TRANSLATIONS["de"]) ? TRANSLATIONS["de"][key] : key);
       if (placeholders) {
         Object.keys(placeholders).forEach(k => {
           text = text.replace(new RegExp(`{${k}}`, 'g'), placeholders[k]);

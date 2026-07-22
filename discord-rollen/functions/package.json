@@ -1,0 +1,12 @@
+{
+  "name": "elden-rogue-discord-rollen",
+  "description": "Discord-Rollen für Elden-Rogue-Achievements (Firebase Cloud Function)",
+  "main": "index.js",
+  "engines": { "node": "20" },
+  "dependencies": {
+    "discord-interactions": "^4.1.0",
+    "firebase-admin": "^12.7.0",
+    "firebase-functions": "^6.1.0"
+  },
+  "private": true
+}

@@ -2,6 +2,7 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Elden Rogue - Spielbereich</title>
   <link rel="icon" href="favicon.ico">
   <link rel="icon" type="image/png" href="images/icons/favicon.png?v=18">
@@ -11,8 +12,8 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-  <script src="lang.js?v=1.5.38"></script>
-  <script src="eldenrogue-online.js?v=1.5.38"></script>
+  <script src="lang.js?v=1.5.37"></script>
+  <script src="eldenrogue-online.js?v=1.5.37"></script>
   <style>
     /* Lokale Font-Einbindung aus dem fonts-Ordner */
     @font-face {
@@ -168,10 +169,11 @@ h1, h2, h3, .btn-menu, .btn-combat, .btn-social, .game-author-tag, #region-displ
       position: relative;
     }
 
-    #map-grid { 
+    #map-grid {
       display: flex; flex-direction: column-reverse; justify-content: space-between;
       height: 94%; width: 100%; max-width: 750px; position: relative; z-index: 10;
     }
+    #map-grid.map-descend { flex-direction: column; }   /* Messmer-Abstieg: Start oben, Boss unten */
     .map-row { display: flex; justify-content: space-around; width: 100%; position: relative; padding: 5px 0; }
 
     .map-node {
@@ -326,7 +328,7 @@ h1, h2, h3, .btn-menu, .btn-combat, .btn-social, .game-author-tag, #region-displ
     .enemy-progress::-webkit-progress-bar { background-color: #1a1a1a; }
     .enemy-progress::-webkit-progress-value { background-color: #922b21; }
 
-    .btn-combat { padding: 14px 32px; font-family: 'Mantinia', serif; font-size: 1rem; font-weight: bold; cursor: pointer; border-radius: 3px; margin: 6px; transition: all 0.2s cubic-bezier(0.25, 1, 0.5, 1); text-transform: uppercase; letter-spacing: 2px; }
+    .btn-combat { padding: 14px 32px; font-family: 'Mantinia', serif; font-size: 1rem; font-weight: bold; cursor: pointer; border-radius: 3px; margin: 6px; transition: transform 0.15s ease, box-shadow 0.15s ease; text-transform: uppercase; letter-spacing: 2px; }
     #atk-btn.btn-combat { background-color: #2c2214; color: var(--gold); border: 1px solid var(--gold); }
     #atk-btn.btn-combat:hover { background-color: var(--gold); color: #0b0b0b; box-shadow: 0 0 20px rgba(205, 163, 79, 0.5); transform: translateY(-2px); }
     .btn-heal { background-color: #141f19; color: #2ecc71; border: 1px solid #27ae60; }
@@ -337,6 +339,11 @@ h1, h2, h3, .btn-menu, .btn-combat, .btn-social, .game-author-tag, #region-displ
     .battle-buttons .btn-combat { flex: 1 1 0; max-width: 240px; margin: 6px 0; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
     
     .btn-combat:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; box-shadow: none !important; background-color: #111 !important; color: #555 !important; border-color: #333 !important; }
+    /* Haltungs-/Stagger-Balken am Gegner (Rauten füllen sich mit jedem Treffer) */
+    .stagger-meter { display: flex; align-items: center; justify-content: center; gap: 4px; margin: 3px 0 6px; }
+    .stagger-lbl { font-family: sans-serif; font-size: 0.55rem; letter-spacing: 1.5px; color: #b0742a; margin-right: 4px; font-weight: bold; }
+    .stagger-pip { width: 12px; height: 12px; transform: rotate(45deg); border: 1px solid #6a4a1c; background: rgba(40,30,15,0.6); border-radius: 2px; transition: all 0.15s ease; }
+    .stagger-pip.on { background: linear-gradient(135deg, #ffcf5a, #e6952a); border-color: #ffcf5a; box-shadow: 0 0 8px rgba(243,156,18,0.85); }
 
     button.btn-modal-action { background-color: #2c2214; color: var(--gold); border: 1px solid var(--gold); padding: 10px 24px; font-family: 'Mantinia', serif; font-weight: bold; cursor: pointer; margin-top: 15px; text-transform: uppercase; letter-spacing: 1px; }
     button.btn-modal-action:hover { background-color: var(--gold); color: #111; }
@@ -387,6 +394,61 @@ h1, h2, h3, .btn-menu, .btn-combat, .btn-social, .game-author-tag, #region-displ
     .ach-toast .ach-name { font-family: 'Mantinia', serif; color: #f4eddb; font-size: 1.05rem; letter-spacing: 1px; }
     .ach-toast .ach-desc { font-size: 0.74rem; color: #9a8f78; font-family: sans-serif; margin-top: 2px; }
     #challenge-badge { position: absolute; top: 16px; left: 16px; z-index: 50; background: rgba(8,8,8,0.82); border: 1px solid #e74c3c; border-radius: 4px; padding: 5px 16px; font-size: 0.72rem; font-family: sans-serif; color: #e74c3c; font-weight: bold; letter-spacing: 1.5px; text-transform: uppercase; backdrop-filter: blur(2px); }
+    /* Seed-Anzeige als Badge links oben über der Karte (Klick = Seed-Link kopieren) */
+    #seed-display { position: absolute; top: 16px; left: 16px; z-index: 50; background: rgba(8,8,8,0.72); border: 1px solid var(--border-color); border-radius: 6px; padding: 8px 16px; font-size: 0.82rem; font-family: sans-serif; color: #8a7f68; letter-spacing: 1px; cursor: pointer; text-transform: none; backdrop-filter: blur(2px); transition: border-color 0.2s ease; }
+    #seed-display:hover { border-color: var(--gold-dark); color: #b3a888; }
+    #game-container.pre-run #seed-display { display: none; }
+    #challenge-badge { top: 58px; }   /* rutscht unter das Seed-Badge */
+    #seed-badge { position: absolute; top: 58px; left: 16px; z-index: 50; background: rgba(8,8,8,0.6); border: 1px solid var(--gold-dark); border-radius: 5px; padding: 4px 11px; font-size: 0.58rem; font-family: sans-serif; color: #9a8a5a; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; backdrop-filter: blur(2px); opacity: 0.9; }
+
+    /* Seitenleiste ohne Scrollen: bei niedrigeren Fenstern wird der Inhalt stufenweise kompakter */
+    @media (max-height: 1020px) {
+      .side-panel { gap: 4px; padding: 8px 10px; }
+      .side-panel .player-card { padding: 6px 8px; }
+      #run-timer { margin-bottom: 2px; font-size: 0.85rem; }
+      .weapon-img-box { width: 62px; height: 62px; }
+      .weapon-name-line { font-size: 0.85rem; }
+      .estus-display { width: 36px; height: 42px; }
+      .talisman-img-slot { width: 38px; height: 38px; }
+      .mini-rune-slot { width: 38px; height: 38px; }
+      .mini-rune-preview-box { width: 29px; height: 29px; }
+      .talisman-img-row { gap: 9px; margin-top: 4px; }
+      .mini-runen-container { gap: 10px; }
+      .backpack-slot { padding: 7px 5px; font-size: 0.72rem; }
+      #medal-left, #medal-right, #medal-mohg { width: 34px !important; height: 34px !important; }
+      .btn-reset, .btn-back-menu { padding: 5px; font-size: 0.78rem; }
+      .btn-social { padding: 5px; font-size: 0.72rem; }
+    }
+    @media (max-height: 870px) {
+      .side-panel { gap: 3px; padding: 6px 8px; }
+      .weapon-img-box { width: 48px; height: 48px; }
+      .weapon-dmg-line { font-size: 0.7rem; }
+      .talisman-img-slot, .mini-rune-slot { width: 31px; height: 31px; }
+      .mini-rune-preview-box { width: 23px; height: 23px; }
+      #medal-left, #medal-right, #medal-mohg { width: 28px !important; height: 28px !important; }
+      .backpack-slot { padding: 5px 4px; font-size: 0.66rem; }
+      .weapon-storage-slot { padding: 5px; font-size: 0.72rem; }
+      .side-panel progress { height: 9px; margin: 4px 0; }
+      #ui-status-heading { font-size: 0.72rem !important; margin-bottom: 2px !important; padding-bottom: 2px !important; }
+      /* Twitch & Discord teilen sich eine Zeile */
+      .btn-social { display: inline-block; width: calc(50% - 3px); font-size: 0.62rem; padding: 5px 2px; }
+    }
+    @media (max-height: 740px) {
+      #ui-status-heading { display: none !important; }
+      #run-timer { font-size: 0.75rem; margin-bottom: 0; }
+      .vitals-row { margin-top: 4px; gap: 8px; }
+      .gear-row { margin-top: 4px; gap: 8px; }
+      .weapon-img-box { width: 40px; height: 40px; }
+      .weapon-name-line { font-size: 0.75rem; }
+      .dmg-type-icon { width: 20px; height: 20px; }
+      .dmg-type-icon img { width: 14px; height: 14px; }
+      .talisman-img-slot, .mini-rune-slot { width: 27px; height: 27px; }
+      .mini-rune-preview-box { width: 20px; height: 20px; }
+      #medal-left, #medal-right, #medal-mohg { width: 24px !important; height: 24px !important; }
+      .backpack-slot { padding: 4px 3px; font-size: 0.6rem; }
+      #quest-progress-text { font-size: 0.62rem !important; }
+      .btn-reset, .btn-back-menu { padding: 4px; font-size: 0.7rem; margin-top: 3px; }
+    }
     #tower-phase-box { position: absolute; top: 48px; left: 16px; z-index: 50; background: rgba(8,8,8,0.82); border: 1px solid #3a5f3a; border-radius: 4px; padding: 4px 12px; font-size: 0.62rem; font-family: sans-serif; color: #84b184; font-weight: bold; letter-spacing: 0.8px; text-transform: uppercase; backdrop-filter: blur(2px); max-width: 300px; line-height: 1.3; }
     .armor-removable { cursor: grab; }
     .armor-removable:active { cursor: grabbing; }
@@ -395,12 +457,136 @@ h1, h2, h3, .btn-menu, .btn-combat, .btn-social, .game-author-tag, #region-displ
     .region-info-icon:hover { border-color: var(--gold); background: rgba(205,163,79,0.18); box-shadow: 0 0 10px rgba(205,163,79,0.3); }
     @keyframes achIn { to { transform: translateX(0); } }
     @keyframes achOut { to { transform: translateX(120%); opacity: 0; } }
+    .battle-arena { position: relative; }
+
+    /* ===== DLC Abgrundwald: Nebel-Karte (Icons pechschwarz) & Wahnsinn ===== */
+    .abyss-fog .map-node { opacity: 0.16; border-color: #1c1c22; box-shadow: none; }
+    .abyss-fog .map-node .map-node-img, .abyss-fog .map-node .map-node-boss-img { filter: brightness(0); }   /* alle Icons pechschwarz */
+    .abyss-fog .map-node.selectable { opacity: 0.32; border-color: #3a3a46; box-shadow: none; }
+    /* Rauh-Geheimpfad: golden pulsierendes, bereits betretenes Feld */
+    .map-node.gold-pfad { border-color: var(--gold) !important; box-shadow: 0 0 14px 3px rgba(205,163,79,0.85), inset 0 0 10px rgba(205,163,79,0.5) !important; animation: goldPuls 1.8s ease-in-out infinite; }
+    @keyframes goldPuls { 0%,100% { box-shadow: 0 0 10px 2px rgba(205,163,79,0.65), inset 0 0 8px rgba(205,163,79,0.4); } 50% { box-shadow: 0 0 20px 5px rgba(230,190,90,1), inset 0 0 14px rgba(230,190,90,0.6); } }
+    /* ===== DLC Fingerruinen: 10×10-Gitter ===== */
+    .fr-wrap { max-width: 560px; margin: 0 auto; padding: 6px; }
+    .fr-head { text-align: center; font-family: 'Mantinia', serif; color: #cdbfa3; letter-spacing: 1px; font-size: 0.95rem; margin-bottom: 12px; }
+    .fr-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; }
+    .fr-cell { aspect-ratio: 1/1; border: 1px solid #2b2740; border-radius: 4px; background: rgba(20,18,34,0.55); display: flex; align-items: center; justify-content: center; font-size: 0.9rem; cursor: default; transition: all 0.15s; }
+    .fr-cell.fr-reach { border-color: #6b6486; background: rgba(80,74,120,0.35); cursor: pointer; box-shadow: 0 0 8px rgba(120,110,180,0.4); }
+    .fr-cell.fr-reach:hover { background: rgba(120,110,180,0.55); border-color: #a99fd0; }
+    .fr-cell.fr-here { border-color: var(--gold); background: rgba(205,163,79,0.25); box-shadow: 0 0 12px rgba(205,163,79,0.7); }
+    .fr-cell.fr-visited { border-color: #23202f; background: rgba(10,9,16,0.7); opacity: 0.5; }
+    .fr-cell.fr-visited::after { content: "·"; color: #4a4560; font-size: 1.1rem; }
+    .fr-cell .fr-me { width: 78%; height: 78%; object-fit: contain; }
+    .fr-cell.fr-finger { font-size: 1.15rem; border-color: #8a6a2a; background: rgba(90,66,20,0.4); box-shadow: 0 0 10px rgba(200,150,60,0.5); }
+    .fr-cell.fr-finger.blown { filter: grayscale(1) brightness(0.6); box-shadow: none; border-color: #3a3a46; }
+    .fr-cell.fr-metyr { border-color: #4a3a6a; background: rgba(40,28,66,0.6); overflow: hidden; }
+    .fr-cell.fr-metyr .fr-metyr-img { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.25) grayscale(0.6); }
+    .fr-cell.fr-metyr.lit { border-color: #d16aff; box-shadow: 0 0 16px 4px rgba(180,90,240,0.85); animation: goldPuls 1.6s ease-in-out infinite; }
+    .fr-cell.fr-metyr.lit .fr-metyr-img { filter: brightness(1); }
+    .fr-cell.fr-wurm { border-color: #4d6b3a; background: rgba(40,60,28,0.45); overflow: hidden; }
+    .fr-cell.fr-wurm .fr-wurm-img { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.75) saturate(0.8); }
+    .fr-cell.fr-wurm.fr-reach { box-shadow: 0 0 10px rgba(140,190,90,0.5); }
+    .fr-cell.fr-wurm.slain { filter: grayscale(1) brightness(0.45); border-color: #2c2c34; box-shadow: none; }
+    .enemy-casting { filter: drop-shadow(0 0 14px rgba(150,90,220,0.95)) brightness(1.25); transform: scale(1.06); transition: all 0.2s; }
+
+    /* ===== DLC: Festung von Messmer kippt (Schalter oben) ===== */
+    .festung-kippt { animation: festungDreht 1.4s cubic-bezier(0.6, 0, 0.35, 1) 1; transform-origin: center center; }
+    @keyframes festungDreht {
+      0%   { transform: rotate(0deg)   scale(1);    filter: none; }
+      45%  { transform: rotate(178deg) scale(0.72); filter: brightness(0.35) hue-rotate(-25deg); }
+      100% { transform: rotate(360deg) scale(1);    filter: none; }
+    }
+    .fr-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 16px; }
+    .fr-actions .fr-blow { border-color: #b8912f; color: var(--gold); }
+    .fr-actions .fr-reset { border-color: #555; color: #bbb; }
+    .abyss-fog .map-node.current-pos { opacity: 0.6; }
+    .abyss-fog .map-node.completed { opacity: 0.3; }
+    .abyss-fog .map-node::after { display: none; }              /* keine Tooltips — man erkennt die Knoten kaum */
+    .abyss-fog #map-lines { opacity: 0.18; }
+    /* Der richtige Weg gibt KEINEN Hinweis — alle Knoten sehen gleich (schwarz) aus. Nur Trial & Error. */
+    /* aufgedeckter Fehltritt: der Wahnsinns-Knoten (Aging Untouchable) leuchtet voll auf */
+    .abyss-fog .map-node.wahn-knoten { opacity: 1 !important; border-color: #d1a33a; box-shadow: 0 0 16px rgba(209,163,58,0.55); }
+    .abyss-fog .map-node.wahn-knoten .map-node-img { filter: none !important; }
+
+    /* ===== DLC: Wahnsinns-Balken (ER-Stil) oben links über der Karte ===== */
+    #madness-overlay { position: absolute; top: 52px; left: 16px; z-index: 55; width: 210px; background: rgba(8,6,4,0.82); border: 1px solid #7a5a12; border-radius: 5px; padding: 6px 9px; backdrop-filter: blur(2px); display: none; }
+    #madness-overlay .mad-head { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+    #madness-overlay .mad-head img { width: 18px; height: 18px; object-fit: contain; }
+    #madness-overlay .mad-head span { font-family: sans-serif; font-size: 0.62rem; letter-spacing: 1.5px; text-transform: uppercase; color: #e0b23a; font-weight: bold; }
+    #madness-track { position: relative; height: 11px; background: #1a1206; border: 1px solid #4a380f; border-radius: 2px; overflow: hidden; }
+    #madness-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #a8720e, #f2c53a, #ffe07a); box-shadow: 0 0 8px rgba(242,197,58,0.6); transition: width 0.45s ease; }
+    #madness-fill.crit { animation: madPulse 0.6s ease-in-out infinite; }
+    @keyframes madPulse { 0%,100% { filter: brightness(1); } 50% { filter: brightness(1.5); } }
+    /* Scharlachfäule-Chip (Ruinen von Rauh) */
+    #rot-chip { position: absolute; top: 52px; left: 16px; z-index: 55; background: rgba(20,4,6,0.85); border: 1px solid #7a1520; border-radius: 5px; padding: 5px 11px; font-family: sans-serif; font-size: 0.66rem; letter-spacing: 0.5px; color: #e06a6a; backdrop-filter: blur(2px); display: none; }
+
+    /* ===== MOBILE: Status-Button & ausklappbare Seitenleiste ===== */
+    #mobile-status-toggle { display: none; position: fixed; top: 8px; left: 8px; z-index: 710;
+      background: rgba(8,8,8,0.92); border: 1px solid var(--gold-dark); color: var(--gold);
+      border-radius: 5px; padding: 9px 14px; font-family: 'Mantinia', serif; font-size: 0.8rem;
+      letter-spacing: 1px; cursor: pointer; align-items: center; gap: 6px; text-transform: uppercase; }
+    #mobile-panel-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 690; }
+    #game-container.pre-run #mobile-status-toggle { display: none !important; }
+
+    @media (max-width: 860px) {
+      .side-panel {
+        position: fixed; top: 0; left: 0; height: 100dvh; width: min(84vw, 340px);
+        z-index: 700; transform: translateX(-105%); transition: transform 0.25s ease;
+        border-right: 1px solid var(--gold-dark); box-shadow: 8px 0 30px rgba(0,0,0,0.8);
+      }
+      .side-panel.mobile-open { transform: translateX(0); }
+      /* Desktop-Sonderregel (Popup + Seitenleiste nebeneinander) auf Mobile neutralisieren */
+      #popup-overlay[style*="flex"] ~ .side-panel.left-panel { position: fixed; }
+      #mobile-status-toggle { display: flex; }
+
+      .main-panel { width: 100%; padding: 8px; padding-top: 48px; }
+      .main-panel h1 { font-size: 1.05rem; letter-spacing: 3px; }
+      .game-author-tag { display: none; }
+      #region-badge { top: 8px; right: 8px; padding: 4px 9px; }
+      #challenge-badge { top: 8px; left: auto; right: 8px; margin-top: 42px; padding: 4px 9px; font-size: 0.6rem; }
+      #seed-display { top: 52px; left: 8px; padding: 6px 12px; font-size: 0.72rem; }
+      #seed-badge { top: 84px; left: 8px; padding: 4px 9px; font-size: 0.6rem; }
+
+      .map-node { width: 54px; height: 54px; }
+      .map-node.boss-node { width: 64px; height: 64px; }
+      .map-node.completed::before { font-size: 1.2rem; }
+      .map-node::after { display: none; } /* Hover-Tooltips gibt es auf Touch nicht — nur Überdeckung */
+
+      .battle-arena { padding: 10px; height: auto; }
+      .fighters-container { padding: 0 2px; margin-bottom: 10px; }
+      .fighter-wrapper { width: 47%; padding: 8px 6px; box-sizing: border-box; }
+      .combat-sprite-frame { height: 130px; margin-bottom: 6px; }
+      .battle-arena progress { height: 18px; }
+      #battle-controls { padding: 10px; }
+      #battle-log { font-size: 0.82rem; min-height: 40px; margin-bottom: 8px; }
+      .btn-combat { padding: 12px 8px; font-size: 0.85rem; letter-spacing: 1px; }
+      .stagger-badge { font-size: 0.7rem; padding: 5px 10px; top: -14px; }
+
+      .modal-content { width: 92%; padding: 20px 14px; max-height: 88dvh; overflow-y: auto; box-sizing: border-box; }
+      .modal-content.klassen-modal { width: 92%; }
+      .class-selection { flex-direction: column; gap: 12px; margin-top: 14px; }
+      .class-card:hover { transform: none; }
+      .class-card-art { height: 150px; }
+    }
   </style>
 </head>
 <body>
 
 <div id="game-container" class="pre-run">
-  
+
+  <button id="mobile-status-toggle" onclick="toggleMobilePanel()">☰ <span id="ui-mobile-status">Status</span></button>
+  <div id="mobile-panel-backdrop" onclick="toggleMobilePanel(false)"></div>
+  <script>
+    function toggleMobilePanel(force) {
+      var p = document.querySelector('.side-panel.left-panel');
+      var b = document.getElementById('mobile-panel-backdrop');
+      if (!p) return;
+      var open = (typeof force === 'boolean') ? force : !p.classList.contains('mobile-open');
+      p.classList.toggle('mobile-open', open);
+      if (b) b.style.display = open ? 'block' : 'none';
+    }
+  </script>
+
   <div id="popup-overlay" class="modal-overlay">
     <div class="modal-content" id="popup-content"></div>
   </div>
@@ -408,8 +594,10 @@ h1, h2, h3, .btn-menu, .btn-combat, .btn-social, .game-author-tag, #region-displ
   <div id="death-screen">
     <div class="death-text" id="ui-death-title">DU BIST GESTORBEN</div>
     <div class="death-souls" id="death-souls-line" style="color:#cda34f; font-family:sans-serif; margin:6px 0 14px; font-size:1rem; font-weight:bold;"></div>
+    <div id="death-login-warn" style="max-width:420px; margin:0 auto 12px;"></div>
     <div class="death-actions">
       <button class="death-btn" id="ui-btn-new-run-death" onclick="direktNeustarten()">Neuen Run starten</button>
+      <button class="death-btn" id="ui-btn-share-death" onclick="teileErgebnis(false, this)">Ergebnis kopieren</button>
       <a href="index.html" class="death-btn" id="ui-btn-main-menu-death">Hauptmenü</a>
     </div>
   </div>
@@ -532,7 +720,14 @@ h1, h2, h3, .btn-menu, .btn-combat, .btn-social, .game-author-tag, #region-displ
     <h1>ELDEN ROGUE</h1>
     <div class="game-author-tag" id="ui-author-tag">by Hoschi</div>
 
+    <div id="seed-display" onclick="kopiereSeed()" title="Seed-Link kopieren / Copy seed link"></div>
     <div id="challenge-badge" style="display:none;"></div>
+    <div id="seed-badge" style="display:none;"></div>
+    <div id="madness-overlay">
+      <div class="mad-head"><img src="images/icons/madness_status_effect_elden_ring_wiki_guide_100px.png" onerror="this.style.display='none'"><span>Wahnsinn <span id="madness-pct">0%</span></span></div>
+      <div id="madness-track"><div id="madness-fill"></div></div>
+    </div>
+    <div id="rot-chip"><img src="images/icons/scarlet_rot_status_effect_elden_ring_wiki_guide_100px.png" style="width:16px;height:16px;vertical-align:middle;margin-right:5px;" onerror="this.style.display='none'">Scharlachfäule — <b>−10% HP</b> je Knoten</div>
     <div id="tower-phase-box" style="display:none;"></div>
     <div id="region-badge">
       <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
@@ -571,6 +766,7 @@ h1, h2, h3, .btn-menu, .btn-combat, .btn-social, .game-author-tag, #region-displ
             <progress id="enemy-hp-bar" class="enemy-progress" value="100" max="100"></progress>
             <span id="arena-enemy-hp-text" class="bar-text-overlay">40 / 40</span>
           </div>
+          <div id="enemy-stagger-meter" class="stagger-meter" style="display:none;"></div>
           <div class="combat-sprite-frame">
             <img id="enemy-img" src="" alt="Gegner">
           </div>
@@ -626,6 +822,7 @@ const CONFIG = {
   estusHeilProzent: { normal: 0.35, hard: 0.25 },   // Anteil der Max-HP, den ein Flakon heilt
   ausweichenCap:    { normal: 0.75, hard: 0.65 },   // maximale Ausweichchance
   // --- Kampf ---
+  globalDifficulty:    1.15,                          // globaler Schwierigkeits-Multiplikator auf ALLEN eingehenden Gegnerschaden (~15% haerter, Normal + Hard)
   staggerTreffer:      { normal: 4, hard: 5 },       // Treffer, bis der Gegner taumelt
   staggerBonusSchaden: 1.3,                          // Schadensmultiplikator für den Treffer nach dem Stagger
   buffBonusProStack:   0.15,                         // Bonus je gestapeltem Rucksack-Buff (dmg / dodge / hp)
@@ -633,12 +830,18 @@ const CONFIG = {
   affinityBurst: { basis: 0.05, ab2Dungeons: 0.075, ab3Dungeons: 0.10 },
   // --- Beute ---
   waffenRarityShift: { proWaechter: 0.05, max: 0.40 }, // bessere Waffen-Chance je besiegtem Wächter
+  // --- Completion-Marks ---
+  speedrunMarkMs: 5 * 60 * 1000,   // "Blitz"-Mark auf der Klassen-Tafel: Run schneller als diese Zeit abschließen
   // --- Tower-Modus (endloser Aufstieg, Score = höchste Etage) ---
   tower: {
-    hpBasis: 85,  hpProEtage: 0.32,  hpExpo: 1.07,    // Gegner-HP = hpBasis * (1 + hpProEtage*(etage-1)) * hpExpo^(etage-1)
-    dmgBasis: 12, dmgProEtage: 0.17, dmgExpo: 1.045,  // Gegner-Schaden analog
-    kleinScaleBasis: 1.045, kleinScaleCap: 2.3,        // zusätzliche Skalierung der kleinen Knoten je Etage
-    hardFaktor: 1.35,                                  // zusätzlicher Multiplikator im Hard-Modus
+    // "Deutlich haerter"-Rework: der 1.15-Globalboost traf den Turm nie, und Melinas Segen
+    // (alle 5 Etagen) wuchsen schneller als die alten Gegner -> Turm war "sehr einfach".
+    // Schaden ~verdoppelt, HP ~+60%, damit Mitte/Ende wirklich beissen. Endboss-Schaden
+    // bleibt durch das x1.15-Finalecap (statt x1.6) threatening, aber kein Instant-Kill.
+    hpBasis: 95,  hpProEtage: 0.44,  hpExpo: 1.09,    // Gegner-HP = hpBasis * (1 + hpProEtage*(etage-1)) * hpExpo^(etage-1)
+    dmgBasis: 14, dmgProEtage: 0.28, dmgExpo: 1.088,  // Gegner-Schaden analog (haerter als zuvor)
+    kleinScaleBasis: 1.06, kleinScaleCap: 3.0,         // zusätzliche Skalierung der kleinen Knoten je Etage (halten laenger mit)
+    hardFaktor: 1.55,                                  // zusätzlicher Multiplikator im Hard-Modus
     minibossAlle: 5,                                   // jede 5. Etage ein Miniboss (mehr HP/Schaden)
     minibossHpMult: 1.9, minibossDmgMult: 1.4,
     heilProEtage: 0.25                                 // Anteil der Max-HP, der zwischen den Etagen geheilt wird
@@ -647,6 +850,88 @@ const CONFIG = {
 function diffVal(o){ return o[hardMode ? "hard" : "normal"]; }
 
 let activeChallenge = urlParams.get("challenge") || "";
+
+/* ============================================================
+   🎲 SEED-SYSTEM — deterministische Karte & Loot pro Run
+   Jeder Run hat einen Seed (teilbar als Link). Wird ein fremder
+   Seed eingegeben (?seed=XXX oder Eingabefeld), ist es ein
+   "Seed-Run": Achievements, Stats, Bestenlisten & Seelen sind aus.
+   Kampf-Würfe (Rolle, Schadensvarianz) bleiben bewusst echter Zufall.
+   ============================================================ */
+let seedRngCalls = 0; let __seedRngFn = null;
+function xmur3(str) { let h = 1779033703 ^ str.length; for (let i = 0; i < str.length; i++) { h = Math.imul(h ^ str.charCodeAt(i), 3432918353); h = (h << 13) | (h >>> 19); } return function () { h = Math.imul(h ^ (h >>> 16), 2246822507); h = Math.imul(h ^ (h >>> 13), 3266489909); return (h ^= h >>> 16) >>> 0; }; }
+function mulberry32(a) { return function () { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+function normalisiereSeed(s) { return String(s || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12); }
+function zufallsSeed() { const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; let s = ""; for (let i = 0; i < 6; i++) s += chars[Math.floor(Math.random() * chars.length)]; return s; }
+let __urlSeed = normalisiereSeed(urlParams.get("seed"));
+let runSeed = __urlSeed || zufallsSeed();
+let seedIsCustom = !!__urlSeed;
+function initSeedRng(skip) { __seedRngFn = mulberry32(xmur3(String(runSeed))()); seedRngCalls = 0; let n = skip || 0; for (let i = 0; i < n; i++) __seedRngFn(); seedRngCalls = n; }
+function srand() { if (!__seedRngFn) initSeedRng(0); seedRngCalls++; return __seedRngFn(); }
+function setzeSeed(s, custom) { runSeed = normalisiereSeed(s) || zufallsSeed(); seedIsCustom = !!custom; initSeedRng(0); if (window.ER && ER.setSeedRun) ER.setSeedRun(seedIsCustom); aktualisiereSeedAnzeige(); }
+initSeedRng(0);
+if (window.ER && ER.setSeedRun) ER.setSeedRun(seedIsCustom);
+function aktualisiereSeedAnzeige() {
+  let el = document.getElementById("seed-display");
+  if (el) el.innerHTML = 'SEED: <b style="color:var(--gold); letter-spacing:1px;">' + runSeed + '</b> ⧉';
+  let badge = document.getElementById("seed-badge");
+  if (badge) { badge.style.display = seedIsCustom ? "block" : "none"; badge.innerHTML = istDailySeedRun() ? ("🏆 " + t("daily_badge")) : ("🎲 " + t("seed_badge")); }
+}
+/* ===== Täglicher Seed – Wertung (identischer Algorithmus wie das Menü) ===== */
+function spielDailySeedStr() {
+  var d = new Date();
+  var key = "" + d.getUTCFullYear() + String(d.getUTCMonth() + 1).padStart(2, "0") + String(d.getUTCDate()).padStart(2, "0");
+  var h = 1779033703 ^ key.length;
+  for (var i = 0; i < key.length; i++) { h = Math.imul(h ^ key.charCodeAt(i), 3432918353); h = (h << 13) | (h >>> 19); }
+  var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", s = "";
+  for (var j = 0; j < 6; j++) { h = Math.imul(h ^ (h >>> 16), 2246822507); h >>>= 0; s += chars[h % 36]; }
+  return s;
+}
+// Läuft der aktuelle Run auf dem HEUTIGEN Tages-Seed? (egal ob per Button oder manuell eingegeben)
+// -> Roundtable-Upgrades werden dann deaktiviert, damit die Daily-Rangliste fair ist (alle mit Basis-Stats).
+function istDailySeedRun() {
+  try { return !!seedIsCustom && String(runSeed).toUpperCase() === spielDailySeedStr().toUpperCase(); } catch (e) { return false; }
+}
+let __dailyEingereicht = false;   // pro Run nur einmal in die Daily-Rangliste eintragen
+function pruefeDailyWertung() {
+  try {
+    if (__dailyEingereicht) return;
+    if (!seedIsCustom || !window.ER || !ER.submitDaily || !ER.computeScore) return;
+    if (String(runSeed).toUpperCase() !== spielDailySeedStr().toUpperCase()) return;   // nur der HEUTIGE Tages-Seed zählt für die Daily-Rangliste
+    __dailyEingereicht = true;
+    let run = {}; try { run = JSON.parse(localStorage.getItem("eldenRogueRun")) || {}; } catch (e) {}
+    let sc = ER.computeScore({ stage: runEbeneMax, bossScore: run.bossScore || 0, ripostes: run.ripostes || 0, weakHits: run.weakHits || 0, timeMs: runPlayMs, difficulty: hardMode ? "hard" : "normal" });
+    ER.submitDaily(ER.dailyKey ? ER.dailyKey() : null, runSeed, sc, { stage: runEbeneMax, bosses: runBosseGelegt, klasse: gewaehlteKlasse });
+  } catch (e) {}
+}
+function kopiereSeed() {
+  let link = window.location.origin + window.location.pathname + "?seed=" + runSeed + (hardMode ? "&mode=hard" : "");
+  try { navigator.clipboard.writeText(link); } catch (e) {}
+  let el = document.getElementById("seed-display");
+  if (el) { el.innerHTML = "✓ " + t("seed_copied"); setTimeout(aktualisiereSeedAnzeige, 1500); }
+}
+function uebernehmeSeedEingabe() {
+  let inp = document.getElementById("seed-input");
+  let val = normalisiereSeed(inp ? inp.value : "");
+  if (!val) return;
+  setzeSeed(val, true);
+  oeffneKlassenAuswahl();   // Karte & Klassenbildschirm mit dem neuen Seed neu würfeln
+}
+/* Ergebnis teilen (Wordle-Stil): Lauf-Fazit + Seed-Link in die Zwischenablage */
+function teileErgebnis(sieg, btn) {
+  let kl = ({ schwertkaempfer: t('class_vagabond'), samurai: t('class_samurai'), nackt: t('class_wretch') })[gewaehlteKlasse] || gewaehlteKlasse;
+  let modus = hardMode ? "Hard" : "Normal"; if (activeChallenge) modus += " · " + activeChallenge;
+  let ort = inSubDungeon ? t("region_catacombs") : aktuelleRegion;
+  let link = window.location.origin + window.location.pathname.replace(/[^\/]*$/, "game.html") + "?seed=" + runSeed + (hardMode ? "&mode=hard" : "");
+  let zeilen = [
+    "ELDEN ROGUE — " + (sieg ? ("👑 " + t('share_victory')) : ("☠ " + t('share_fallen') + " " + ort)),
+    kl + " · " + modus + " · Stage " + gibStageNummer() + " · ⏱ " + fmtRunTime(runPlayMs),
+    "🎲 Seed: " + runSeed,
+    link
+  ];
+  try { navigator.clipboard.writeText(zeilen.join("\n")); } catch (e) {}
+  if (btn) { let alt = btn.innerText; btn.innerText = t('share_copied'); setTimeout(function () { btn.innerText = alt; }, 1600); }
+}
 let spielerHp = 100; let spielerMaxHp = 100; let spielerFlasks = 3; let maxKlassenFlasks = 3; let estusHeilProzent = diffVal(CONFIG.estusHeilProzent); let gewaehlteKlasse = ""; let basisAusweichChance = 0.0;
 let waffenName = ""; let waffenSchaden = 0; let waffenUpgrade = 0;
 let waffenRaritaet = "common"; let waffenSchadensarten = ["Normal"];
@@ -664,6 +949,32 @@ let hatMohgMedaille = false;      // Reinblutrittermedaille (Sieg über Mohg, da
 let hatRyaKette = false;          // Ryas Halskette (Samurai-Geheimnis in Liurnia) — bei Rya abgeben schaltet den Pfad nach Gelmir frei
 let inSewers = false;             // in der Kanalisation der Hauptstadt (Mini-Ebene unter Leyndell)
 let gezaehlteBossKnoten = [];     // bereits für die Rangliste gezählte Boss-Knoten-IDs (verhindert Quit-Reload-Farmen)
+// --- DLC: Land des Schattens ---
+let torbogenSpruenge = 0;         // Gräberebene: Sprünge durch Torbögen (3 = Wolfsgeheul — Check für späteren Secret Boss)
+let wolfsgeheulGehoert = false;   // der Wolf hat geantwortet (Flag für den kommenden Secret Boss)
+let wahnsinn = 0;                 // Abgrundwald: WAHNSINN in % — jeder Griff des Aging Untouchable gibt +25, bei 100 ist der Run vorbei
+let untouchableRunden = 0;        // Runden im laufenden Untouchable-"Kampf"
+let rellanaGetroffen = false;     // Castle Ensis: wurde man im Rellana-Kampf getroffen? (hitless = Zugang zum Abgrundwald)
+let scharlachRot = false;         // Ruinen von Rauh: Scharlachfäule aktiv — jeder Knoten kostet 10% Max-HP
+let dlcWahlOffen = false;         // Mohg (2. Sieg) liegt: Wahl "Run vollenden" vs. "Miquellas Hand berühren" steht an
+// --- DLC: Fingerruinen & Metyr (Secret-Boss) ---
+let rauhGeheimIntakt = true;       // Rauh: läuft man EXAKT den geheimen Gold-Pfad (= Abgrundwald-Pfad)?
+let inFingerruinen = false;        // Fingerruinen-Modus (eigenes 10×10-Gitter statt Rautennetz)
+let fingerPos = 90;                // aktuelle Position im 10×10-Gitter (Start unten links = Reihe 9, Spalte 0 = Index 90)
+let fingerGeblasen = [];           // Indizes der bereits geblasenen Finger
+let fingerNodes = [];              // die 3 Finger-Knoten — pro Run an ZUFÄLLIGEN Orten (im Save gehalten)
+let fingerPfad = [90];             // besuchte Felder (Einbahn: nur hoch/rechts, kein Zurück)
+let hatGebetet = false;            // an der Statue in Messmers Abstieg gebetet -> schaltet den Garten frei
+let messmerGekippt = false;        // Schalter oben in der Festung gezogen -> Abstieg mit neuem Layout, Messmer unten
+let fingerWuermer = [];            // Gebiet der Finger: Kacheln mit einem Wurm-Gegner
+let fingerWuermerTot = [];         // davon bereits erschlagen
+let wurmBann = 0;              // Wurm-Spell aktiv -> die naechste Aktion des Spielers faellt aus
+// Die Finger Mimic ist ein echtes RUCKSACK-Item (Drop des Fingercreepers im Waldgebiet).
+// Sie ist der Schlüssel zum Gebiet der Finger (Metyr) — wer sie benutzt/wegwirft, verliert ihn.
+const FINGER_MIMIC = { type: "fingermimic", name: "Finger Mimic", desc: "Ein zuckender, abgetrennter Finger. Er fühlt sich… erwartungsvoll an.", icon: "🖐", bild: "images/icons/finger_mimic.webp" };
+function besitztFingerMimic(){ return backpackItems.some(function(i){ return i && i.type === "fingermimic"; }); }
+const FINGER_START = 90;           // unten links
+const FINGER_METYR = 9;            // oben rechts (Metyr)
 
 let playerHitsOnEnemy = 0;
 let enemyIsStaggered = false; let staggerVisualActive = false;
@@ -689,6 +1000,9 @@ function speichereRun() {
   try { tickTimer(); } catch(e) {}
   let save = {
     v: 1, hardMode: hardMode, challenge: activeChallenge, ts: Date.now(), runPlayMs: runPlayMs,
+    runSeed, seedIsCustom, seedRngCalls, runEbeneMax, runBosseGelegt,
+    torbogenSpruenge, wolfsgeheulGehoert, wahnsinn, untouchableRunden, rellanaGetroffen, scharlachRot, dlcWahlOffen,
+    rauhGeheimIntakt, inFingerruinen, fingerPos, fingerGeblasen, fingerNodes, fingerPfad, hatGebetet, messmerGekippt, fingerWuermer, fingerWuermerTot,
     spielerHp, spielerMaxHp, spielerFlasks, maxKlassenFlasks, estusHeilProzent,
     gewaehlteKlasse, basisAusweichChance, playerImageStr,
     waffenName, waffenSchaden, waffenUpgrade, waffenRaritaet, waffenSchadensarten,
@@ -727,8 +1041,15 @@ function ladeGespeichertenRun() {
     aktuelleRegion=d.aktuelleRegion; aktuelleEbene=d.aktuelleEbene; geloesieKnotenIds=d.geloesieKnotenIds||[]; aktuellerKnotenId=d.aktuellerKnotenId;
     netzKarte=d.netzKarte||[]; inSubDungeon=d.inSubDungeon; inSewers=d.inSewers||false; mainMapState=d.mainMapState;
     activeChallenge=d.challenge||"";
+    runSeed = d.runSeed || zufallsSeed(); seedIsCustom = !!d.seedIsCustom; initSeedRng(d.seedRngCalls || 0);
+    if (window.ER && ER.setSeedRun) ER.setSeedRun(seedIsCustom);
+    setTimeout(aktualisiereSeedAnzeige, 0);
+    torbogenSpruenge = d.torbogenSpruenge || 0; wolfsgeheulGehoert = !!d.wolfsgeheulGehoert; wahnsinn = d.wahnsinn || 0; untouchableRunden = d.untouchableRunden || 0; rellanaGetroffen = !!d.rellanaGetroffen; scharlachRot = !!d.scharlachRot; dlcWahlOffen = !!d.dlcWahlOffen;
+    rauhGeheimIntakt = d.rauhGeheimIntakt !== false; inFingerruinen = !!d.inFingerruinen; fingerPos = (typeof d.fingerPos === "number") ? d.fingerPos : 90; fingerGeblasen = d.fingerGeblasen || []; fingerNodes = d.fingerNodes || []; fingerPfad = (d.fingerPfad && d.fingerPfad.length) ? d.fingerPfad : [fingerPos]; hatGebetet = !!d.hatGebetet; messmerGekippt = !!d.messmerGekippt; fingerWuermer = d.fingerWuermer || []; fingerWuermerTot = d.fingerWuermerTot || []; wurmBann = 0;
+    setTimeout(aktualisiereWahnsinnAnzeige, 0);
+    if (dlcWahlOffen) setTimeout(oeffneMohgDlcWahl, 100);   // Wahl-Popup übersteht einen Reload
     towerEtage=d.towerEtage||0;
-    runPlayMs = d.runPlayMs || 0; startRunTimer();
+    runPlayMs = d.runPlayMs || 0; runEbeneMax = d.runEbeneMax || 1; runBosseGelegt = d.runBosseGelegt || 0; startRunTimer();
     window.__attr = (ladeMeta().attr) || {};   // Attribut-Schadensbonus auch nach Fortsetzen aktiv
     if (activeChallenge === "tower") { if (!towerEtage) towerEtage = 1; starteTowerEtage(); return true; }
     // Kampf-Zustand wiederherstellen -> Rausquitten setzt den Kampf nicht zurück (kein Farmen)
@@ -795,10 +1116,14 @@ function ladeMeta() {
   return metaDefault();
 }
 function speichereMeta(m) { try { localStorage.setItem(META_KEY, JSON.stringify(m)); } catch(e) {} if (window.ER && ER.syncNow) try { ER.syncNow(); } catch(e) {} }
+// Bosse fürs Gefolge (Idle) zählen erst AB JETZT und nur im Hard Mode (kein rückwirkendes Freischalten)
+function markiereGefolgeBoss(name) { try { if (!hardMode || !name || seedIsCustom) return; let m = ladeMeta(); m.idleUnlocked = m.idleUnlocked || []; if (m.idleUnlocked.indexOf(name) < 0) { m.idleUnlocked.push(name); speichereMeta(m); } } catch (e) {} }
 function L(de, en) { return (window.i18n && window.i18n.getLang && window.i18n.getLang() === "en") ? en : de; }
 
-const SEELEN_REGION_TIEFE = { Limgrave:0, Caelid:1, Leyndell:2, Mountaintops:3, FarumAzula:4, AshenCapital:5, EldenThrone:6, Haligtree:6 };
+const SEELEN_REGION_TIEFE = { Limgrave:0, Caelid:1, Leyndell:2, Mountaintops:3, FarumAzula:4, AshenCapital:5, EldenThrone:6, Haligtree:6, Gravesite:7, CastleEnsis:8, Waldgebiet:9, AbyssalWoods:9, FestungMessmer:10, Rauh:11, Garten:11, EnirIlim:12, Fingerruinen:12 };
 function belohneSeelen(gewonnen) {
+  // Seed-Run: keine Seelen (sonst Lucky-Seed-Farming) — AUSSER in der Dev-/Test-Umgebung, damit man dort vernünftig testen kann
+  if (seedIsCustom && !(window.ER && ER.isDevMode && ER.isDevMode())) { letzteRunSeelen = 0; return 0; }
   if (seelenVergeben) return letzteRunSeelen;
   seelenVergeben = true;
   let tiefe = SEELEN_REGION_TIEFE[aktuelleRegion] || 0;
@@ -980,19 +1305,20 @@ function dmgTypIconHtml(art) {
   return `<span class="dmg-type-icon tip" data-tooltip="${t("combat_dmg_type")}: ${dmgArtLoc(art)}"><img src="${datei}" alt="${dmgArtLoc(art)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';"><span class="dmg-fallback" style="display:none; color:${farbe};">${dmgArtLoc(art).slice(0,2)}</span></span>`;
 }
 
-function poolUnlockedWaffe(rarity){ let m=ladeMeta(); let pool=waffenDatenbank[rarity]||[]; let frei=pool.filter(w=>m.unlockedWeapons.indexOf(w.name)>=0); return frei.length?frei:pool; }
-function poolUnlockedRuestung(rarity){ let m=ladeMeta(); let pool=ruestungDatenbank[rarity]||[]; let frei=pool.filter(a=>(m.unlockedArmor||[]).indexOf(a.name)>=0); return frei.length?frei:pool; }
+// Daily-Seed: nur der BASIS-Pool (DEFAULT_*) — keine im Roundtable freigeschalteten Extras -> fairer Loot für alle.
+function poolUnlockedWaffe(rarity){ let pool=waffenDatenbank[rarity]||[]; let frei=istDailySeedRun()?pool.filter(w=>DEFAULT_WEAPONS.indexOf(w.name)>=0):pool.filter(w=>ladeMeta().unlockedWeapons.indexOf(w.name)>=0); return frei.length?frei:pool; }
+function poolUnlockedRuestung(rarity){ let pool=ruestungDatenbank[rarity]||[]; let frei=istDailySeedRun()?pool.filter(a=>DEFAULT_ARMOR.indexOf(a.name)>=0):pool.filter(a=>(ladeMeta().unlockedArmor||[]).indexOf(a.name)>=0); return frei.length?frei:pool; }
 function rolleZufallsWaffe() {
   let shift = Math.min(besiegteWaechter * CONFIG.waffenRarityShift.proWaechter, CONFIG.waffenRarityShift.max);
   let pCommon = 0.50 - shift, pRare = 0.30 + shift * 0.60, pEpic = 0.15 + shift * 0.30;
-  let r = Math.random(); let rarity;
+  let r = srand(); let rarity;
   if (r < pCommon) rarity = "common"; else if (r < pCommon + pRare) rarity = "rare";
   else if (r < pCommon + pRare + pEpic) rarity = "epic"; else rarity = "legendary";
 
-  let pool = poolUnlockedWaffe(rarity); let base = pool[Math.floor(Math.random() * pool.length)];
+  let pool = poolUnlockedWaffe(rarity); let base = pool[Math.floor(srand() * pool.length)];
   let waffe = { name: base.name, basisDmg: base.basisDmg, rarity: rarity };
   if (rarity === "legendary") waffe.schadensarten = [...base.schadensarten];
-  else waffe.schadensarten = [ schadensArten[Math.floor(Math.random() * schadensArten.length)] ];
+  else waffe.schadensarten = [ schadensArten[Math.floor(srand() * schadensArten.length)] ];
   return waffe;
 }
 
@@ -1028,7 +1354,18 @@ const bossResistenzen = {
   "Gideon Ofnir, der Allwissende":      { Normal: 0, Magie: -0.25, Feuer: 0, Heilig: 0.25 },
   "Godfrey, der Erste Eldenlord":       { Normal: 0.25, Magie: 0, Feuer: 0, Heilig: -0.25 },
   "Radagon von der Goldenen Ordnung":   { Normal: -0.25, Magie: -0.25, Feuer: 0, Heilig: 0.25 },
-  "Eldenbiest":                     { Normal: -0.25, Magie: -0.25, Feuer: 0, Heilig: 0.25 }
+  "Eldenbiest":                     { Normal: -0.25, Magie: -0.25, Feuer: 0, Heilig: 0.25 },
+  // --- DLC: Land des Schattens — boss-eigene Profile (überschreiben das Gebiet, zeigen sich im Eldendex) ---
+  "Sonnenblume":                        { Normal: 0, Magie: -0.20, Feuer: 0.30, Heilig: 0 },      // Pflanze: Feuer frisst sie, Magie nährt sie nur
+  "Messmer der Pfähler":                { Normal: 0, Magie: 0.20, Feuer: -0.35, Heilig: 0 },      // Flammen-Fürst: Feuer prallt ab, Magie wirkt
+  "Gaius":                              { Normal: -0.15, Magie: 0.25, Feuer: 0.10, Heilig: 0 },   // gepanzerter Reiter: Stahl prallt ab, Magie durchschlägt
+  "Göttliches Tanzlöwenbiest":          { Normal: -0.20, Magie: 0, Feuer: 0.10, Heilig: 0.20 },   // Sturm/Blitz-Bestie: schwach gegen Heilig, trotzt rohem Stahl
+  "Rellana, Ritterin der Zwillingsmonde": { Normal: 0.20, Magie: -0.25, Feuer: -0.20, Heilig: 0 }, // Zwillingsmonde (Magie+Feuer) -> resistent dagegen, roher Stahl wirkt
+  "Midra, Herr der Wahnsinnigen Flamme":  { Normal: 0, Magie: 0, Feuer: -0.30, Heilig: 0.25 },     // Wahnsinnige Flamme fürchtet das Heilige, trotzt Feuer
+  "Romina, Heilige der Knospe":         { Normal: 0, Magie: -0.20, Feuer: 0.25, Heilig: 0 },       // Scharlachfäule brennt weg -> Feuer, Magie prallt ab
+  "Metyr, Mutter der Finger":           { Normal: 0.20, Magie: -0.25, Feuer: 0, Heilig: 0.10 },    // Sternen-Botin: resistent gegen Magie, verwundbar durch Stahl/Heilig
+  "Verheißener Gemahl Radahn":          { Normal: 0.15, Magie: 0, Feuer: 0.10, Heilig: -0.30 },    // badet in heiligem Licht -> Heilig prallt ab
+  "Radahn, Gemahl Miquellas":           { Normal: 0.15, Magie: 0, Feuer: 0.10, Heilig: -0.30 }     // Phase 2: identisches Profil
 };
 
 // Gebiets-Schadensprofil: gilt für ALLE Gegner einer Region (namentliche Bosse überschreiben via bossResistenzen).
@@ -1043,7 +1380,17 @@ const gebietsResistenzen = {
   Mountaintops: { Magie: 0.20, Heilig: 0.15, Feuer: -0.25 },
   FarumAzula:   { Heilig: 0.20, Normal: -0.15, Magie: -0.10 },
   AshenCapital: { Magie: 0.20, Feuer: -0.30, Normal: -0.10 },
-  Haligtree:    { Feuer: 0.25, Heilig: -0.25, Magie: -0.15 }
+  Haligtree:    { Feuer: 0.25, Heilig: -0.25, Magie: -0.15 },
+  // --- DLC: Land des Schattens ---
+  Gravesite:    { Normal: 0.10, Heilig: 0.15, Magie: -0.15 },  // erstes Schatten-Gebiet: noch relativ offen, Heilig wirkt gut
+  CastleEnsis:  { Normal: 0.15, Magie: -0.25 },              // Karianische Magier trotzen der Magie — roher Stahl wirkt
+  Waldgebiet:   { Feuer: 0.25, Normal: 0.10, Magie: -0.15 }, // dichter Wald: Feuer frisst sich durch das Dickicht
+  AbyssalWoods: { Heilig: 0.25, Feuer: -0.25 },              // GRUSELWALD: die Wahnsinnige Flamme fürchtet das Heilige
+  FestungMessmer: { Magie: 0.20, Feuer: -0.30 },             // Messmers Flammen-Festung: Feuer prallt ab, Magie wirkt
+  Garten:       { Feuer: 0.20, Heilig: -0.15 },              // wuchernder Garten — Feuer wirkt, Heilig verpufft
+  Rauh:         { Feuer: 0.20, Magie: -0.20 },               // die Scharlachfäule brennt weg — Feuer wirkt, Magie prallt ab
+  EnirIlim:     { Feuer: 0.15, Heilig: -0.25 },              // der Verheißene Gemahl badet in heiligem Licht
+  Fingerruinen: { Normal: 0.15, Feuer: 0.10, Magie: -0.25 }  // Reich der Äußeren Götter — Sternenmagie prallt ab
 };
 // Aktuelles Schadensprofil des Gegners: namentlicher Boss/Festung > Gebiets-Profil. Dungeons: keins.
 function gibSchadensProfilTabelle() {
@@ -1100,6 +1447,15 @@ function regionBossName(region, ebene) {
   if (region === "EldenThrone") return ebene === 3 ? "Radagon von der Goldenen Ordnung" : "Godfrey, der Erste Eldenlord";
   if (region === "Haligtree") return "Malenia, Blade of Miquella";
   if (region === "Mohgwyn") return "Mohg, Fürst des Blutes";
+  if (region === "Gravesite") return "Göttliches Tanzlöwenbiest";
+  if (region === "CastleEnsis") return "Rellana, Ritterin der Zwillingsmonde";
+  if (region === "Waldgebiet") return "Sonnenblume";
+  if (region === "AbyssalWoods") return "Midra, Herr der Wahnsinnigen Flamme";   // = Gruselwald
+  if (region === "FestungMessmer") return "Messmer der Pfähler";
+  if (region === "Garten") return "Gaius";
+  if (region === "Rauh") return "Romina, Heilige der Knospe";
+  if (region === "EnirIlim") return "Verheißener Gemahl Radahn";
+  if (region === "Fingerruinen") return "Metyr, Mutter der Finger";
   return "";
 }
 // Kurzer Schwäche/Resistenz-Text für einen Boss (für den Hover-Tooltip)
@@ -1114,7 +1470,8 @@ function bossSchwaecheText(bossName) {
   return lines.join("\n");
 }
 
-const regionStufe = { Limgrave:1, Liurnia:2, Caelid:2, Leyndell:3, Gelmir:3, Mountaintops:4, FarumAzula:5, AshenCapital:6, EldenThrone:7, Haligtree:8, Mohgwyn:8 };
+// DLC-Kette: Gravesite 9 → Ensis 10 → Waldgebiet/Gruselwald(=AbyssalWoods) 11 → Festung Messmer 12 → Rauh/Garten 13 → Enir-Ilim 14
+const regionStufe = { Limgrave:1, Liurnia:2, Caelid:2, Leyndell:3, Gelmir:3, Mountaintops:4, FarumAzula:5, AshenCapital:6, EldenThrone:7, Haligtree:8, Mohgwyn:8, Gravesite:9, CastleEnsis:10, Waldgebiet:11, AbyssalWoods:11, FestungMessmer:12, Rauh:13, Garten:13, EnirIlim:14, Fingerruinen:14 };
 function gibStageNummer(){ return inSubDungeon ? 1 : (regionStufe[aktuelleRegion] || 1); }
 function gibTalismanTier(){ return Math.min(Math.max(gibStageNummer() - 1, 0), 3); }
 function tierSuffix(tier){ return tier > 0 ? " +" + tier : ""; }
@@ -1161,7 +1518,7 @@ function erzeugeGutenTalisman(typId, tier){
 }
 
 function erzeugeSchlechtenTalisman(tier){
-  if (Math.random() < 0.5) {
+  if (srand() < 0.5) {
     let dmgArr=[0.20,0.28,0.36,0.44], takenArr=[0.25,0.30,0.35,0.40];
     return leererTalisman({ id:"dungeater", tier, rarity:"cursed", forced:true, bild:gibTalismanBild("dungeater"), dmg:dmgArr[tier], dmgTaken:takenArr[tier],
       name:"Dungeater Medallion"+tierSuffix(tier),
@@ -1187,9 +1544,9 @@ const startRuestungen = {
   samurai:         { name:"Land of Reeds Set",  bild:"images/armor/samurai-set.png",         rarity:"common", reduktion:0.04 }
 };
 function rolleZufallsRuestung(){
-  let r = Math.random(); let rarity;
+  let r = srand(); let rarity;
   if (r < 0.50) rarity="common"; else if (r < 0.80) rarity="rare"; else if (r < 0.95) rarity="epic"; else rarity="legendary";
-  let pool = poolUnlockedRuestung(rarity); let base = pool[Math.floor(Math.random()*pool.length)];
+  let pool = poolUnlockedRuestung(rarity); let base = pool[Math.floor(srand()*pool.length)];
   return { name: base.name, bild: base.bild, rarity: rarity, reduktion: ruestungRaritaetReduktion[rarity] };
 }
 function setzeAusgeruesteteRuestung(r){ ruestungName=r.name; ruestungRaritaet=r.rarity; ruestungReduktion=r.reduktion; ruestungBild=r.bild; if (window.ER) try { ER.discover("a:" + r.name); } catch(e){} }
@@ -1236,12 +1593,33 @@ const gebietsGegnerKonfig = {
   Leyndell: { elite: "images/LEYNDELL_ELITE.jpg", waechter: "images/LEYNDELL_WAECHTER.jpg", invader: "images/LEYNDELL_INVADER.jpg", eliteName: "Leyndell Ritter", waechterName: "Omen", invaderName: "Eleonora" },
   Gelmir: { elite: "images/Gegner/abductor-virgins.jpg", waechter: "images/Gegner/full-grown-fallingstar.jpg", invader: "images/Gegner/ER_Inquisitor_Ghiza.png", eliteName: "Eiserne Jungfrauen", waechterName: "Ausgewachsene Sternenbestie", invaderName: "Inquisitor Ghiza" },
   Mohgwyn: { elite: "images/Gegner/ER_Red_Albinauric_w_Shamshir.webp", waechter: "images/Gegner/monstrous-crow-2-hq-elden-ring-wiki-guide.jpg", invader: "images/Gegner/nameless-white-mask-in-elden-ring.avif", eliteName: "Roter Albinauriker", waechterName: "Monströse Krähe", invaderName: "Namenlose Weißmaske" },
+  // --- DLC: Land des Schattens (Bilder in images/Gegner/ nachlegen — Fallback greift bis dahin) ---
+  Gravesite: { elite: "images/Gegner/GRAVESITE_ELITE.jpg", waechter: "images/Gegner/GRAVESITE_WAECHTER.png", invader: "images/Gegner/GRAVESITE_INVADER.webp", eliteName: "Geisterflammen-Drache", waechterName: "Lamenter", invaderName: "Schwertmeister Onze" },
+  CastleEnsis: { elite: "images/Gegner/carian-elite-knight-v0-rszypmang49d1.webp", waechter: "images/Gegner/ENSIS_WAECHTER.webp", invader: "images/Gegner/ENSIS_INVADER.webp", eliteName: "Karianischer Ritter", waechterName: "Kampfmagier von Ensis", invaderName: "Zwillingsmond-Adept" },
+  Waldgebiet: { elite: "images/Gegner/WALD_ELITE.webp", waechter: "images/Gegner/WALD_WAECHTER.jpg", invader: "images/Gegner/WALD_INVADER.jpg", eliteName: "Runenbär", waechterName: "Schwarzklingen-Runenbär", invaderName: "Verirrter Jäger" },
+  // GRUSELWALD (interner Schlüssel bleibt AbyssalWoods) erbt sicherer-Pfad/Untouchable/Wahnsinn und hat KEINE normalen Gegner -> keine Gegner-Config nötig.
+  FestungMessmer: { elite: "images/Gegner/MESSMER_ELITE.png", waechter: "images/Gegner/MESSMER_WAECHTER.webp", invader: "images/Gegner/MESSMER_INVADER.webp", eliteName: "Messmers Speerträger", waechterName: "Flammenritter", invaderName: "Anhänger Messmers" },
+  Garten: { elite: "images/Gegner/GARTEN_ELITE.jpg", waechter: "images/Gegner/GARTEN_WAECHTER.png", invader: "images/Gegner/GARTEN_INVADER.jpg", eliteName: "Blütenwächter", waechterName: "Steinerner Hüter", invaderName: "Pilger des Gartens" },
+  Rauh: { elite: "images/Gegner/rauh_Elite.png", waechter: "images/Gegner/rauh_Wächter.webp", invader: "images/Gegner/rauh_invader.jpg", eliteName: "Ulkerbestie", waechterName: "Roter Wolf des Champions", invaderName: "Rakshasa" },
+  EnirIlim: { elite: "images/Gegner/enir_elite.webp", waechter: "images/Gegner/enir_wächter.png", invader: "images/Gegner/enir_invader.png", eliteName: "Wächter von Enir-Ilim", waechterName: "Hornbewehrter Wächter", invaderName: "Anhänger Miquellas" },
   Mountaintops: { elite: "images/MOUNTAINTOPS_ELITE.jpg", waechter: "images/MOUNTAINTOPS_WAECHTER.jpg", invader: "images/MOUNTAINTOPS_INVADER.jpg", eliteName: "Feuermönch", waechterName: "Troll", invaderName: "Okina" },
   FarumAzula: { elite: "images/FARUMAZULA_ELITE.jpg", waechter: "images/FARUMAZULA_WAECHTER.jpg", invader: "images/FARUMAZULA_INVADER.jpg", eliteName: "Bestienmensch of Farum Azula", waechterName: "Farum Azula Drache", invaderName: "Anastasia" },
   AshenCapital: { elite: "images/ASHENCAPITAL_ELITE.jpg", waechter: "images/ASHENCAPITAL_WAECHTER.jpg", invader: "images/ASHENCAPITAL_INVADER.jpg", eliteName: "Page", waechterName: "Königlicher Revenant", invaderName: "Varre" }
 };
 
 const bilderDatenbankBosse = {
+  // --- DLC: Land des Schattens (Bilder in images/bosse/ nachlegen) ---
+  "Göttliches Tanzlöwenbiest": "images/bosse/tanzloewe.jpg",
+  "Rellana, Ritterin der Zwillingsmonde": "images/bosse/rellana.png",
+  "Midra, Herr der Wahnsinnigen Flamme": "images/bosse/midra.png",
+  "Sonnenblume": "images/bosse/sonnenblume.png",
+  "Messmer der Pfähler": "images/bosse/messmer.webp",
+  "Gaius": "images/bosse/Gauis.png",
+  "Romina, Heilige der Knospe": "images/bosse/romina.png",
+  "Metyr, Mutter der Finger": "images/bosse/metyr.webp",
+  "Verheißener Gemahl Radahn": "images/bosse/PCR1.jpg",   // Phase 1
+  "Radahn, Gemahl Miquellas": "images/bosse/PCR2.jpg",    // Phase 2 (Miquella auf den Schultern)
+  "Aging Untouchable": "images/icons/4026614_full.webp",
   "Loretta, Knight of the Haligtree": "images/loretta-knight-of-haligtree.jpg",
   "Commander Niall": "images/commander-niall-elden-ring-wiki.jpg",
   "Malenia, Blade of Miquella": "images/maleniap1.webp",
@@ -1259,8 +1637,8 @@ const bilderDatenbankBosse = {
   "Feuerriese": "images/firegiant.avif", "Maliketh, die Schwarze Klinge": "images/maliketh.jpg",
   "Gideon Ofnir, der Allwissende": "images/gideon.webp", "Godfrey, der Erste Eldenlord": "images/godfrey.webp",
   "Radagon von der Goldenen Ordnung": "images/radagon.jpg", "Eldenbiest": "images/eldenbeast.jpg",
-  "Dungeon Skelett": "images/skeleton.webp", "Cemetery Shade": "images/catacomb_boss.jpg",
-  "Promised Consort Radahn": "images/bosse/pcr.webp"
+  "Dungeon Skelett": "images/skeleton.webp", "Cemetery Shade": "images/catacomb_boss.jpg", "Dragonkin Soldier": "images/miniboss_dragonkin_soldier.png",
+  "Baby PCR": "images/bosse/pcr.webp"
 };
 
 const bDatenbankHTML = {
@@ -1273,10 +1651,17 @@ const bDatenbankHTML = {
   16: "images/icons/sewersicon.webp",
   17: "images/icons/ryas_necklace.png",
   18: "images/icons/rya.webp",
-  19: "images/icons/Elden_Ring_Torrent_concept_art.png"
+  19: "images/icons/Elden_Ring_Torrent_concept_art.png",
+  20: "images/icons/tor.png",       // DLC: Torbogen (Gräberebene) — echtes Icon, ⛩️-Emoji nur als Fallback
+  21: "images/Gegner/fingercreeper.jpg",   // DLC: Fingercreeper (Waldgebiet) — im Wald als Baum getarnt
+  22: "images/icons/statue.png",    // DLC: Statue (Festung Messmer) — davor beten öffnet den Garten
+  23: "images/icons/schalter.png"   // DLC: Schalter oben in der Festung — kippt das ganze Gebiet
 };
 
 const gewichteterPfadePool = [1, 1, 2, 2, 2, 3, 6, 9, 10, 14, 14];
+// DLC Abgrundwald: der EINE richtige Weg (Knotenindex je Reihe, 0 = ganz links; Layout [2,3,4,3,4,3,2,1]).
+// Reihe 1 links · 2 Mitte · 3 zweiter v.l. · 4 Mitte · 5 dritter v.l. · 6 rechts · 7 rechts · 8 Boss.
+const ABYSS_SAFE_PATH = [0, 1, 1, 1, 2, 2, 1, 0];
 let aktuelleRegion = "Limgrave"; let aktuelleEbene = 1; let geloesieKnotenIds = []; let aktuellerKnotenId = null; let netzKarte = [];
 
 window.addEventListener('resize', zeichneLinien);
@@ -1300,7 +1685,7 @@ function platziereKanalisation(karte, regionName) {
     karte.forEach((zeile, zi) => { zeile.knoten.forEach((k) => { if (![4,5,10,15].includes(k.typ) && zi > 0 && zi < karte.length-1) candidates.push(k); }); });
   }
   if (candidates.length === 0) return karte;
-  candidates[Math.floor(Math.random() * candidates.length)].typ = 16;
+  candidates[Math.floor(srand() * candidates.length)].typ = 16;
   return karte;
 }
 
@@ -1323,8 +1708,8 @@ function platziereRyaQuest(karte, regionName) {
     if (zi === karte.length - 3 || zi === karte.length - 2) ryaKandidaten.push(k);
   }); });
   if (!ketteKandidaten.length || !ryaKandidaten.length) return karte;
-  ketteKandidaten[Math.floor(Math.random() * ketteKandidaten.length)].typ = 17;
-  ryaKandidaten[Math.floor(Math.random() * ryaKandidaten.length)].typ = 18;
+  ketteKandidaten[Math.floor(srand() * ketteKandidaten.length)].typ = 17;
+  ryaKandidaten[Math.floor(srand() * ryaKandidaten.length)].typ = 18;
   return karte;
 }
 
@@ -1343,12 +1728,12 @@ function platziereFestungen(karte, regionName) {
   if (!slot) return karte;
   let remaining = 2 - fortressPlacedRegions.length;
   let slotsLeft = 5 - slot;                 // inkl. aktueller Ebene (Slot 4 -> 1)
-  if (Math.random() > (remaining / slotsLeft)) return karte;
+  if (srand() > (remaining / slotsLeft)) return karte;
   // Einen passenden Knoten finden (nicht Boss, Gnade, Dungeon, Runen-Altar, Erdbaum)
   let candidates = [];
   karte.forEach((zeile, zi) => { zeile.knoten.forEach((k) => { if (![4,5,7,8,10].includes(k.typ) && zi > 0 && zi < karte.length-1) candidates.push(k); }); });
   if (candidates.length === 0) return karte;
-  candidates[Math.floor(Math.random() * candidates.length)].typ = 15;
+  candidates[Math.floor(srand() * candidates.length)].typ = 15;
   fortressPlacedRegions.push(regionName);
   return karte;
 }
@@ -1359,18 +1744,20 @@ function entferneBlaidd(karte) {
   return karte;
 }
 function generiereRautenNetz(regionName) {
-  let layout = [2, 3, 4, 3, 4, 3, 2, 1]; 
+  let layout = [2, 3, 4, 3, 4, 3, 2, 1];
   if (regionName === "EldenThrone") { layout = [1, 1, 1]; }
+  // DLC Festung von Messmer: der Schalter oben KIPPT die Festung — der Abstieg hat ein völlig anderes Layout.
+  if (regionName === "FestungMessmer" && messmerGekippt) { layout = [3, 4, 2, 4, 3, 1]; }
   let temporaereKarte = [];
-  let heilungEbene = Math.floor(Math.random() * 2) + 3; 
+  let heilungEbene = Math.floor(srand() * 2) + 3; 
   let heilungKnotenIdx = -1;
   let dungeonPlatziert = false;
 
   for (let e = 0; e < layout.length; e++) {
     let anzahlKnoten = layout[e]; let ebeneNummer = e + 1; let knotenArray = [];
-    let reihenPool = [...gewichteterPfadePool].sort(() => Math.random() - 0.5);
+    let reihenPool = [...gewichteterPfadePool].sort(() => srand() - 0.5);
 
-    if (ebeneNummer === heilungEbene && regionName !== "EldenThrone") heilungKnotenIdx = Math.floor(Math.random() * anzahlKnoten);
+    if (ebeneNummer === heilungEbene && regionName !== "EldenThrone") heilungKnotenIdx = Math.floor(srand() * anzahlKnoten);
 
     for (let k = 0; k < anzahlKnoten; k++) {
       let typ = reihenPool.pop() || 2;
@@ -1392,8 +1779,8 @@ function generiereRautenNetz(regionName) {
         if (ebeneNummer === 1) typ = 5; if (ebeneNummer === 2) typ = 4; if (ebeneNummer === 3) typ = 5;
       } else {
         if (ebeneNummer === 2 && k === 0 && (hatGodrickRune || hatRadahnRune || hatMorgottRune)) { typ = 8; }
-        else if (ebeneNummer === 7) { if (k === 0) { typ = 4; } }
-        else if (ebeneNummer === 8) { typ = 5; }
+        else if (ebeneNummer === layout.length - 1) { if (k === 0) { typ = 4; } }   // vorletzte Reihe: Gnade
+        else if (ebeneNummer === layout.length) { typ = 5; }                       // letzte Reihe: Boss
         else if (ebeneNummer === heilungEbene && k === heilungKnotenIdx) { typ = 7; }
       }
       
@@ -1407,6 +1794,10 @@ function generiereRautenNetz(regionName) {
         else if (anzahlKnoten === 2 && naechsteAnzahl === 2) { if (k === 0) verknuepfungen = [0]; if (k === 1) verknuepfungen = [1]; } 
         else if (anzahlKnoten === 2 && naechsteAnzahl === 1) { verknuepfungen = [0]; }
         else if (anzahlKnoten === 1 && naechsteAnzahl === 1) { verknuepfungen = [0]; }
+        // Messmer-Abstieg (3-4-2-4-3): die Engstelle in der Mitte und der Auslauf zum Boss
+        else if (anzahlKnoten === 4 && naechsteAnzahl === 2) { if (k === 0 || k === 1) verknuepfungen = [0]; else verknuepfungen = [1]; }
+        else if (anzahlKnoten === 2 && naechsteAnzahl === 4) { if (k === 0) verknuepfungen = [0, 1]; if (k === 1) verknuepfungen = [2, 3]; }
+        else if (anzahlKnoten === 3 && naechsteAnzahl === 1) { verknuepfungen = [0]; }
       }
       knotenArray.push({ id: regionName.substring(0,3) + "_" + ebeneNummer + "_" + k, index: k, typ: typ, wege: verknuepfungen });
     }
@@ -1421,12 +1812,89 @@ function generiereRautenNetz(regionName) {
       if (cur.typ === links.typ && !spezialTypen.includes(cur.typ)) {
         let rechtsTyp = zeile.knoten[i + 1] ? zeile.knoten[i + 1].typ : null;
         let optionen = ersatzPool.filter(typ => typ !== links.typ && typ !== rechtsTyp);
-        if (optionen.length) cur.typ = optionen[Math.floor(Math.random() * optionen.length)];
+        if (optionen.length) cur.typ = optionen[Math.floor(srand() * optionen.length)];
       }
     }
   });
 
-  return platziereRyaQuest(platziereKanalisation(platziereFestungen(entferneBlaidd(temporaereKarte), regionName), regionName), regionName);
+  let fertigeKarte = platziereRyaQuest(platziereKanalisation(platziereFestungen(entferneBlaidd(temporaereKarte), regionName), regionName), regionName);
+
+  // DLC Gräberebene: 3 Torbögen (typ 20) auf drei verschiedenen Ebenen — wer alle drei durchspringt, weckt etwas…
+  if (regionName === "Gravesite") {
+    [1, 3, 5].forEach(zi => {   // Ebenen 2, 4 und 6 (nie Start, Gnade oder Boss)
+      let zeile = fertigeKarte[zi]; if (!zeile) return;
+      let kandidaten = zeile.knoten.filter(k => k.typ !== 4 && k.typ !== 5 && k.typ !== 7 && k.typ !== 8 && k.typ !== 10);
+      if (zeile.knoten.length > 1 && kandidaten.length) kandidaten[Math.floor(srand() * kandidaten.length)].typ = 20;
+    });
+  }
+
+  // DLC Waldgebiet: GENAU EIN Knoten ist heimlich der Fingercreeper (typ 21) — er dropt die Finger Mimic.
+  // Alle Icons sehen hier gleich aus (Baum); nur die Beschreibung verrät, was dahinter steckt.
+  if (regionName === "Waldgebiet") {
+    let reihen = [];
+    for (let e = 1; e < fertigeKarte.length - 1; e++) {   // weder Startreihe noch Boss-Reihe
+      let z = fertigeKarte[e];
+      if (z && z.knoten.some(k => k.typ !== 4 && k.typ !== 5)) reihen.push(e);
+    }
+    if (reihen.length) {
+      let z = fertigeKarte[reihen[Math.floor(srand() * reihen.length)]];
+      let kand = z.knoten.filter(k => k.typ !== 4 && k.typ !== 5);
+      if (kand.length) kand[Math.floor(srand() * kand.length)].typ = 21;
+    }
+  }
+
+  // DLC Gebiet der Finger: 3 KOMPLETTE Finger-Reihen (typ 24). Jeder Pfad quert pro Reihe genau
+  // einen Knoten -> man bläst garantiert 3 Finger, bevor man Metyr erreicht (kein Soft-Lock möglich).
+  if (regionName === "Fingerruinen") {
+    let eligible = [];
+    for (let e = 1; e < fertigeKarte.length - 1; e++) {
+      let z = fertigeKarte[e];
+      if (z && !z.knoten.some(k => k.typ === 4 || k.typ === 5)) eligible.push(e);   // keine Gnade-/Boss-Reihe
+    }
+    let pick = (eligible.length >= 3)
+      ? [eligible[0], eligible[Math.floor(eligible.length / 2)], eligible[eligible.length - 1]]
+      : eligible;
+    pick.forEach(e => { fertigeKarte[e].knoten.forEach(k => { k.typ = 24; }); });
+  }
+
+  // DLC Festung von Messmer — zwei Gesichter:
+  //  Aufstieg: oben wartet KEIN Boss, sondern der SCHALTER (typ 23), der die Festung kippt.
+  //  Abstieg : ein STATUE-Knoten (typ 22) — davor beten schaltet den Garten frei; unten wartet Messmer.
+  if (regionName === "FestungMessmer") {
+    if (!messmerGekippt) {
+      let letzte = fertigeKarte[fertigeKarte.length - 1];
+      if (letzte) letzte.knoten.forEach(k => { if (k.typ === 5) k.typ = 23; });
+    } else {
+      let reihen = [];
+      for (let e = 1; e < fertigeKarte.length - 1; e++) {
+        let z = fertigeKarte[e];
+        if (z && z.knoten.some(k => k.typ !== 4 && k.typ !== 5)) reihen.push(e);
+      }
+      if (reihen.length) {
+        let z = fertigeKarte[reihen[Math.floor(srand() * reihen.length)]];
+        let kand = z.knoten.filter(k => k.typ !== 4 && k.typ !== 5);
+        if (kand.length) kand[Math.floor(srand() * kand.length)].typ = 22;
+      }
+    }
+  }
+
+  // DLC Abgrundwald: EIN fester, IMMER gleicher richtiger Pfad (unabhängig vom Seed — reines Trial & Error).
+  // Knotenindex je Reihe (0 = ganz links). Bewusst KEIN Glimmen: der Weg wird auswendig gelernt, nicht gesehen.
+  if (regionName === "AbyssalWoods") {
+    ABYSS_SAFE_PATH.forEach((idx, e) => {
+      if (fertigeKarte[e] && fertigeKarte[e].knoten[idx]) fertigeKarte[e].knoten[idx].sicher = true;
+    });
+  }
+
+  // DLC Ruinen von Rauh: derselbe verborgene Pfad wie im Abgrundwald — wer ihn EXAKT läuft,
+  // lässt die betretenen Felder golden aufglühen und schaltet nach Romina den Weg zu den Fingerruinen frei.
+  if (regionName === "Rauh") {
+    ABYSS_SAFE_PATH.forEach((idx, e) => {
+      if (fertigeKarte[e] && fertigeKarte[e].knoten[idx]) fertigeKarte[e].knoten[idx].geheim = true;
+    });
+  }
+
+  return fertigeKarte;
 }
 
 // Mini-Ebenen (Dungeon & Kanalisation) im Battle-Tower-Layout: 2-3-4-3-2-Boss, immer mind. 2 Wahlmöglichkeiten.
@@ -1434,14 +1902,14 @@ function generiereRautenNetz(regionName) {
 function generiereSubDungeonNetz(art) {
   let subLayout = [2, 3, 4, 3, 2, 1];
   let temporaereKarte = [];
-  let gnadenReihe = 1 + Math.floor(Math.random() * 3);   // eine Gnade in Reihe 2-4
+  let gnadenReihe = 1 + Math.floor(srand() * 3);   // eine Gnade in Reihe 2-4
   for (let e = 0; e < subLayout.length; e++) {
     let anzahl = subLayout[e]; let ebeneNummer = e + 1; let knotenArray = []; let istBoss = (e === subLayout.length - 1);
     for (let k = 0; k < anzahl; k++) {
       let typ;
       if (istBoss) typ = 5;
-      else if (art === "sewers") { let r = Math.random(); if (r < 0.35) typ = 11; else if (r < 0.70) typ = 12; else typ = 13; }
-      else typ = (Math.random() < 0.5) ? 11 : 12;   // Dungeons: NUR Gegner + Kisten (keine Gnade/Falle)
+      else if (art === "sewers") { let r = srand(); if (r < 0.35) typ = 11; else if (r < 0.70) typ = 12; else typ = 13; }
+      else typ = (srand() < 0.5) ? 11 : 12;   // Dungeons: NUR Gegner + Kisten (keine Gnade/Falle)
       if (art === "sewers" && !istBoss && e === gnadenReihe && k === 0) typ = 4;   // garantierte Gnade nur in der Kanalisation
       let wege = []; let naechste = subLayout[e + 1] || 0;
       if (naechste > 0) {
@@ -1459,7 +1927,7 @@ function generiereSubDungeonNetz(art) {
   if (art === "sewers") {
     let kandidaten = [];
     temporaereKarte.forEach((zeile, zi) => { if (zi >= 2 && zi <= 4) zeile.knoten.forEach(k => { if (k.typ !== 4) kandidaten.push(k); }); });
-    if (kandidaten.length) kandidaten[Math.floor(Math.random() * kandidaten.length)].typ = 19;
+    if (kandidaten.length) kandidaten[Math.floor(srand() * kandidaten.length)].typ = 19;
   }
   return temporaereKarte;
 }
@@ -1530,7 +1998,14 @@ function oeffneKlassenAuswahl() {
         <div class="class-card-stats">${hardMode ? t('class_wretch_stats_hard') : t('class_wretch_stats')}</div>
         <div class="class-card-start">${t('class_wretch_gear')}</div>
       </div>
-    </div>`;
+    </div>
+    <div style="margin-top:16px; font-family:sans-serif; font-size:0.8rem; color:#888; text-transform:none; display:flex; gap:8px; justify-content:center; align-items:center; flex-wrap:wrap;">
+      <span>${t('seed_label')}: <b style="color:var(--gold); letter-spacing:1px;">${runSeed}</b></span>
+      <input id="seed-input" maxlength="12" placeholder="${t('seed_placeholder')}" style="background:#0a0a0a; border:1px solid var(--border-color); color:#ede6d4; padding:6px 8px; border-radius:3px; font-family:sans-serif; font-size:0.8rem; width:130px; text-transform:uppercase;">
+      <button onclick="uebernehmeSeedEingabe()" style="background:#1c1710; border:1px solid var(--gold-dark); color:var(--gold); padding:6px 10px; border-radius:3px; cursor:pointer; font-family:sans-serif; font-size:0.78rem;">${t('seed_apply')}</button>
+    </div>
+    ${seedIsCustom ? '<div style="margin-top:8px; color:#e0a34f; font-size:0.75rem; font-family:sans-serif; text-transform:none;">🎲 ' + t('seed_run_warn') + '</div>' : ''}
+    ${istDailySeedRun() ? '<div style="margin-top:6px; color:#7fc7e6; font-size:0.78rem; font-weight:bold; font-family:sans-serif; text-transform:none;">🏆 ' + t('daily_fair_warn') + '</div>' : ''}`;
 }
 
 function zeigeTodesBildschirm(endgueltig) {
@@ -1553,24 +2028,28 @@ function zeigeTodesBildschirm(endgueltig) {
   let __sl = document.getElementById("death-souls-line");
   if (__sl) __sl.innerHTML = ICO("lords-rune-tools-elden-ring-wiki-guide.png", "margin-right:5px;") + "+" + __s + " " + L("Seelen erbeutet","Souls earned");
   if (window.ER) ER.death();
+  let __lw = document.getElementById("death-login-warn"); if (__lw) __lw.innerHTML = loginWarnungHtml();
+  let __sb = document.getElementById("ui-btn-share-death"); if (__sb) __sb.innerText = t('share_result');
   let ds = document.getElementById("death-screen");
   if (ds) ds.classList.add("show");
 }
 
 /* ===== Run-Timer ===== */
 let runPlayMs = 0, _timerLastTick = null, _timerInterval = null;
+let runEbeneMax = 0, runBosseGelegt = 0;   // Skill-Score-Anker (funktionieren auch im Seed-/Daily-Run)
 function fmtRunTime(ms) {
   let s = Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), ss = s % 60;
   let mm = (h > 0) ? String(m).padStart(2, "0") : String(m);
   return (h > 0 ? h + ":" : "") + mm + ":" + String(ss).padStart(2, "0");
 }
 function updateTimerDisplay() { let el = document.getElementById("run-timer"); if (el) el.innerHTML = ICO("carian_inverted_statue_elden_ring_wiki_guide_200px.png", "margin-right:5px;") + fmtRunTime(runPlayMs); }
-function tickTimer() { if (_timerLastTick != null) { runPlayMs += Date.now() - _timerLastTick; _timerLastTick = Date.now(); } updateTimerDisplay(); }
+function tickTimer() { if (_timerLastTick != null) { runPlayMs += Date.now() - _timerLastTick; _timerLastTick = Date.now(); if (window.ER && ER.recordRunTime) ER.recordRunTime(runPlayMs); } updateTimerDisplay(); }
 function startRunTimer() { _timerLastTick = Date.now(); if (_timerInterval) clearInterval(_timerInterval); _timerInterval = setInterval(tickTimer, 1000); updateTimerDisplay(); }
-function stopRunTimer() { tickTimer(); if (_timerInterval) { clearInterval(_timerInterval); _timerInterval = null; } _timerLastTick = null; }
+function stopRunTimer() { tickTimer(); if (_timerInterval) { clearInterval(_timerInterval); _timerInterval = null; } _timerLastTick = null; try { pruefeDailyWertung(); } catch (e) {} }
 
 /* ===== Hall of Fame: abgeschlossenen Run mit Ausrüstung + Zeit sichern ===== */
 function recordHallOfFame() {
+  if (seedIsCustom) return;   // Seed-Runs landen nicht in der Hall of Fame
   try {
     tickTimer();
     let run = {}; try { run = JSON.parse(localStorage.getItem("eldenRogueRun")) || {}; } catch (e) {}
@@ -1583,7 +2062,7 @@ function recordHallOfFame() {
       klasse: gewaehlteKlasse || "",
       bosses: run.bosses || 0,
       fights: run.fights || 0,
-      score: (run.stage || 0) * 1000 + (run.bosses || 0) * 200 + (run.fights || 0) * 10,
+      score: (window.ER && ER.computeScore) ? ER.computeScore(run) : ((run.stage || 0) * 1000 + (run.bosses || 0) * 200 + (run.fights || 0) * 10),
       timeMs: runPlayMs,
       weapon: { name: waffenName, upgrade: waffenUpgrade || 0, rarity: waffenRaritaet || "common", img: weaponImg },
       armor: (typeof hatRuestungAusgeruestet === "function" && hatRuestungAusgeruestet()) ? { name: ruestungName, rarity: ruestungRaritaet || "common", img: ruestungBild || "" } : null
@@ -1618,6 +2097,9 @@ function direktNeustarten() {
   playerHitsOnEnemy = 0; enemyIsStaggered = false; staggerVisualActive = false; nextHitBonusDamage = false;
   currentAffinity = "Keine"; affinityHits = 0; completedDungeonsCount = 0;
   backpackItems = [null, null, null]; activeBuffs = []; inSubDungeon = false; inSewers = false; mainMapState = null; towerEtage = 0;
+  torbogenSpruenge = 0; wolfsgeheulGehoert = false; wahnsinn = 0; untouchableRunden = 0; rellanaGetroffen = false; scharlachRot = false; dlcWahlOffen = false; rauhGeheimIntakt = true; inFingerruinen = false; fingerPos = 90; fingerGeblasen = []; fingerNodes = []; fingerPfad = [90]; hatGebetet = false; messmerGekippt = false; fingerWuermer = []; fingerWuermerTot = []; wurmBann = 0; aktualisiereWahnsinnAnzeige();
+  // Seed-Run (geteilter Seed): derselbe Seed bleibt für den Retry — normaler Run: frisch würfeln
+  setzeSeed(seedIsCustom ? runSeed : zufallsSeed(), seedIsCustom);
   oeffneKlassenAuswahl();
 }
 
@@ -1633,8 +2115,8 @@ function waehleKlasseEngine(klasse) {
   if (klasse === 'schwertkaempfer') { spielerMaxHp = 150; maxKlassenFlasks = hardMode ? 2 : 3; spielerFlasks = maxKlassenFlasks; basisAusweichChance = 0.30; playerImageStr = "images/tarnished_ritter.webp"; }
   else if (klasse === 'samurai') { spielerMaxHp = 110; maxKlassenFlasks = hardMode ? 1 : 2; spielerFlasks = maxKlassenFlasks; basisAusweichChance = 0.40; playerImageStr = "images/tarnished_samurai.webp"; }
   else if (klasse === 'nackt') { spielerMaxHp = 90; maxKlassenFlasks = hardMode ? 0 : 1; spielerFlasks = maxKlassenFlasks; basisAusweichChance = 0.50; playerImageStr = "images/tarnished_nackt.webp"; }
-  // ⚜️ Meta-Upgrades (Roundtable) anwenden
-  let __meta = ladeMeta(); let __a = __meta.attr || {};
+  // ⚜️ Meta-Upgrades (Roundtable) anwenden — im DAILY-SEED-Run DEAKTIVIERT (alle starten mit Basis-Stats -> faire Rangliste)
+  let __meta = ladeMeta(); let __a = istDailySeedRun() ? {} : (__meta.attr || {});
   window.__attr = __a;                                                 // für Schadensberechnung im Kampf
   spielerMaxHp += (__a.vgr||0) * 10;                                   // Lebenskraft: +10 HP/Pkt
   waffenUpgrade += (__a.str||0);                                       // Stärke: +1 Start-Waffenstufe pro Punkt
@@ -1645,7 +2127,8 @@ function waehleKlasseEngine(klasse) {
   // Kategorie mitgeben, damit Challenge-Runs (tower/noarmor/noblaidd/autobattle/haligtree)
   // in ihrer eigenen Bestenliste landen. Leeres activeChallenge -> normCat fällt auf normal/hard zurück.
   if (window.ER) ER.startRun(hardMode ? "hard" : "normal", activeChallenge);
-  runPlayMs = 0; startRunTimer();
+  aktualisiereSeedAnzeige();
+  runPlayMs = 0; runEbeneMax = 1; runBosseGelegt = 0; __dailyEingereicht = false; startRunTimer();
   speichereRun();
   if (activeChallenge === "tower") { starteTowerModus(); return; }   // Tower: direkt in den Aufstieg statt Regionskarte
   updateUI();
@@ -1655,7 +2138,8 @@ function baueKarteHTML() {
   let grid = document.getElementById("map-grid"); if (!grid) return;
   grid.innerHTML = ""; 
   let mapScrollArea = document.getElementById("map-view");
-  if (grid.offsetParent === null) return; 
+  if (grid.offsetParent === null) return;
+  if (inFingerruinen) { renderFingerruinen(grid, mapScrollArea); return; }   // DLC: eigenes 10×10-Gitter
   
   if (inSubDungeon) {
     mapScrollArea.style.backgroundImage = inSewers
@@ -1673,12 +2157,26 @@ function baueKarteHTML() {
     if (aktuelleRegion === "EldenThrone") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(20,15,5,0.8), rgba(5,5,5,0.95)), url('images/background/eldenthrone.jpg')";
     if (aktuelleRegion === "Haligtree") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(15,25,10,0.75), rgba(5,5,5,0.95)), url('images/background/elden_ring_elphael_hero_2.avif')";
     if (aktuelleRegion === "Mohgwyn") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(35,5,8,0.75), rgba(10,2,3,0.95)), url('images/background/mohgwyn.avif')";
+    if (aktuelleRegion === "Gravesite") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(20,18,10,0.78), rgba(8,8,5,0.92)), url('images/background/gravesite.jpg')";
+    if (aktuelleRegion === "CastleEnsis") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(10,12,28,0.78), rgba(4,5,14,0.92)), url('images/background/castleensis.webp')";
+    if (aktuelleRegion === "Waldgebiet") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(8,20,10,0.78), rgba(4,10,5,0.92)), url('images/background/waldgebiet.webp')";
+    if (aktuelleRegion === "AbyssalWoods") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(4,4,6,0.92), rgba(2,2,3,0.985)), url('images/background/abyssalwoods.jpg')";   // Gruselwald
+    if (aktuelleRegion === "FestungMessmer") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(30,8,4,0.78), rgba(12,4,2,0.92)), url('images/background/messmer.jpg')";
+    if (aktuelleRegion === "Garten") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(10,18,12,0.7), rgba(5,9,6,0.88)), url('images/background/garten.webp')";
+    if (aktuelleRegion === "Rauh") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(24,6,8,0.78), rgba(10,4,4,0.92)), url('images/background/rauh.jpg')";
+    if (aktuelleRegion === "EnirIlim") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(28,22,6,0.78), rgba(8,6,3,0.94)), url('images/background/enirelim.webp')";
+    if (aktuelleRegion === "Fingerruinen") mapScrollArea.style.backgroundImage = "linear-gradient(to bottom, rgba(18,14,30,0.82), rgba(5,4,10,0.94)), url('images/background/fingerruinen.jpg')";   // DLC Gebiet der Finger
   }
+  mapScrollArea.classList.toggle("abyss-fog", aktuelleRegion === "AbyssalWoods" && !inSubDungeon);
+  // DLC Festung Messmer: Aufstieg = normal (Start unten -> Schalter oben). Nach dem Kippen = Abstieg
+  // (Start OBEN -> Messmer unten): dazu die Karte vertikal umdrehen.
+  grid.classList.toggle("map-descend", aktuelleRegion === "FestungMessmer" && messmerGekippt && !inSubDungeon);
 
   netzKarte.forEach(zeile => {
     let rowDiv = document.createElement("div"); rowDiv.classList.add("map-row");
     zeile.knoten.forEach(knoten => {
       let nodeDiv = document.createElement("div"); nodeDiv.id = knoten.id; nodeDiv.className = "map-node";
+      if (knoten.geheimAktiv) nodeDiv.classList.add("gold-pfad");   // Rauh-Geheimpfad: golden pulsierendes Feld
       nodeDiv.setAttribute("data-tooltip", t("node_" + knoten.typ) || t("node_5"));
       let imgTag = document.createElement("img"); imgTag.classList.add("map-node-img");
       
@@ -1697,15 +2195,46 @@ function baueKarteHTML() {
           else if (aktuelleRegion === "EldenThrone" && zeile.ebene === 3) imgTag.src = "images/radagon.jpg";
           else if (aktuelleRegion === "Haligtree") imgTag.src = "images/maleniap1.webp";
           else if (aktuelleRegion === "Mohgwyn") imgTag.src = "images/bosse/Titel-8-fc80008000ffff_1920x1080.avif";
+          else if (aktuelleRegion === "Gravesite") imgTag.src = "images/bosse/tanzloewe.jpg";
+          else if (aktuelleRegion === "CastleEnsis") imgTag.src = "images/bosse/rellana.png";
+          else if (aktuelleRegion === "Waldgebiet") imgTag.src = "images/bosse/sonnenblume.png";
+          else if (aktuelleRegion === "AbyssalWoods") imgTag.src = "images/bosse/midra.png";   // Gruselwald
+          else if (aktuelleRegion === "FestungMessmer") imgTag.src = "images/bosse/messmer.webp";
+          else if (aktuelleRegion === "Garten") imgTag.src = "images/bosse/Gauis.png";
+          else if (aktuelleRegion === "Rauh") imgTag.src = "images/bosse/romina.png";
+          else if (aktuelleRegion === "EnirIlim") imgTag.src = "images/bosse/pcr.webp";
         }
+        imgTag.onerror = function(){ this.style.display = "none"; };   // fehlendes Bossbild -> leerer Knoten statt Broken-Image
         // Schwäche/Resistenz des Bosses beim Hovern anzeigen (kurz: Weak/Resist)
         let __bn = (activeChallenge === "tower") ? knoten.towerBoss : ((inSubDungeon || inSewers) ? "" : regionBossName(aktuelleRegion, zeile.ebene));
         let __wk = __bn ? bossSchwaecheText(__bn) : "";
         if (__wk) nodeDiv.setAttribute("data-tooltip", __wk);
+      } else if (knoten.wahnKnoten) {
+        // Abgrundwald: aufgedeckter Fehltritt — der Aging Untouchable lauert hier
+        nodeDiv.classList.add("wahn-knoten");
+        imgTag.src = "images/icons/4026614_full.webp";
+        imgTag.classList.add("fullbleed");
+      } else if (knoten.typ === 20) {
+        // Torbogen: echtes Icon (tor.png via bDatenbankHTML[20]); ⛩️-Emoji nur als Fallback
+        imgTag.src = bDatenbankHTML[20];
+        imgTag.onerror = function(){ this.outerHTML = '<span style="font-size:1.8rem; pointer-events:none;">⛩️</span>'; };
+      } else if (knoten.typ === 24) {
+        // DLC Gebiet der Finger: ein Finger zum Reinblasen; geblasene Finger sind gedämpft.
+        imgTag.src = "images/icons/finger_mimic.webp";
+        imgTag.classList.add("fullbleed");
+        imgTag.onerror = function(){ this.onerror = null; this.outerHTML = '<span style="font-size:1.9rem; pointer-events:none;">🖐</span>'; };
+        if (Array.isArray(fingerGeblasen) && fingerGeblasen.indexOf(knoten.id) >= 0) { imgTag.style.filter = "grayscale(1)"; imgTag.style.opacity = "0.4"; }
       } else {
         let iconPfad = bDatenbankHTML[knoten.typ] || "images/icon_loot.webp"; imgTag.src = iconPfad;
         imgTag.onerror = function(){ this.onerror = null; this.src = "images/icon_loot.webp"; };   // fehlendes Icon -> generisches Fallback
         if (!iconPfad.toLowerCase().endsWith(".png")) imgTag.classList.add("fullbleed");
+      }
+      // DLC Waldgebiet: TARNUNG — jeder Nicht-Boss-Knoten zeigt nur einen Baum. Die Beschreibung
+      // (Tooltip/Popup) bleibt ehrlich: wer liest, findet den versteckten Fingercreeper.
+      if (aktuelleRegion === "Waldgebiet" && !inSubDungeon && knoten.typ !== 5) {
+        imgTag.className = "map-node-img";
+        imgTag.src = "images/icons/baum.png";
+        imgTag.onerror = function(){ this.onerror = null; this.outerHTML = '<span style="font-size:1.7rem; pointer-events:none;">🌲</span>'; };
       }
       nodeDiv.appendChild(imgTag);
 
@@ -1717,8 +2246,9 @@ function baueKarteHTML() {
           if (vorherigeEbeneKnoten) { let alterKnoten = vorherigeEbeneKnoten.find(k => k.id === aktuellerKnotenId); if (alterKnoten && alterKnoten.wege.includes(knoten.index)) istWaehlbar = true; }
         }
       }
-      if (istGeloest) { nodeDiv.classList.add("completed"); } 
-      else if (knoten.id === aktuellerKnotenId) nodeDiv.classList.add("current-pos"); 
+      if (knoten.sicher) nodeDiv.classList.add("abyss-sicher");   // Abgrundwald: der sichere Pfad glimmt kaum merklich
+      if (istGeloest) { nodeDiv.classList.add("completed"); }
+      else if (knoten.id === aktuellerKnotenId) nodeDiv.classList.add("current-pos");
       else if (istWaehlbar) { nodeDiv.classList.add("selectable"); nodeDiv.onclick = () => klickeKnoten(zeile.ebene, knoten); }
       rowDiv.appendChild(nodeDiv);
     });
@@ -1928,8 +2458,12 @@ function updateUI() {
   let areaText = inSubDungeon ? t("region_catacombs") : aktuelleRegion; 
   if (!inSubDungeon) {
     if (areaText === "FarumAzula") areaText = "Farum Azula"; if (areaText === "Haligtree") areaText = "Haligtree"; if (areaText === "AshenCapital") areaText = "Aschehauptstadt"; if (areaText === "EldenThrone") areaText = "Eldenthron";
+    if (areaText === "Gravesite") areaText = L("Gräberebene", "Gravesite Plain"); if (areaText === "CastleEnsis") areaText = "Castle Ensis"; if (areaText === "AbyssalWoods") areaText = L("Gruselwald", "Eerie Woods");
+    if (areaText === "Waldgebiet") areaText = L("Waldgebiet", "Woodlands"); if (areaText === "FestungMessmer") areaText = L("Festung von Messmer", "Messmer's Fortress"); if (areaText === "Garten") areaText = L("Der Garten", "The Garden");
+    if (areaText === "Rauh") areaText = L("Ruinen von Rauh", "Ruins of Rauh"); if (areaText === "EnirIlim") areaText = "Enir-Ilim";
   }
   document.getElementById("region-display-name").innerText = areaText;
+  aktualisiereWahnsinnAnzeige();   // DLC: Wahnsinns-Balken (Abgrundwald) & Scharlachfäule-Chip (Rauh) über der Karte
   { let __ri = document.getElementById("region-info-icon"); if (__ri) { let __tip = gibGebietsResistenzTooltip(); if (__tip) { __ri.setAttribute("data-tooltip", __tip); __ri.style.display = "inline-flex"; } else { __ri.style.display = "none"; } } }
 
   if (imKampf) {
@@ -1946,6 +2480,16 @@ function updateUI() {
     
     document.getElementById("enemy-stagger-badge").style.display = (enemyIsStaggered || staggerVisualActive) ? "block" : "none";
     document.getElementById("enemy-sprite-wrapper").classList.toggle("staggered", enemyIsStaggered || staggerVisualActive);
+    // Haltungs-Balken: zeigt live, wie nah der Gegner am Stagger ist (Treffer / Schwelle)
+    { let stm = document.getElementById("enemy-stagger-meter");
+      if (stm) {
+        if (imKampf && !enemyIsStaggered && !staggerVisualActive) {
+          let thr = diffVal(CONFIG.staggerTreffer); let pips = "";
+          for (let pi = 0; pi < thr; pi++) pips += '<span class="stagger-pip' + (pi < playerHitsOnEnemy ? " on" : "") + '"></span>';
+          stm.innerHTML = '<span class="stagger-lbl">' + L("HALTUNG", "POISE") + '</span>' + pips;
+          stm.style.display = "flex";
+        } else { stm.style.display = "none"; }
+      } }
 
     let affInfo = document.getElementById("enemy-affinity-info"); let aff = gibGegnerAffinitaeten();
     if (aff) {
@@ -1955,7 +2499,10 @@ function updateUI() {
       affInfo.innerHTML = teile.join("<br>"); affInfo.style.display = "block";
     } else { affInfo.style.display = "none"; }
 
-    if (aktuellerKnotenTyp === 15) document.getElementById("enemy-img").src = bilderDatenbankBosse[gegnerName] || "images/icons/fort-nightreign-full.jpg";
+    if (gegnerName === "Aging Untouchable") document.getElementById("enemy-img").src = "images/icons/4026614_full.webp";
+    else if (gegnerName === "Fingerwurm") document.getElementById("enemy-img").src = "images/Gegner/wurm.avif";
+    else if (gegnerName === "Fingercreeper") document.getElementById("enemy-img").src = "images/Gegner/fingercreeper.jpg";
+    else if (aktuellerKnotenTyp === 15) document.getElementById("enemy-img").src = bilderDatenbankBosse[gegnerName] || "images/icons/fort-nightreign-full.jpg";
     else if (aktuellerKnotenTyp === 19) document.getElementById("enemy-img").src = bilderDatenbankBosse[gegnerName] || "";
     else if (aktuellerKnotenTyp === 9) document.getElementById("enemy-img").src = "images/blaidd.avif";
     else if (aktuellerKnotenTyp === 14) { let mb = gibAktuellenMiniboss(); document.getElementById("enemy-img").src = (mb.bild === "__TARNISHED__") ? playerImageStr : mb.bild; }
@@ -1976,6 +2523,14 @@ function updateUI() {
       else if (aktuelleRegion === "AshenCapital") arenaView.style.backgroundImage = "linear-gradient(to bottom, rgba(20,5,5,0.6), rgba(5,5,5,0.9)), url('images/background/ashencapital.avif')";
       else if (aktuelleRegion === "EldenThrone") arenaView.style.backgroundImage = "linear-gradient(to bottom, rgba(40,30,10,0.5), rgba(5,5,5,0.9)), url('images/background/eldenthrone.jpg')";
       else if (aktuelleRegion === "Gelmir") arenaView.style.backgroundImage = "linear-gradient(to bottom, rgba(30,8,4,0.5), rgba(12,4,2,0.85)), url('images/background/gelmir.webp')";
+      else if (aktuelleRegion === "Gravesite") arenaView.style.backgroundImage = "linear-gradient(to bottom, rgba(20,18,10,0.6), rgba(8,8,5,0.9)), url('images/background/gravesite.jpg')";
+      else if (aktuelleRegion === "CastleEnsis") arenaView.style.backgroundImage = "linear-gradient(to bottom, rgba(10,12,28,0.6), rgba(4,5,14,0.9)), url('images/background/castleensis.webp')";
+      else if (aktuelleRegion === "Waldgebiet") arenaView.style.backgroundImage = "linear-gradient(to bottom, rgba(8,20,10,0.6), rgba(4,10,5,0.9)), url('images/background/waldgebiet.webp')";
+      else if (aktuelleRegion === "AbyssalWoods") arenaView.style.backgroundImage = "linear-gradient(to bottom, rgba(4,4,6,0.8), rgba(2,2,3,0.95)), url('images/background/abyssalwoods.jpg')";   // Gruselwald
+      else if (aktuelleRegion === "FestungMessmer") arenaView.style.backgroundImage = "linear-gradient(to bottom, rgba(30,8,4,0.6), rgba(12,4,2,0.9)), url('images/background/messmer.jpg')";
+      else if (aktuelleRegion === "Garten") arenaView.style.backgroundImage = "linear-gradient(to bottom, rgba(10,18,12,0.55), rgba(5,9,6,0.88)), url('images/background/garten.webp')";
+      else if (aktuelleRegion === "Rauh") arenaView.style.backgroundImage = "linear-gradient(to bottom, rgba(24,6,8,0.6), rgba(10,4,4,0.9)), url('images/background/rauh.jpg')";
+      else if (aktuelleRegion === "EnirIlim") arenaView.style.backgroundImage = "linear-gradient(to bottom, rgba(28,22,6,0.55), rgba(8,6,3,0.92)), url('images/background/enirelim.webp')";
       else arenaView.style.backgroundImage = `linear-gradient(to bottom, rgba(11,11,11,0.3), rgba(11,11,11,0.6)), url('images/background/${aktuelleRegion.toLowerCase()}.jpg')`;
     }
 
@@ -1999,16 +2554,128 @@ function waehleTurmRuneAusSidePanel(runeKey) {
 
 function useBackpackItem(slotIndex) {
   if (imKampf || !backpackItems[slotIndex]) return;
-  let item = backpackItems[slotIndex]; activeBuffs.push({ type: item.type, remaining: 10 }); backpackItems[slotIndex] = null; updateUI();
+  let item = backpackItems[slotIndex];
+  if (item.type === "fingermimic") { benutzeFingerMimic(slotIndex); return; }   // kein Buff — eine Falle
+  activeBuffs.push({ type: item.type, remaining: 10 }); backpackItems[slotIndex] = null; updateUI();
   oeffneStatPopup(t("item_used_title"), t("item_used_desc", { name: item.name }), aktuelleEbene);
+}
+
+// Die Finger Mimic ist eine MIMIC: benutzen kostet 10% HP und verbraucht sie -> Metyr ist damit verloren.
+function benutzeFingerMimic(slotIndex) {
+  backpackItems[slotIndex] = null;
+  let schaden = Math.max(1, Math.round(spielerMaxHp * 0.10));
+  spielerHp = Math.max(1, spielerHp - schaden);   // die Mimic verhöhnt dich, sie tötet dich nicht
+  updateUI(); speichereRun();
+  oeffneStatPopup(
+    L("Die Mimic beißt zu", "The Mimic Bites"),
+    L(`Du drückst den Finger — und er schnappt zu. Er bohrt sich in deine Hand, saugt <b>${schaden} HP</b> aus dir heraus und zerfällt zu Asche.\n\nEs war nie ein Geschenk. Es war eine Falle. Was auch immer der Finger dir hätte öffnen können — es bleibt jetzt für immer verschlossen.`,
+      `You squeeze the finger — and it snaps shut. It burrows into your hand, drains <b>${schaden} HP</b> out of you and crumbles to ash.\n\nIt was never a gift. It was a trap. Whatever the finger might have opened for you — it stays closed forever now.`),
+    aktuelleEbene);
+}
+
+// Drop des Fingercreepers (Waldgebiet). Rucksack voll -> der Spieler wählt, was er wegwirft.
+function fingerMimicDrop(naechsteEbene) {
+  let overlay = document.getElementById("popup-overlay"); let content = document.getElementById("popup-content");
+  let kopf = `<h3 style="color:#c9a227; font-size:1.5rem; margin-top:0; font-family:'Mantinia', serif;">${L("Kein Baum", "Not a Tree")}</h3>
+    <p style="color:#ddd; font-size:0.95rem; font-family:sans-serif; white-space:pre-line;">${L("Was du für einen Baum gehalten hast, entrollt sich zu einer Hand aus Fingern — und stirbt.\n\nZurück bleibt ein einzelner, noch zuckender Finger: die <b>Finger Mimic</b>.", "What you took for a tree unfurls into a hand made of fingers — and dies.\n\nLeft behind is a single, still-twitching finger: the <b>Finger Mimic</b>.")}</p>`;
+  let frei = backpackItems.indexOf(null);
+  if (frei !== -1) {
+    backpackItems[frei] = Object.assign({}, FINGER_MIMIC);
+    speichereRun(); updateUI();
+    content.innerHTML = kopf + `<button class="btn-modal-action" onclick="bestaetigeStufe(${naechsteEbene})">${L("Einstecken", "Take it")}</button>`;
+  } else {
+    content.innerHTML = kopf +
+      `<p style="color:#e74c3c; font-size:0.9rem; font-family:sans-serif;">${L("Dein Rucksack ist voll. Wähle, was du dafür wegwirfst:", "Your backpack is full. Choose what to throw away for it:")}</p>
+       <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin:10px 0;">` +
+      backpackItems.map(function (it, i) {
+        return `<button class="btn-modal-action" style="min-width:120px;" onclick="fingerMimicErsetze(${i}, ${naechsteEbene})">${it.icon} ${it.name}</button>`;
+      }).join("") +
+      `</div><button class="btn-modal-action" style="opacity:.65;" onclick="bestaetigeStufe(${naechsteEbene})">${L("Finger liegen lassen", "Leave the finger")}</button>`;
+  }
+  overlay.style.display = "flex";
+}
+function fingerMimicErsetze(slot, naechsteEbene) {
+  backpackItems[slot] = Object.assign({}, FINGER_MIMIC);
+  speichereRun(); updateUI(); bestaetigeStufe(naechsteEbene);
 }
 
 function klickeKnoten(ebene, knoten) {
   if (imKampf || spielerHp <= 0 || aktionsSperre) return;
   if (window.ER && !inSubDungeon) ER.reachStage(gibStageNummer());
+  if (!inSubDungeon) runEbeneMax = Math.max(runEbeneMax, gibStageNummer());   // tiefste erreichte Ebene (auch für die Daily-Wertung, die im Seed-Run läuft)
   geloesieKnotenIds.push(knoten.id); aktuellerKnotenId = knoten.id; aktuellerKnotenTyp = knoten.typ;
-       
+
   playerHitsOnEnemy = 0; enemyIsStaggered = false; staggerVisualActive = false; nextHitBonusDamage = false; affinityHits = 0;
+
+  // DLC Abgrundwald: reine Navigations-Region — keine normalen Knoten.
+  //  · Falscher Weg (nicht sicher): Knoten deckt sich auf, der Aging Untouchable treibt den Wahnsinn.
+  //  · Richtiger Weg (sicher), kein Boss: es passiert einfach NICHTS — du schleichst weiter.
+  if (aktuelleRegion === "AbyssalWoods" && !inSubDungeon) {
+    if (!knoten.sicher) { knoten.wahnKnoten = true; starteUntouchableKampf(); return; }
+    if (knoten.typ !== 5) {
+      speichereRun();
+      oeffneStatPopup(L("Stille", "Silence"),
+        L("Du setzt einen Fuß vor den anderen. Nichts regt sich in der Schwärze — der Pfad war richtig.", "You place one foot before the other. Nothing stirs in the blackness — the path was true."), ebene + 1);
+      return;
+    }
+  }
+
+  // DLC Ruinen von Rauh: Scharlachfäule — jeder betretene Knoten kostet 10% der Max-HP. Sie TÖTET auch (Gnade heilt).
+  if (aktuelleRegion === "Rauh" && !inSubDungeon && knoten.typ !== 4) {
+    let rot = Math.round(berechneFinalMaxHp() * 0.10);
+    spielerHp = Math.max(0, spielerHp - rot);
+    zeigeRotToast(rot);
+    updateUI();
+    if (spielerHp <= 0) {
+      let ovR = document.getElementById("popup-overlay"); if (ovR) ovR.style.display = "none";
+      let logR = document.getElementById("battle-log"); if (logR) logR.innerText = L("☠ Die Scharlachfäule zerfrisst dich von innen.", "☠ The Scarlet Rot devours you from within.");
+      speichereRun(); zeigeTodesBildschirm(true);   // die Fäule tötet — kein Vollmond rettet
+      return;
+    }
+    // Geheimpfad: exakt den Abgrundwald-Pfad laufen -> betretenes Feld glüht golden; ein Fehltritt bricht es
+    if (knoten.geheim && rauhGeheimIntakt) knoten.geheimAktiv = true;
+    if (!knoten.geheim) rauhGeheimIntakt = false;
+  }
+
+  if (knoten.typ === 20) {   // DLC Gräberebene: der Torbogen — hindurchspringen kostet den Knoten, aber…
+    torbogenSpruenge++;
+    if (torbogenSpruenge >= 3 && !wolfsgeheulGehoert) {
+      wolfsgeheulGehoert = true; speichereRun();
+      oeffneStatPopup(L("Ein Wolfsgeheul!", "A Wolf's Howl!"),
+        L("Du springst durch den dritten Torbogen — und diesmal antwortet etwas.\n\nAus weiter Ferne rollt ein markerschütterndes <b>Wolfsgeheul</b> über die Gräberebene. Irgendetwas hat dich bemerkt…", "You leap through the third archway — and this time, something answers.\n\nFrom far away, a bone-chilling <b>wolf's howl</b> rolls across the Gravesite Plain. Something has taken notice of you…"), ebene + 1);
+    } else {
+      speichereRun();
+      oeffneStatPopup(L("Der Torbogen", "The Archway"),
+        L("Ein uralter steinerner Torbogen, von Gräbern gesäumt. Du nimmst Anlauf und springst hindurch.\n\nDer Wind pfeift durch den alten Stein. Nichts geschieht… noch nicht.", "An ancient stone archway, lined with graves. You take a running start and leap through.\n\nThe wind whistles through the old stone. Nothing happens… yet."), ebene + 1);
+    }
+    return;
+  }
+
+  if (knoten.typ === 24) {   // DLC Gebiet der Finger: in den Finger blasen -> zählt Richtung Metyr
+    if (!Array.isArray(fingerGeblasen)) fingerGeblasen = [];
+    if (fingerGeblasen.indexOf(knoten.id) < 0) fingerGeblasen.push(knoten.id);
+    try { playFingerSound(); } catch(e){}
+    speichereRun();
+    let __n = fingerGeblasen.length;
+    oeffneStatPopup(L("Ein Finger erklingt", "A Finger Sounds"),
+      L("Du legst die Lippen an den Finger und bläst. Ein tiefer Ton hallt durch die Säulen — <b>" + __n + " / 3</b>." + (__n >= 3 ? "\n\nAlle Finger haben getönt. Metyr erwacht." : ""),
+        "You set your lips to the finger and blow. A deep tone echoes through the pillars — <b>" + __n + " / 3</b>." + (__n >= 3 ? "\n\nAll fingers have tolled. Metyr awakens." : "")), ebene + 1);
+    return;
+  }
+
+  if (knoten.typ === 23) { kippeFestung(); return; }   // DLC: der Schalter oben — hier wartet KEIN Boss
+
+  if (knoten.typ === 22) {   // DLC Festung Messmer: die Statue — davor beten öffnet nach Messmer den Garten
+    if (!hatGebetet) {
+      hatGebetet = true; speichereRun();
+      oeffneStatPopup(L("Die Statue", "The Statue"),
+        L("Eine namenlose steinerne Statue, das Gesicht abgeschlagen. Du kniest nieder und betest.\n\nEin tiefes, fernes <b>Geräusch</b> antwortet — kein Laut dieser Welt. Es kommt von irgendwo hinter der Festung, und du weißt jetzt, wo du suchen musst.", "A nameless stone statue, its face struck off. You kneel and pray.\n\nA deep, distant <b>sound</b> answers — no noise of this world. It comes from somewhere behind the fortress, and now you know where to look."), ebene + 1);
+    } else {
+      oeffneStatPopup(L("Die Statue", "The Statue"),
+        L("Du kniest erneut nieder — doch die Statue schweigt. Das Geräusch hallt längst in dir nach.", "You kneel again — but the statue is silent. The sound already echoes within you."), ebene + 1);
+    }
+    return;
+  }
 
   if (knoten.typ === 4) {
     spielerHp = berechneFinalMaxHp(); spielerFlasks = maxKlassenFlasks;
@@ -2016,7 +2683,9 @@ function klickeKnoten(ebene, knoten) {
   }
   if (knoten.typ === 6) { oeffneTalismanPopup(ebene + 1); return; }
   if (knoten.typ === 7) {
-    maxKlassenFlasks += 1; spielerFlasks = maxKlassenFlasks; estusHeilProzent = Math.min(0.95, estusHeilProzent + (hardMode ? 0.025 : 0.05));
+    maxKlassenFlasks += 1;
+    if (activeChallenge === "tower") maxKlassenFlasks = Math.min(6, maxKlassenFlasks);   // Tower: Flakons gedeckelt
+    spielerFlasks = maxKlassenFlasks; estusHeilProzent = Math.min(0.95, estusHeilProzent + (hardMode ? 0.025 : 0.05));
     oeffneStatPopup(t("seed_title"), t("seed_desc", { pct: Math.round(estusHeilProzent*100) }), ebene + 1); return;
   }
   if (knoten.typ === 8) { oeffneTowerSelectionMenu(ebene + 1); return; }
@@ -2049,6 +2718,14 @@ function klickeKnoten(ebene, knoten) {
   if (aktuelleRegion === "Mountaintops") rMult = (hardMode ? 3.2*1.3 : 3.2) * 1.05; if (aktuelleRegion === "FarumAzula") rMult = (hardMode ? 4.0*1.3 : 4.0) * 1.05;
   if (aktuelleRegion === "AshenCapital") rMult = (hardMode ? 4.8*1.3 : 4.8) * 1.05; if (aktuelleRegion === "EldenThrone") rMult = (hardMode ? 5.5*1.3 : 5.5) * 1.05;
   if (aktuelleRegion === "Haligtree" || aktuelleRegion === "Mohgwyn") rMult = (hardMode ? 6.5*1.3 : 6.5) * 1.05;
+  // DLC: Land des Schattens — deutlich über allem im Basegame (soll eine echte Herausforderung sein)
+  if (aktuelleRegion === "Gravesite") rMult = (hardMode ? 7.2*1.3 : 7.2) * 1.05;
+  if (aktuelleRegion === "CastleEnsis") rMult = (hardMode ? 8.0*1.3 : 8.0) * 1.05;
+  if (aktuelleRegion === "Waldgebiet") rMult = (hardMode ? 9.0*1.3 : 9.0) * 1.05;
+  if (aktuelleRegion === "AbyssalWoods") rMult = (hardMode ? 9.0*1.3 : 9.0) * 1.05;   // Gruselwald
+  if (aktuelleRegion === "FestungMessmer") rMult = (hardMode ? 10.0*1.3 : 10.0) * 1.05;
+  if (aktuelleRegion === "Garten") rMult = (hardMode ? 11.0*1.3 : 11.0) * 1.05;
+  if (aktuelleRegion === "Fingerruinen") rMult = (hardMode ? 12.0*1.3 : 12.0) * 1.05;   // Reich der Äußeren Götter
 
   if (gebietsGegnerKonfig[aktuelleRegion]) {
     let cfg = gebietsGegnerKonfig[aktuelleRegion];
@@ -2057,7 +2734,13 @@ function klickeKnoten(ebene, knoten) {
     else if (knoten.typ === 3) { gegnerName = cfg.invaderName; gegnerMaxHp = Math.round(60 * rMult); gegnerSchaden = Math.round(12 * rMult); }
   }
   
-  if (knoten.typ === 11) { gegnerName = "Dungeon Skelett"; gegnerMaxHp = Math.round(25 * rMult); gegnerSchaden = Math.round(5 * rMult); }
+  // DLC Gebiet der Finger: JEDER Kampfknoten ist der Fingerwurm (30% Bann-Spell, 2 Runden).
+  if (aktuelleRegion === "Fingerruinen" && (knoten.typ === 1 || knoten.typ === 2 || knoten.typ === 3)) {
+    gegnerName = "Fingerwurm"; gegnerMaxHp = Math.round(45 * rMult); gegnerSchaden = Math.round(7.5 * rMult);
+  }
+
+  if (knoten.typ === 21) { gegnerName = "Fingercreeper"; gegnerMaxHp = Math.round(95 * rMult); gegnerSchaden = Math.round(17 * rMult); }   // DLC Waldgebiet: getarnter Geheim-Gegner -> dropt die Finger Mimic
+  else if (knoten.typ === 11) { gegnerName = "Dungeon Skelett"; gegnerMaxHp = Math.round(25 * rMult); gegnerSchaden = Math.round(5 * rMult); }
   else if (knoten.typ === 9) {
     if (activeChallenge === "noblaidd") { oeffneStatPopup(t("challenge_noblaidd_skip_title"), t("challenge_noblaidd_skip_desc"), ebene + 1); return; }
     gegnerName = "Blaidd, der Halbwolf";
@@ -2080,6 +2763,7 @@ function klickeKnoten(ebene, knoten) {
       gegnerSchaden = fin ? Math.round(tstats.dmg * 1.15) : tstats.dmg;
     }
     else if (inSewers) { gegnerName = "Esgar, Priester des Blutes"; gegnerMaxHp = 450; gegnerSchaden = 36; }
+    else if (inSubDungeon && aktuelleRegion === "EnirIlim") { gegnerName = "Dragonkin Soldier"; gegnerMaxHp = Math.round(120 * rMult); gegnerSchaden = Math.round(16 * rMult); }   // DLC Enir-Ilim: Höhlen-Gegner ist der Drachenkin-Soldat
     else if (inSubDungeon) { gegnerName = "Cemetery Shade"; gegnerMaxHp = Math.round(100 * rMult); gegnerSchaden = Math.round(14 * rMult); }
     else {
       if (aktuelleRegion === "Limgrave") { gegnerName = "Godrick, der Verpflanzte"; gegnerMaxHp = 250; gegnerSchaden = 20; }
@@ -2099,6 +2783,16 @@ function klickeKnoten(ebene, knoten) {
         // Feste Werte wie Malenia/Radagon — NICHT via rMult skalieren (Mohgwyn-rMult wäre ~6.8x).
         gegnerName = "Mohg, Fürst des Blutes"; gegnerMaxHp = 2000; gegnerSchaden = 135;
       }
+      // --- DLC: Land des Schattens — feste Werte, bewusst über allem im Basegame ---
+      else if (aktuelleRegion === "Gravesite") { gegnerName = "Göttliches Tanzlöwenbiest"; gegnerMaxHp = 2400; gegnerSchaden = 150; }
+      else if (aktuelleRegion === "CastleEnsis") { gegnerName = "Rellana, Ritterin der Zwillingsmonde"; gegnerMaxHp = 2700; gegnerSchaden = 160; }
+      else if (aktuelleRegion === "Waldgebiet") { gegnerName = "Sonnenblume"; gegnerMaxHp = 3000; gegnerSchaden = 170; }
+      else if (aktuelleRegion === "AbyssalWoods") { gegnerName = "Midra, Herr der Wahnsinnigen Flamme"; gegnerMaxHp = 3200; gegnerSchaden = 175; }   // Gruselwald
+      else if (aktuelleRegion === "FestungMessmer") { gegnerName = "Messmer der Pfähler"; gegnerMaxHp = 3500; gegnerSchaden = 188; }   // haertester Boss vor den Endbossen
+      else if (aktuelleRegion === "Garten") { gegnerName = "Gaius"; gegnerMaxHp = 2900; gegnerSchaden = 165; }   // spiegelt Romina (paralleler Weg)
+      else if (aktuelleRegion === "Rauh") { gegnerName = "Romina, Heilige der Knospe"; gegnerMaxHp = 2900; gegnerSchaden = 165; }
+      else if (aktuelleRegion === "EnirIlim") { gegnerName = "Verheißener Gemahl Radahn"; gegnerMaxHp = 3800; gegnerSchaden = 195; }   // finaler DLC-Boss: bewusst der haerteste
+      else if (aktuelleRegion === "Fingerruinen") { gegnerName = "Metyr, Mutter der Finger"; gegnerMaxHp = 3800; gegnerSchaden = 195; }   // Geheim-End-Boss
       else if (aktuelleRegion === "EldenThrone") {
         if (ebene === 1) { gegnerName = "Godfrey, der Erste Eldenlord"; gegnerMaxHp = 1800; gegnerSchaden = 100; }
         if (ebene === 3) { gegnerName = "Radagon von der Goldenen Ordnung"; gegnerMaxHp = 2000; gegnerSchaden = 110; }
@@ -2111,6 +2805,7 @@ function klickeKnoten(ebene, knoten) {
   }
   if (activeChallenge === "tower") towerApplyModifierBeimKampf(knoten);
   gegnerHp = gegnerMaxHp; imKampf = true; aktionsSperre = false;
+  if (gegnerName === "Rellana, Ritterin der Zwillingsmonde") rellanaGetroffen = false;   // Hitless-Zähler für diesen Kampf zurücksetzen
   if (window.ER) try { ER.discover(gegnerName); } catch(e){}   // Eldendex: Gegner/Boss gesehen
   playerHitsOnEnemy = 0; enemyIsStaggered = false; staggerVisualActive = false; nextHitBonusDamage = false;
   let __log = t("log_start") + gegnerNameLoc(gegnerName) + "!";
@@ -2203,7 +2898,7 @@ function sturzTod() {
 
 function looteDungeonChest(naechsteEbene) {
   let overlay = document.getElementById("popup-overlay"); let content = document.getElementById("popup-content");
-  let gewinnChance = Math.random() < 0.30;
+  let gewinnChance = srand() < 0.30;
   
   if (gewinnChance) {
     let itemTypes = [
@@ -2211,7 +2906,7 @@ function looteDungeonChest(naechsteEbene) {
       { type: "dodge", name: t("item_neck"), desc: t("item_neck_desc"), icon: "💨", bild: "images/pickled_turtle_neck.png" },
       { type: "dmg", name: t("item_flesh"), desc: t("item_flesh_desc"), icon: "⚔️", bild: "images/exalted_flesh.png" }
     ];
-    let gefundenesItem = itemTypes[Math.floor(Math.random() * itemTypes.length)];
+    let gefundenesItem = itemTypes[Math.floor(srand() * itemTypes.length)];
     let emptySlotIdx = backpackItems.indexOf(null);
     if (emptySlotIdx !== -1) {
       backpackItems[emptySlotIdx] = gefundenesItem;
@@ -2239,7 +2934,7 @@ function looteDungeonChest(naechsteEbene) {
 
 function triggerDungeonRun(naechsteEbene) {
   let overlay = document.getElementById("popup-overlay"); let content = document.getElementById("popup-content");
-  let erfolg = Math.random() < 0.75;
+  let erfolg = srand() < 0.75;
   if (erfolg) {
     content.innerHTML = `
       <h3 style="color: #2ecc71; font-size:1.5rem; margin-top:0; font-family: 'Mantinia', serif;">${t("trap_win")}</h3>
@@ -2329,12 +3024,36 @@ function zeigeBurstEffekt(wrapper, affinity) {
 //    logSuccess / logFail / logStagger – i18n-Keys fuer die Logzeile
 //    cleanupDelay – ms bis Trefferanimation/Klassen entfernt werden
 // ============================================================
+// Ausweich-Chance an EINER Stelle: Basis + Talismane + Rune/Buffs, gedeckelt, minus Turm-Modifikator.
+function aktuelleAusweichChance(tStats) {
+  tStats = tStats || berechneTalismanStats();
+  let runeRollBonus = (aktiveRune === "godrick" ? 0.15 : 0.0) + CONFIG.buffBonusProStack * buffStacks("dodge");
+  return Math.min(diffVal(CONFIG.ausweichenCap), basisAusweichChance + tStats.extraRolle + runeRollBonus - (towerModifier && towerModifier.id === "benommen" ? 0.15 : 0));
+}
+
 async function gegnerKonter(opts) {
   let playerWrapper = document.getElementById("player-sprite-wrapper");
   let enemyWrapper  = document.getElementById("enemy-sprite-wrapper");
 
   // Kampf bereits entschieden -> kein Konter mehr.
   if (gegnerHp <= 0 || spielerHp <= 0) return;
+
+  // DLC Abgrundwald: der Aging Untouchable macht KEINEN Schaden — sein Griff treibt nur den Wahnsinn (+25%).
+  // Man kann ihn nicht töten (99999 HP); nach seinem Griff reißt man sich los und geht (mit dem Wahnsinn) weiter.
+  if (gegnerName === "Aging Untouchable") {
+    wahnsinn = Math.min(100, wahnsinn + 25);
+    untouchableRunden++;
+    zeigeFloatingZahl(playerWrapper, "+25% " + L("WAHNSINN", "MADNESS"), "dmg-enemy");
+    document.getElementById("battle-log").innerText = L("Der Aging Untouchable ergreift dich — dein Geist splittert. Wahnsinn +25%.", "The Aging Untouchable seizes you — your mind splinters. Madness +25%.");
+    aktualisiereWahnsinnAnzeige();
+    await wait(650);
+    if (wahnsinn >= 100) {
+      spielerHp = 0; document.getElementById("battle-log").innerText = L("☠ Der Wahnsinn verzehrt dich. Die Flamme des Frenzy bricht aus deinen Augen.", "☠ Madness consumes you. The Frenzied Flame bursts from your eyes.");
+      updateUI(); zeigeTodesBildschirm(true); return;
+    }
+    entkommeUntouchable();
+    return;
+  }
 
   // Gegner taumelt -> setzt mit seinem Angriff aus (kein Schaden), die Runde dauert aber
   // GENAUSO LANGE wie ein normaler Konter — sonst öffnet sich beim Stagger ein Spam-Fenster.
@@ -2353,8 +3072,30 @@ async function gegnerKonter(opts) {
   }
 
   let tStats = berechneTalismanStats();
-  let runeRollBonus = (aktiveRune === "godrick" ? 0.15 : 0.0) + CONFIG.buffBonusProStack * buffStacks("dodge");
-  let finaleAusweichChance = Math.min(diffVal(CONFIG.ausweichenCap), basisAusweichChance + tStats.extraRolle + runeRollBonus - (towerModifier && towerModifier.id === "benommen" ? 0.15 : 0));
+  let finaleAusweichChance = aktuelleAusweichChance(tStats);
+
+  // DLC Gebiet der Finger: der Wurm castet mit 30% einen Bannspell STATT anzugreifen.
+  // Trifft er, faellt die naechste Aktion des Spielers aus — ausweichen geht mit der normalen Rollchance.
+  if (gegnerName === "Fingerwurm" && !wurmBann && Math.random() < 0.30) {
+    enemyWrapper.classList.add("enemy-casting");
+    document.getElementById("battle-log").innerText = L("Der Wurm richtet sich auf und zischt eine fremde Formel…", "The worm rears up and hisses an alien formula…");
+    await wait(450);
+    enemyWrapper.classList.remove("enemy-casting");
+    if (Math.random() < finaleAusweichChance) {
+      playerWrapper.classList.add("player-rolling");
+      zeigeFloatingZahl(playerWrapper, t("float_dodged"), "dmg-dodge");
+      document.getElementById("battle-log").innerText += "\n" + L("Du rollst unter dem Spruch hindurch.", "You roll clear of the spell.");
+    } else {
+      wurmBann = 2;   // 2 Runden bewegungsunfähig
+      zeigeFloatingZahl(playerWrapper, L("GEBANNT", "BOUND"), "dmg-enemy");
+      document.getElementById("battle-log").innerText += "\n" + L("Der Spruch schließt sich um deine Glieder — du kannst dich <b>2 Runden</b> nicht rühren!", "The spell clamps around your limbs — you cannot move for <b>2 rounds</b>!");
+    }
+    updateUI();
+    await wait(opts.cleanupDelay || 300);
+    playerWrapper.classList.remove("player-rolling");
+    return;
+  }
+
   let ausgewichen = Math.random() < finaleAusweichChance;
 
   if (ausgewichen) {
@@ -2365,6 +3106,7 @@ async function gegnerKonter(opts) {
   } else {
     let gSchaden = gegnerSchaden + opts.dmgVariance();
     gSchaden = Math.round(gSchaden * (1 + tStats.bonusDmgTakenPercent) * (1 - ruestungReduktion));
+    gSchaden = Math.round(gSchaden * CONFIG.globalDifficulty);   // globaler +15%-Schwierigkeits-Multiplikator (trifft alle Gegner & Bosse)
     gSchaden = Math.max(1, gSchaden);
     // Malenia: Schaden skaliert mit der Max-HP des Spielers, damit sie auch bei hoher Meta-HP bedrohlich
     // bleibt (gefaehrlicher als Radagon) — aber durch das 55%-Cap NIE ein One-Shot. Ruestung/Talismane wirken weiter.
@@ -2375,7 +3117,36 @@ async function gegnerKonter(opts) {
       gSchaden = Math.min(Math.max(gSchaden, malDmg), Math.round(finalMaxHp * 0.62));
       gSchaden = Math.max(1, gSchaden);
     }
+    // BATTLE TOWER: Schaden skaliert mit der Max-HP -> egal wie viel HP man stackt, ein Treffer kostet
+    // immer einen spürbaren Anteil. Damit kann man NIE unsterblich werden (das war das Endgame-Problem).
+    if (activeChallenge === "tower") {
+      let finalMaxHp = berechneFinalMaxHp();
+      let istBoss = (aktuellerKnotenTyp === 5);
+      let pct = istBoss ? Math.min(0.42, 0.11 + 0.007 * (towerEtage - 1))    // Boss: 11% -> bis 42%
+                        : Math.min(0.12, 0.035 + 0.003 * (towerEtage - 1));  // kleine Knoten: 3.5% -> bis 12%
+      let hpFloor = Math.round(finalMaxHp * pct * (1 - ruestungReduktion) * (1 + tStats.bonusDmgTakenPercent));
+      gSchaden = Math.max(gSchaden, hpFloor);
+      gSchaden = Math.min(gSchaden, Math.round(finalMaxHp * 0.55));   // aber nie ein One-Shot (max 55% pro Treffer)
+      gSchaden = Math.max(1, gSchaden);
+    }
+    // DLC %HP-Schadensboden (wie im Tower), damit HP-Stacking die Bosse nicht trivialisiert.
+    //  · Endbosse (Radahn P1/P2 + Metyr): 25% pro Treffer — echte Walls.
+    //  · normale DLC-Regionsbosse: 10% pro Treffer.
+    // Egal ob 1500 oder 15000 HP -> der Treffer kostet immer denselben Anteil.
+    {
+      let __endboss = (gegnerName === "Verheißener Gemahl Radahn" || gegnerName === "Radahn, Gemahl Miquellas" || gegnerName === "Metyr, Mutter der Finger");
+      let __dlcBoss = (gegnerName === "Göttliches Tanzlöwenbiest" || gegnerName === "Rellana, Ritterin der Zwillingsmonde" || gegnerName === "Sonnenblume" || gegnerName === "Midra, Herr der Wahnsinnigen Flamme" || gegnerName === "Messmer der Pfähler" || gegnerName === "Gaius" || gegnerName === "Romina, Heilige der Knospe");
+      if (__endboss || __dlcBoss) {
+        let finalMaxHp = berechneFinalMaxHp();
+        let floorPct = __endboss ? 0.25 : 0.10;
+        let dlcFloor = Math.round(finalMaxHp * floorPct * (1 - ruestungReduktion) * (1 + tStats.bonusDmgTakenPercent));
+        gSchaden = Math.max(gSchaden, dlcFloor);
+        gSchaden = Math.min(gSchaden, Math.round(finalMaxHp * 0.50));   // kein One-Shot (max 50% pro Treffer)
+        gSchaden = Math.max(1, gSchaden);
+      }
+    }
     spielerHp = Math.max(0, spielerHp - gSchaden);
+    if (gegnerName === "Rellana, Ritterin der Zwillingsmonde") rellanaGetroffen = true;   // Treffer kassiert -> kein Hitless-Bonus mehr
     playerWrapper.classList.add("enemy-hurt");
     zeigeFloatingZahl(playerWrapper, "-" + gSchaden, "dmg-enemy");
     document.getElementById("battle-log").innerText += t(opts.logFail, { name: gegnerNameLoc(gegnerName), dmg: gSchaden });
@@ -2391,8 +3162,22 @@ async function gegnerKonter(opts) {
   }
 }
 
+// Der Wurm-Bann: die Aktion des Spielers verpufft, der Gegner kontert frei. Hält 2 Runden.
+async function verbrauchteBannRunde() {
+  if (wurmBann <= 0) return false;
+  wurmBann--;   // eine gebannte Runde verbraucht
+  aktionsSperre = true; updateUI();
+  document.getElementById("battle-log").innerText = L("Du bist gebannt — deine Glieder gehorchen dir nicht" + (wurmBann > 0 ? " (noch 1 Runde)" : "") + ".", "You are bound — your limbs will not obey" + (wurmBann > 0 ? " (1 more round)" : "") + ".");
+  zeigeFloatingZahl(document.getElementById("player-sprite-wrapper"), L("GEBANNT", "BOUND"), "dmg-enemy");
+  await wait(500);
+  await gegnerKonter({ windup: true, dmgVariance: () => Math.floor(Math.random() * 4) - 1, logSuccess: "roll_success", logFail: "roll_fail", logStagger: "stagger_alert", cleanupDelay: 300 });
+  aktionsSperre = false; updateUI();
+  return true;
+}
+
 async function spielerAngriff() {
   if (!imKampf || spielerHp <= 0 || aktionsSperre) return;
+  if (await verbrauchteBannRunde()) return;
   staggerVisualActive = false;
   // Verhängnis "Scharlachfäule": −3% Max-HP pro Runde
   if (towerModifier && towerModifier.id === "faeulnis") {
@@ -2412,6 +3197,8 @@ async function spielerAngriff() {
 
   let warBurst = false; let warBonus = false;
   if (nextHitBonusDamage) { finalDmg = Math.round(finalDmg * CONFIG.staggerBonusSchaden); nextHitBonusDamage = false; warBonus = true; }
+  // Skill-Wertung fürs Punktesystem: Riposte (Stagger-Konter) + Schwäche-Treffer
+  if (window.ER) { if (warBonus && ER.skillRiposte) ER.skillRiposte(); if (bossMod > 0 && ER.skillWeakness) ER.skillWeakness(); }
 
   if (currentAffinity !== "Keine") {
     affinityHits++;
@@ -2468,11 +3255,15 @@ async function spielerAngriff() {
 async function spielerHeilen() {
   if (!imKampf || spielerHp <= 0 || aktionsSperre) return;
   if (spielerFlasks <= 0) return;
+  if (await verbrauchteBannRunde()) return;
   aktionsSperre = true;
   let tStats = berechneTalismanStats();
   let finalMaxHp = berechneFinalMaxHp();
-  let heilWert = Math.round(finalMaxHp * estusHeilProzent * (1 + tStats.bonusHealPercent));
+  let effHeilProz = estusHeilProzent * (1 + tStats.bonusHealPercent);
+  if (activeChallenge === "tower") effHeilProz = Math.min(effHeilProz, 0.55);   // Tower: Heilung gedeckelt -> kein Heil-Lock
+  let heilWert = Math.round(finalMaxHp * effHeilProz);
   spielerHp = Math.min(finalMaxHp, spielerHp + heilWert); spielerFlasks--;
+  if (playerHitsOnEnemy > 0) playerHitsOnEnemy--;   // Heilen statt Angreifen -> die Haltung des Gegners erholt sich eine Stufe
   if (window.ER) ER.flaskDrunk();
   document.getElementById("battle-log").innerText = t("heal_log", { hp: heilWert }); updateUI();
   let playerWrapper = document.getElementById("player-sprite-wrapper");
@@ -2512,6 +3303,7 @@ const TOWER_BOSSES = [
 let towerAngeboteneBelohnungen = [];
 let letzterTowerBoss = "";
 let towerModifier = null;   // aktuelles Verhängnis dieser Etage (null = keins)
+let towerBaseMaxHp = 0;     // Max-HP bei Tower-Start — der Erdbaum-Segen skaliert davon (kein exponentielles Compounding)
 let towerDmgMult = 1.0;     // Segen: Schadens-Multiplikator (stapelt)
 let towerSoulMult = 1.0;    // Segen: Seelen-Multiplikator
 let towerRadahnPhase2 = false;
@@ -2532,8 +3324,8 @@ function addMetaSeelen(n){ try { let evMult = (window.ER && ER.getEvent) ? (ER.g
 function towerSegenPool() {
   return [
     { icon:"🔥", titel: L("Kriegsflamme · +15% Schaden","War Flame · +15% dmg"),        apply: ()=>{ towerDmgMult += 0.15; } },
-    { icon:"❤️", titel: L("Erdbaum-Segen · +20% Max-HP","Erdtree Blessing · +20% max HP"), apply: ()=>{ let b=Math.round(spielerMaxHp*0.20); spielerMaxHp+=b; spielerHp=berechneFinalMaxHp(); } },
-    { icon:"🧪", img:"images/icons/icon_estus.png", titel: L("Heiliger Flakon · +1 & voll","Sacred Flask · +1 & refill"),    apply: ()=>{ maxKlassenFlasks++; spielerFlasks=maxKlassenFlasks; } },
+    { icon:"❤️", titel: L("Erdbaum-Segen · +15% Max-HP","Erdtree Blessing · +15% max HP"), apply: ()=>{ let b=Math.round((towerBaseMaxHp||spielerMaxHp)*0.15); spielerMaxHp+=b; spielerHp=berechneFinalMaxHp(); } },   // +15% des START-Werts (linear, kein exponentielles Compounding)
+    { icon:"🧪", img:"images/icons/icon_estus.png", titel: L("Heiliger Flakon · +1 & voll","Sacred Flask · +1 & refill"),    apply: ()=>{ maxKlassenFlasks = Math.min(6, maxKlassenFlasks + 1); spielerFlasks=maxKlassenFlasks; } },
     { icon:"💨", titel: L("Wind der Gnade · +8% Rolle","Wind of Grace · +8% dodge"),      apply: ()=>{ basisAusweichChance=Math.min(0.85, basisAusweichChance+0.08); } },
     { icon:"⚔️", titel: L("Miquellas Schärfung · Waffe +2","Miquella's Edge · weapon +2"), apply: ()=>{ waffenUpgrade+=2; } },
     { icon:"✨", img:"images/icons/lords-rune-tools-elden-ring-wiki-guide.png", titel: L("Seelensegen · +Seelen","Soul Blessing · +souls"),              apply: ()=>{ towerSoulMult += 0.25; addMetaSeelen(50); } }
@@ -2556,6 +3348,7 @@ function towerGegnerStats(etage) {
 
 function starteTowerModus() {
   towerEtage = 1;
+  towerBaseMaxHp = spielerMaxHp;   // Referenz für den Erdbaum-Segen (fester Wert, kein Compounding)
   towerDmgMult = 1.0; towerSoulMult = 1.0; letzterTowerBoss = ""; towerRadahnPhase2 = false; towerModifier = null;
   inSubDungeon = false; mainMapState = null;
   besiegteWaechter = 0; questProgress = 0; completedDungeonsCount = 0;
@@ -2563,7 +3356,7 @@ function starteTowerModus() {
 }
 
 function towerBossFuerEtage(etage) {
-  if (etage >= TOWER_MAX) return "Promised Consort Radahn";
+  if (etage >= TOWER_MAX) return "Baby PCR";
   let pool = TOWER_BOSSES.filter(b => b !== letzterTowerBoss);
   let name = pool[Math.floor(Math.random() * pool.length)];
   letzterTowerBoss = name;
@@ -2616,7 +3409,7 @@ function starteTowerEtage() {
   imKampf = false; aktionsSperre = false; inSubDungeon = false; towerRadahnPhase2 = false;
   // --- Verhängnis der GANZEN Etage würfeln (30%, nie auf der Finaletage) ---
   towerModifier = null;
-  if (towerEtage < TOWER_MAX && Math.random() < 0.30) {
+  if (towerEtage < TOWER_MAX && Math.random() < 0.45) {   // Verhaengnis-Chance 30% -> 45% (Turm-Haerte-Rework)
     towerModifier = TOWER_MODIFIERS[Math.floor(Math.random() * TOWER_MODIFIERS.length)];
     if (towerModifier.id === "ausgezehrt") spielerFlasks = Math.floor(maxKlassenFlasks / 2);   // gilt für die ganze Etage
     towerZeigeVerhaengnisToast(towerModifier);
@@ -2664,8 +3457,8 @@ function towerUpdatePhaseBox() {
 }
 
 function towerBossBesiegt() {
-  // Promised Consort Radahn: 2. Phase
-  if (gegnerName === "Promised Consort Radahn" && !towerRadahnPhase2) {
+  // Baby PCR (Turm-Version): 2. Phase
+  if (gegnerName === "Baby PCR" && !towerRadahnPhase2) {
     towerRadahnPhase2 = true;
     document.getElementById("battle-log").innerText = L("Miquella erhebt sich — Radahn kämpft weiter!", "Miquella rises — Radahn fights on!");
     gegnerMaxHp = Math.round(gegnerMaxHp * 1.25); gegnerHp = gegnerMaxHp; gegnerSchaden = Math.round(gegnerSchaden * 1.1);
@@ -2835,7 +3628,7 @@ function towerSegenWaehlen(i) {
   starteTowerEtage();
 }
 
-// --- Turm bezwungen (Etage 20 / Promised Consort Radahn gefallen) ---
+// --- Turm bezwungen (Etage 20 / Baby PCR gefallen) ---
 function oeffneTowerSieg() {
   loescheRunSave(); stopRunTimer();
   // Sicherheitsnetz: alle Tower-Achievements freischalten (höchste Etage + Turm bezwungen)
@@ -2846,7 +3639,7 @@ function oeffneTowerSieg() {
   content.innerHTML =
     '<div style="font-size:0.72rem; letter-spacing:3px; color:#cda34f; text-transform:uppercase; font-family:sans-serif;">' + ICO("Godfrey Icon.webp", "margin-right:5px;") + L("Der Turm ist bezwungen", "The Tower is Conquered") + '</div>'
     + '<h3 style="color: var(--gold); font-size:1.8rem; margin:8px 0 4px; letter-spacing:2px; font-family: \'Cinzel\', serif;">' + L("MEISTER DES TURMS", "MASTER OF THE TOWER") + '</h3>'
-    + '<p style="color:#e6dcc4; font-size:0.95rem; font-family:sans-serif; line-height:1.6; margin:8px 0;">' + L("Promised Consort Radahn ist gefallen. Du hast alle " + TOWER_MAX + " Etagen bezwungen.", "Promised Consort Radahn has fallen. You conquered all " + TOWER_MAX + " floors.") + '</p>'
+    + '<p style="color:#e6dcc4; font-size:0.95rem; font-family:sans-serif; line-height:1.6; margin:8px 0;">' + L("Baby PCR ist gefallen. Du hast alle " + TOWER_MAX + " Etagen bezwungen.", "Baby PCR has fallen. You conquered all " + TOWER_MAX + " floors.") + '</p>'
     + '<div style="display:flex; gap:22px; justify-content:center; margin:16px 0; font-family:sans-serif;">'
     +   '<div><div style="font-family:\'Cinzel\',serif; color:var(--gold); font-size:1.4rem;">' + ICO("carian_inverted_statue_elden_ring_wiki_guide_200px.png", "margin-right:5px;") + zeit + '</div><div style="font-size:0.66rem; color:#888; text-transform:uppercase; letter-spacing:1px;">' + L("Zeit", "Time") + '</div></div>'
     +   '<div><div style="font-family:\'Cinzel\',serif; color:var(--gold); font-size:1.4rem;">+500 ' + ICO("lords-rune-tools-elden-ring-wiki-guide.png", "margin:0 0 0 3px;") + '</div><div style="font-size:0.66rem; color:#888; text-transform:uppercase; letter-spacing:1px;">' + L("Seelen", "Souls") + '</div></div>'
@@ -2997,8 +3790,23 @@ function kampfGewonnen() {
     if (activeChallenge === "autobattle") setTimeout(autoBattleTick, 500);
     return;
   }
+  // Verheißener Gemahl Radahn (DLC-Finale) Phase 1 -> Phase 2: VOR dem ER-Block (P1 zählt nicht separat)
+  if (gegnerName === "Verheißener Gemahl Radahn" && aktuelleRegion === "EnirIlim") {
+    document.getElementById("battle-log").innerText = L("Miquella erhebt sich auf Radahns Schultern — das Zeitalter der Barmherzigkeit bricht an!", "Miquella rises upon Radahn's shoulders — the Age of Compassion dawns!");
+    gegnerName = "Radahn, Gemahl Miquellas"; gegnerMaxHp = Math.round(gegnerMaxHp * 1.3); gegnerHp = gegnerMaxHp; gegnerSchaden = Math.round(gegnerSchaden * 1.15);
+    if (window.ER) try { ER.discover("Radahn, Gemahl Miquellas"); } catch(e){}
+    bossPhaseWechsel = true; aktionsSperre = false;
+    updateUI(); speichereRun();
+    if (activeChallenge === "autobattle") setTimeout(autoBattleTick, 500);
+    return;
+  }
 
   activeBuffs.forEach(b => { if (b.remaining > 0) b.remaining--; }); activeBuffs = activeBuffs.filter(b => b.remaining > 0);
+
+  // DLC-Zugang: Wer Mohg schon in einem FRÜHEREN Run besiegt hat (Miquella erwacht), bekommt beim
+  // erneuten Sieg die Wahl, Miquellas Hand zu berühren — der Run endet dann NICHT, sondern geht ins DLC.
+  let mohgZweiterKill = gegnerName === "Mohg, Fürst des Blutes" && window.ER &&
+    ((ER.getStats().bossKills["Mohg, Fürst des Blutes"] || 0) >= 1);
 
   // Anti-Farm: jeden Boss-/Festungs-/Abgrund-Knoten pro Run nur EINMAL für die Rangliste zählen (schützt vor Quit-Reload-Farmen, auch bei 2-Phasen-Bossen)
   let __bossNode = ((aktuellerKnotenTyp === 5 && !inSewers) || aktuellerKnotenTyp === 15 || aktuellerKnotenTyp === 19) && !inSubDungeon;
@@ -3007,15 +3815,21 @@ function kampfGewonnen() {
 
   if (window.ER) {
     ER.fightWon();
-    if (gegnerName === "Eldenbiest" || gegnerName === "Mohg, Fürst des Blutes") { if (!__schonGezaehlt) { ER.bossKilled(gegnerName); recordHallOfFame(); ER.gameCompleted(gewaehlteKlasse, hardMode ? "hard" : "normal", !blaiddEncounteredRun, (armorRemovedByPlayer && !hatRuestungAusgeruestet())); stopRunTimer();
+    if (gegnerName === "Eldenbiest" || (gegnerName === "Mohg, Fürst des Blutes" && !mohgZweiterKill)) { if (!__schonGezaehlt) { ER.bossKilled(gegnerName); if (window.ER && ER.addBossValue) ER.addBossValue(gibStageNummer()); runBosseGelegt++; markiereGefolgeBoss(gegnerName); recordHallOfFame(); ER.gameCompleted(gewaehlteKlasse, hardMode ? "hard" : "normal", !blaiddEncounteredRun, (armorRemovedByPlayer && !hatRuestungAusgeruestet())); stopRunTimer();
+      // Completion-Marks für die Klassen-Tafel (Hard schließt Normal mit ein)
+      ER.classFeat(gewaehlteKlasse, "normal");
+      if (hardMode) ER.classFeat(gewaehlteKlasse, "hard");
+      if (gegnerName === "Mohg, Fürst des Blutes") ER.classFeat(gewaehlteKlasse, "mohgwyn");
+      if (runPlayMs > 0 && runPlayMs <= CONFIG.speedrunMarkMs) ER.classFeat(gewaehlteKlasse, "speed5");
       if (activeChallenge === "" && window.ER && ER.recordCompletionTime) try { ER.recordCompletionTime(runPlayMs, { klasse: gewaehlteKlasse, diff: hardMode ? "hard" : "normal" }); } catch(e){}   // Speedrun-Bestenliste (nur echte Story-Runs)
       if (hardMode) ER.hardCompleted();
       if (activeChallenge) ER.challengeCompleted(activeChallenge);
       if (maleniaBesiegtRun) ER.maleniaRunCompleted();   // Achievement "Pfad des Haligtree"
       if (waffenRaritaet === "legendary" && ruestungRaritaet === "legendary" && Array.isArray(ausgeruesteteTalismane) && ausgeruesteteTalismane.some(function(tt){ return tt && tt.rarity === "legendary"; })) ER.legendaryRunCompleted();  // "Legendär ausgestattet"
     } }
-    else if (aktuellerKnotenTyp === 5 && !inSubDungeon && !inSewers) { if (!__schonGezaehlt) ER.bossKilled(gegnerName); }
-    else if (aktuellerKnotenTyp === 15 || aktuellerKnotenTyp === 19) { if (!__schonGezaehlt) ER.bossKilled(gegnerName); }
+    else if (mohgZweiterKill) { if (!__schonGezaehlt) { ER.bossKilled(gegnerName); if (window.ER && ER.addBossValue) ER.addBossValue(gibStageNummer()); runBosseGelegt++; markiereGefolgeBoss(gegnerName); ER.classFeat(gewaehlteKlasse, "mohgwyn"); } }   // Zweitsieg: Kill zählt, Run-Abschluss erst nach der Hand-Wahl
+    else if (aktuellerKnotenTyp === 5 && !inSubDungeon && !inSewers) { if (!__schonGezaehlt) { ER.bossKilled(gegnerName); if (window.ER && ER.addBossValue) ER.addBossValue(gibStageNummer()); runBosseGelegt++; markiereGefolgeBoss(gegnerName); } }
+    else if (aktuellerKnotenTyp === 15 || aktuellerKnotenTyp === 19) { if (!__schonGezaehlt) { ER.bossKilled(gegnerName); if (window.ER && ER.addBossValue) ER.addBossValue(gibStageNummer()); runBosseGelegt++; markiereGefolgeBoss(gegnerName); } }
     else if (aktuellerKnotenTyp === 5 && inSewers) ER.eliteKilled();   // Esgar zählt als Gegner, nicht als Boss
     else if (aktuellerKnotenTyp === 14) ER.minibossKilled();
     else if (aktuellerKnotenTyp === 1) ER.eliteKilled();
@@ -3030,7 +3844,9 @@ function kampfGewonnen() {
   imKampf = false; aktionsSperre = false; let naechsteEbene = aktuelleEbene + 1;
 
   // Mohg, Fürst des Blutes besiegt -> Miquella erwacht, der Run ist vollendet (alternatives Ende)
+  // Beim ZWEITEN Sieg (Meta): die verwelkte Hand wartet — Wahl zwischen Ende und Land des Schattens
   if (gegnerName === "Mohg, Fürst des Blutes") {
+    if (mohgZweiterKill) { oeffneMohgDlcWahl(); return; }
     oeffneAbschlussPopup(
       L("MIQUELLA ERWACHT", "MIQUELLA AWAKENS"),
       L("Mohg, Fürst des Blutes, ist gefallen. Im Herzen der Dynastie regt sich der Kokon — Miquella erwacht aus seinem langen Schlummer.\n\nDein Weg endet hier... vorerst.", "Mohg, Lord of Blood, has fallen. Within the heart of the dynasty the cocoon stirs — Miquella awakens from his long slumber.\n\nYour path ends here... for now.")
@@ -3084,6 +3900,58 @@ function kampfGewonnen() {
     else { oeffneStatPopup(t("blaidd_progress_title"), t("blaidd_progress_desc", { n: questProgress, z: hardMode ? 5 : 4 }), naechsteEbene); return; }
   }
   
+  // === DLC: Land des Schattens — Boss-Übergänge ===
+  if (gegnerName === "Göttliches Tanzlöwenbiest") {
+    aktuelleRegion = "CastleEnsis"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null; netzKarte = generiereRautenNetz("CastleEnsis");
+    oeffneStatPopup(L("Tanzlöwenbiest besiegt", "Dancing Lion Defeated"), "", 1);
+    return;
+  }
+  if (gegnerName === "Rellana, Ritterin der Zwillingsmonde") {
+    // Die 3 Torbögen auf der Gräberebene entscheiden den Mittelweg:
+    // durchgesprungen -> Blaidd zeigt den Weg ins Waldgebiet; sonst geht es in den Gruselwald.
+    if (torbogenSpruenge >= 3) { starteWaldgebiet(); return; }
+    starteGruselwald();
+    return;
+  }
+  if (gegnerName === "Sonnenblume") {
+    starteFestungMessmer(L("Sonnenblume besiegt", "Sunflower Defeated"), "");
+    return;
+  }
+  if (gegnerName === "Midra, Herr der Wahnsinnigen Flamme") {
+    wahnsinn = 0; aktualisiereWahnsinnAnzeige();
+    starteFestungMessmer(L("Midra besiegt", "Midra Defeated"), "");
+    return;
+  }
+  if (gegnerName === "Messmer der Pfähler") { oeffneWegwahlMessmer(); return; }
+  if (gegnerName === "Gaius") {
+    if (besitztFingerMimic()) {   // Finger im Rucksack -> hier ist er RICHTIG eingesetzt: Gebiet der Finger -> Metyr
+      for (let i = 0; i < backpackItems.length; i++) if (backpackItems[i] && backpackItems[i].type === "fingermimic") backpackItems[i] = null;
+      updateUI();
+      starteFingerruinen(); return;
+    }
+    // Ohne Finger Mimic: der Garten gibt nichts her -> regulärer Weg nach Enir-Ilim
+    starteEnirIlim(L("Gaius besiegt", "Gaius Defeated"), L("Am Ende des Gartens ist nichts — dir fehlt etwas, um diesen Ort zu öffnen.", "At the end of the garden there is nothing — something is missing to open this place."));
+    return;
+  }
+  if (gegnerName === "Romina, Heilige der Knospe") {
+    scharlachRot = false;
+    starteEnirIlim(L("Romina besiegt", "Romina Defeated"), "");
+    return;
+  }
+  if (gegnerName === "Radahn, Gemahl Miquellas") {
+    vollendeRunMitAbschluss(
+      L("ZEITALTER DER BARMHERZIGKEIT", "AGE OF COMPASSION"),
+      L("Der Verheißene Gemahl Radahn ist gefallen, und Miquellas Traum zerbricht an der Spitze von Enir-Ilim.\n\nDu hast das Land des Schattens bis zu seinem Ende durchschritten und den größten aller Feinde bezwungen. <b>Nur die Allerwenigsten kommen je so weit.</b>", "Promised Consort Radahn has fallen, and Miquella's dream shatters at the summit of Enir-Ilim.\n\nYou have walked the Land of Shadow to its very end and defeated the greatest foe of all. <b>Only the fewest of the few ever come this far.</b>"));
+    return;
+  }
+  if (gegnerName === "Metyr, Mutter der Finger") {
+    inFingerruinen = false;
+    vollendeRunMitAbschluss(
+      L("DIE MUTTER DER FINGER IST TOT", "THE MOTHER OF FINGERS IS DEAD"),
+      L("Metyr, Botin der Äußeren Götter, zerfällt zu Sternenstaub. Ihr Blick, der aus dem Nichts zwischen den Welten auf die Zwischenlande fiel, erlischt für immer.\n\nDu hast das tiefste, bestgehütete Geheimnis des Schattenlands gelüftet — einen Boss, den <b>fast niemand</b> je zu Gesicht bekommt.", "Metyr, messenger of the Outer Gods, crumbles to stardust. Her gaze, cast upon the Lands Between from the void between worlds, is snuffed out forever.\n\nYou have uncovered the deepest, best-kept secret of the Land of Shadow — a boss <b>almost no one</b> ever lays eyes upon."));
+    return;
+  }
+
   if (gegnerName === "Godrick, der Verpflanzte") {
     hatGodrickRune = true;
     // Nach Limgrave: wenn Liurnia freigeschaltet ist (und kein Challenge-Run), Wegwahl Caelid/Liurnia anbieten
@@ -3098,12 +3966,12 @@ function kampfGewonnen() {
   if (gegnerName === "Rennala, Königin des Vollmonds") {
     hatRennalaRune = true;
     if (kannNachGelmir()) { oeffneWegwahlLeyndell(L("Rennala ist gefallen", "Rennala Has Fallen")); return; }
-    aktuelleRegion = "Leyndell"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null; netzKarte = generiereRautenNetz("Leyndell"); oeffneStatPopup(L("Rennala bezwungen", "Rennala Defeated"), L("Die Königin des Vollmonds ist gefallen. Ihre Große Rune schenkt dir eine zweite Chance — eine Wiederbelebung mit 50% HP. Dein Weg führt weiter nach Leyndell.", "The Queen of the Full Moon has fallen. Her Great Rune grants you a second chance — a revive at 50% HP. Your path leads on to Leyndell."), 1); return;
+    aktuelleRegion = "Leyndell"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null; netzKarte = generiereRautenNetz("Leyndell"); oeffneStatPopup(L("Rennala besiegt", "Rennala Defeated"), L("Ihre Rune schenkt dir eine Wiederbelebung (50% HP).", "Her rune grants you one revive (50% HP)."), 1); return;
   }
   if (gegnerName === "Rykard, Herr der Blasphemie") {
     hatRykardRune = true; if (hardMode) maxTalismanSlots = Math.max(maxTalismanSlots, 3);   // Parität zu Morgott im Hard Mode
     aktuelleRegion = "Mountaintops"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null; netzKarte = generiereRautenNetz("Mountaintops");
-    oeffneStatPopup(L("Rykard bezwungen", "Rykard Defeated"), L("Der Herr der Blasphemie ist verschlungen worden — von dir. Seine Große Rune nährt dich fortan mit jedem Hieb. Dein Weg führt hinauf zu den Gipfeln der Riesen.", "The Lord of Blasphemy has been devoured — by you. His Great Rune now feeds you with every strike. Your path leads up to the Mountaintops of the Giants."), 1); return;
+    oeffneStatPopup(L("Rykard besiegt", "Rykard Defeated"), "", 1); return;
   }
   if (gegnerName === "Morgott, der Omenkönig") { hatMorgottRune = true; if (hardMode) maxTalismanSlots = Math.max(maxTalismanSlots, 3); aktuelleRegion = "Mountaintops"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null; netzKarte = generiereRautenNetz("Mountaintops"); oeffneStatPopup(t("boss_morgott_title"), t("boss_morgott_win"), 1); return; }
   if (gegnerName === "Feuerriese") { maxWaffenSlots = hardMode ? 1 : 2; aktuelleRegion = "FarumAzula"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null; netzKarte = generiereRautenNetz("FarumAzula"); oeffneStatPopup(t("boss_giant_title"), t("boss_giant_win"), 1); return; }
@@ -3116,7 +3984,7 @@ function kampfGewonnen() {
   // Malenia Phase 1 -> Phase 2 wird oben (vor dem ER-Block) behandelt.
   // Malenia Phase 2 besiegt -> weiter zum Eldenthron (zählt hier oben im ER-Block als EIN Boss)
   if (gegnerName === "Malenia, Goddess of Rot") {
-    maleniaBesiegtRun = true; if (window.ER) ER.maleniaKilled();   // Achievement "Klinge Miquellas"
+    maleniaBesiegtRun = true; if (window.ER) { ER.maleniaKilled(); ER.classFeat(gewaehlteKlasse, "malenia"); }   // Achievement "Klinge Miquellas" + Klassen-Tafel
     if (hatMohgMedaille) { oeffneHaligtreeWahl(true); return; }    // Reinblutrittermedaille -> nach Malenia auch Mohgwyn möglich
     aktuelleRegion = "EldenThrone"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null; netzKarte = generiereRautenNetz("EldenThrone");
     oeffneStatPopup(L("Malenia bezwungen", "Malenia Defeated"), L("Die Klinge Miquellas ist gefallen. Nun führt dein Weg zum Eldenthron.", "Miquella's blade has fallen. Now your path leads on to the Elden Throne."), 1);
@@ -3125,10 +3993,21 @@ function kampfGewonnen() {
 
   if (gegnerName === "Eldenbiest") { oeffneAbschlussPopup(t("elden_lord_title"), t("boss_beast_win")); return; }
 
+  if (gegnerName === "Fingercreeper") { fingerMimicDrop(naechsteEbene); return; }   // DLC: getarnter Wald-Gegner -> Finger Mimic
+
+  // DLC Gebiet der Finger: Wurm erschlagen -> zurück aufs Gitter (keine Ebenen-Logik hier)
+  if (gegnerName === "Fingerwurm") {
+    if (fingerWuermerTot.indexOf(fingerPos) < 0) fingerWuermerTot.push(fingerPos);
+    imKampf = false; aktionsSperre = false; wurmBann = 0; aktuellerKnotenTyp = null;
+    document.getElementById("popup-overlay").style.display = "none";
+    speichereRun(); baueKarteHTML(); updateUI();
+    return;
+  }
+
   if (aktuellerKnotenTyp === 1) {
     let hpBonus = Math.round(spielerMaxHp * (hardMode ? 0.05 : 0.1)); spielerMaxHp += hpBonus; spielerHp += hpBonus;
     oeffneStatPopup(t("elite_title"), t("enemy_elite_win", { hp: hpBonus }), naechsteEbene); return;
-  } 
+  }
   if (aktuellerKnotenTyp === 11) { oeffneStatPopup(t("skeleton_title"), t("enemy_skeleton_win"), naechsteEbene); return; }
 }
 
@@ -3179,9 +4058,9 @@ function berechneFinalMaxHp() {
 function oeffneTalismanPopup(naechsteEbene) {
   if (window.ER) ER.talismanFound();
   let overlay = document.getElementById("popup-overlay"); let content = document.getElementById("popup-content");
-  let tier = gibTalismanTier(); let istVerflucht = Math.random() < (hardMode ? 0.30 : 0.15); let neuerTalisman;
+  let tier = gibTalismanTier(); let istVerflucht = srand() < (hardMode ? 0.30 : 0.15); let neuerTalisman;
   if (istVerflucht) neuerTalisman = erzeugeSchlechtenTalisman(tier);
-  else { let typId = guteTalismanIds[Math.floor(Math.random() * guteTalismanIds.length)]; neuerTalisman = erzeugeGutenTalisman(typId, tier); }
+  else { let typId = guteTalismanIds[Math.floor(srand() * guteTalismanIds.length)]; neuerTalisman = erzeugeGutenTalisman(typId, tier); }
   if (window.ER && neuerTalisman && neuerTalisman.id) try { ER.discover("t:" + neuerTalisman.id); } catch(e){}   // Eldendex: Talisman gesehen
 
   let rarFarbe = neuerTalisman.rarity === "cursed" ? "#c0392b" : (raritaetFarben[neuerTalisman.rarity] || "#9aa0a6");
@@ -3370,7 +4249,7 @@ function oeffneStatPopup(titel, text, naechsteEbene) {
   let overlay = document.getElementById("popup-overlay"); let content = document.getElementById("popup-content");
   content.innerHTML = `
     <h3 style="color: var(--gold); font-size:1.6rem; margin-top:0; letter-spacing:2px; font-family: 'Mantinia', serif;">${titel}</h3>
-    <p style="color:#ddd; font-size:0.95rem; font-family: sans-serif; white-space: pre-line; line-height:1.5;">${text}</p>
+    ${text ? `<p style="color:#ddd; font-size:0.95rem; font-family: sans-serif; white-space: pre-line; line-height:1.5;">${text}</p>` : ""}
     <button class="btn-modal-action" onclick="bestaetigeStufe(${naechsteEbene})">${t("btn_continue")}</button>
   `;
   overlay.style.display = "flex";
@@ -3402,6 +4281,407 @@ function speedrunModusAktiv(){ try { return localStorage.getItem("eldenRogueSpee
 
 // Run ist ABGESCHLOSSEN (Sieg) – kein Weiterspielen, kein Speichern.
 // Zeigt nur einen Button zurück ins Hauptmenü.
+/* ============================================================
+   DLC: LAND DES SCHATTENS — Zugang, Regionen & Todesfluch
+   ============================================================ */
+
+// Mohg (2. Sieg) liegt: Wahl zwischen bisherigem Ende und dem Übertritt ins DLC
+function oeffneMohgDlcWahl() {
+  dlcWahlOffen = true; speichereRun();
+  let overlay = document.getElementById("popup-overlay"); let content = document.getElementById("popup-content");
+  content.innerHTML = `
+    <div style="color:#888; font-size:0.72rem; letter-spacing:3px; text-transform:uppercase; font-family:sans-serif; margin-bottom:6px;">${L("Mohg ist erneut gefallen", "Mohg has fallen once more")}</div>
+    <h3 style="color: var(--gold); font-size:1.7rem; margin-top:0; letter-spacing:2px; font-family: 'Mantinia', serif;">${L("DIE VERWELKTE HAND", "THE WITHERED HAND")}</h3>
+    <p style="color:#ddd; font-size:0.95rem; font-family: sans-serif; white-space:pre-line; line-height:1.55;">${L("Der Kokon ist geborsten — Miquella ist fort. Zurück blieb nur eine <b>verwelkte Hand</b>, die aus dem Herzen der Dynastie ragt.\n\nSie scheint auf dich zu warten.", "The cocoon has burst — Miquella is gone. All that remains is a <b>withered hand</b>, reaching out from the heart of the dynasty.\n\nIt seems to be waiting for you.")}</p>
+    <button class="btn-modal-action" style="border-color:#b06ad4; color:#c99ae0;" onclick="starteDLC()">🖐 ${L("Die Hand berühren", "Touch the hand")}</button>
+    <button class="btn-modal-action" onclick="vollendeMohgwynEnde()">${L("Den Run vollenden", "Complete the run")}</button>
+    <p style="color:#666; font-size:0.72rem; font-family:sans-serif; margin-top:10px;">${L("Die Hand führt ins Land des Schattens — es gibt kein Zurück, und was dort wartet, ist gnadenlos.", "The hand leads into the Land of Shadow — there is no way back, and what waits there is merciless.")}</p>
+  `;
+  overlay.style.display = "flex";
+}
+
+// Gemeinsames Run-Abschluss-Paket (Statistiken, Bestenlisten, Marks) + Abschluss-Popup
+function vollendeRunMitAbschluss(titel, text) {
+  dlcWahlOffen = false;
+  if (window.ER) {
+    recordHallOfFame();
+    ER.gameCompleted(gewaehlteKlasse, hardMode ? "hard" : "normal", !blaiddEncounteredRun, (armorRemovedByPlayer && !hatRuestungAusgeruestet()));
+    stopRunTimer();
+    ER.classFeat(gewaehlteKlasse, "normal");
+    if (hardMode) ER.classFeat(gewaehlteKlasse, "hard");
+    if (runPlayMs > 0 && runPlayMs <= CONFIG.speedrunMarkMs) ER.classFeat(gewaehlteKlasse, "speed5");
+    if (activeChallenge === "" && ER.recordCompletionTime) try { ER.recordCompletionTime(runPlayMs, { klasse: gewaehlteKlasse, diff: hardMode ? "hard" : "normal" }); } catch(e){}
+    if (hardMode) ER.hardCompleted();
+    if (activeChallenge) ER.challengeCompleted(activeChallenge);
+    if (maleniaBesiegtRun) ER.maleniaRunCompleted();
+    if (waffenRaritaet === "legendary" && ruestungRaritaet === "legendary" && Array.isArray(ausgeruesteteTalismane) && ausgeruesteteTalismane.some(function(tt){ return tt && tt.rarity === "legendary"; })) ER.legendaryRunCompleted();
+  }
+  oeffneAbschlussPopup(titel, text);
+}
+
+function vollendeMohgwynEnde() {
+  vollendeRunMitAbschluss(
+    L("MIQUELLA ERWACHT", "MIQUELLA AWAKENS"),
+    L("Mohg, Fürst des Blutes, ist gefallen. Die verwelkte Hand sinkt zurück in den Kokon.\n\nDein Weg endet hier... vorerst.", "Mohg, Lord of Blood, has fallen. The withered hand sinks back into the cocoon.\n\nYour path ends here... for now.")
+  );
+}
+
+// Übertritt ins Land des Schattens: der Run läuft weiter — auf der Gräberebene
+function starteDLC() {
+  dlcWahlOffen = false;
+  document.getElementById("popup-overlay").style.display = "none";
+  aktuelleRegion = "Gravesite"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null;
+  inSubDungeon = false; inSewers = false; mainMapState = null;
+  torbogenSpruenge = 0; wolfsgeheulGehoert = false; wahnsinn = 0; rellanaGetroffen = false; scharlachRot = false;
+  netzKarte = generiereRautenNetz("Gravesite");
+  heileUndRegeneriereVoll(hardMode);
+  speichereRun(); baueKarteHTML(); updateUI(); aktualisiereWahnsinnAnzeige();
+  oeffneStatPopup(L("Das Land des Schattens", "The Land of Shadow"),
+    L("Du berührst die verwelkte Hand — und die Welt zerfließt zu goldener Asche.\n\nAls du erwachst, liegt ein fremdes Land unter einem verhangenen Himmel vor dir: die <b>Gräberebene</b>. Steinerne Torbögen säumen die Gräber, und die Gegner hier sind von ganz anderer Härte.\n\n<b>Es gibt kein Zurück.</b>", "You touch the withered hand — and the world dissolves into golden ash.\n\nWhen you wake, a strange land lies before you beneath a veiled sky: the <b>Gravesite Plain</b>. Stone archways line the graves, and the enemies here are of a different caliber entirely.\n\n<b>There is no way back.</b>"), 1);
+}
+
+// --- DLC-Mittelweg: 3 Torbögen gesprungen -> Blaidd führt ins Waldgebiet ---
+function starteWaldgebiet() {
+  document.getElementById("popup-overlay").style.display = "none";
+  aktuelleRegion = "Waldgebiet"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null;
+  netzKarte = generiereRautenNetz("Waldgebiet");
+  heileUndRegeneriereVoll(hardMode);
+  speichereRun(); baueKarteHTML(); updateUI(); aktualisiereWahnsinnAnzeige();
+  oeffneStatPopup(L("Waldgebiet", "Woodlands"),
+    L("Blaidd führt dich hinein. Hier sieht jeder Knoten gleich aus — <b>lies die Beschreibung</b>, um zu wissen, was dich erwartet.", "Blaidd leads you in. Every node looks the same here — <b>read the description</b> to know what awaits."), 1);
+}
+
+// --- DLC-Mittelweg: keine Tore -> Gruselwald (erbt die Abgrund-Mechanik, interner Schluessel bleibt AbyssalWoods) ---
+function starteGruselwald() {
+  document.getElementById("popup-overlay").style.display = "none";
+  aktuelleRegion = "AbyssalWoods"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null;
+  wahnsinn = 0; untouchableRunden = 0;
+  netzKarte = generiereRautenNetz("AbyssalWoods");
+  speichereRun(); baueKarteHTML(); updateUI(); aktualisiereWahnsinnAnzeige();
+  oeffneStatPopup(L("Der Gruselwald", "The Eerie Woods"),
+    L("Alle Wege sind schwarz — nur der <b>richtige</b> glimmt sacht. Verlässt du ihn, packt dich der Aging Untouchable: <b>+25% Wahnsinn</b> je Griff, bei 100% ist der Run vorbei.", "Every path is black — only the <b>right</b> one faintly glimmers. Stray from it and the Aging Untouchable grabs you: <b>+25% madness</b> each time; at 100% the run is over."), 1);
+}
+
+// --- Beide Mittelwege muenden hier: die Festung von Messmer ---
+function starteFestungMessmer(titel, text) {
+  document.getElementById("popup-overlay").style.display = "none";
+  aktuelleRegion = "FestungMessmer"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null;
+  hatGebetet = false; messmerGekippt = false;   // man beginnt IMMER mit dem Aufstieg
+  netzKarte = generiereRautenNetz("FestungMessmer");
+  heileUndRegeneriereVoll(hardMode);
+  speichereRun(); baueKarteHTML(); updateUI(); aktualisiereWahnsinnAnzeige();
+  oeffneStatPopup(titel, text, 1);
+}
+
+// Der Schalter ganz oben: die Festung kippt. Ab hier geht es hinab — neues Layout, Statue, unten Messmer.
+function kippeFestung() {
+  if (messmerGekippt) return;
+  messmerGekippt = true;
+  aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null;
+  netzKarte = generiereRautenNetz("FestungMessmer");   // 3-4-2-4-3 -> Boss
+  let mv = document.getElementById("map-scroll-area");
+  if (mv) {   // sichtbares Kippen: die Karte dreht sich einmal um sich selbst
+    mv.classList.add("festung-kippt");
+    setTimeout(function () { try { mv.classList.remove("festung-kippt"); } catch (e) {} }, 1400);
+  }
+  try { playKippSound(); } catch (e) {}
+  speichereRun(); baueKarteHTML(); updateUI();
+  oeffneStatPopup(
+    L("Die Festung kippt", "The Fortress Turns"),
+    L("Kein Thron, kein Boss — nur ein rostiger Hebel im Wind. Du legst dich hinein, und er gibt mit einem Knirschen nach.\n\nEin Beben läuft durch das Mauerwerk. Treppen, die eben noch hinaufführten, führen jetzt <b>hinab</b>. Die ganze Festung hat sich gedreht — und irgendwo tief unter dir, am Grund dessen, was eben noch der Himmel war, wartet <b>Messmer</b>.",
+      "No throne, no boss — just a rusted lever in the wind. You throw your weight into it, and it gives with a grinding groan.\n\nA tremor runs through the masonry. Stairs that led up a moment ago now lead <b>down</b>. The whole fortress has turned — and somewhere far beneath you, at the bottom of what was just the sky, <b>Messmer</b> waits."),
+    1);
+}
+function playKippSound() {
+  if (typeof _soundOn !== "undefined" && !_soundOn) return;
+  var AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+  var ac = new AC(); var o = ac.createOscillator(), g = ac.createGain();
+  o.type = "sawtooth";
+  o.frequency.setValueAtTime(180, ac.currentTime);
+  o.frequency.exponentialRampToValueAtTime(38, ac.currentTime + 1.3);   // die Welt dreht sich nach unten
+  g.gain.setValueAtTime(0.0001, ac.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.22, ac.currentTime + 0.12);
+  g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + 1.5);
+  o.connect(g); g.connect(ac.destination);
+  o.start(); o.stop(ac.currentTime + 1.6);
+  o.onended = function () { try { ac.close(); } catch (e) {} };
+}
+
+// --- Nach Messmer: Wahl zwischen den Ruinen (Enir-Weg) und dem Garten (Metyr-Weg, nur mit Gebet) ---
+function oeffneWegwahlMessmer() {
+  let overlay = document.getElementById("popup-overlay"); let content = document.getElementById("popup-content");
+  content.innerHTML =
+    '<div style="color:#8a7f68; font-size:0.72rem; letter-spacing:2px; font-family:sans-serif; margin-bottom:2px; text-transform:none;">' + L("Messmer ist gefallen", "Messmer has fallen") + '</div>' +
+    '<h3 style="color: var(--gold); font-size:1.6rem; margin-top:0; letter-spacing:2px; font-family:\'Mantinia\',serif;">' + L("ZWEI WEGE", "TWO PATHS") + '</h3>' +
+    '<p style="color:#ddd; font-size:0.92rem; font-family:sans-serif; line-height:1.55; white-space:pre-line;">' +
+      (hatGebetet
+        ? L("Die Flammen der Festung erlöschen. Vor dir teilt sich der Weg:\n\nNach Osten die <b>Ruinen von Rauh</b> — und dahinter Enir-Ilim.\nUnd da ist noch etwas: das <b>Geräusch</b>, das die Statue dir gezeigt hat. Es führt in den <b>Garten</b>.",
+             "The fortress flames die down. Before you the path splits:\n\nEast lie the <b>Ruins of Rauh</b> — and beyond them, Enir-Ilim.\nAnd there is something else: the <b>sound</b> the statue revealed to you. It leads to the <b>Garden</b>.")
+        : L("Die Flammen der Festung erlöschen. Vor dir liegen die <b>Ruinen von Rauh</b> — und dahinter Enir-Ilim.", "The fortress flames die down. Before you lie the <b>Ruins of Rauh</b> — and beyond them, Enir-Ilim.")) + '</p>' +
+    '<button class="btn-modal-action" onclick="starteRauh(false)">' + L("🩸 Zu den Ruinen von Rauh", "🩸 To the Ruins of Rauh") + '</button>' +
+    (hatGebetet ? '<button class="btn-modal-action" style="border-color:#5aa06a; color:#8fe6b0;" onclick="starteGarten()">' + L("🌿 Dem Geräusch folgen — in den Garten", "🌿 Follow the sound — to the Garden") + '</button>' : '');
+  overlay.style.display = "flex";
+}
+
+function starteGarten() {
+  document.getElementById("popup-overlay").style.display = "none";
+  aktuelleRegion = "Garten"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null;
+  netzKarte = generiereRautenNetz("Garten");
+  heileUndRegeneriereVoll(hardMode);
+  speichereRun(); baueKarteHTML(); updateUI(); aktualisiereWahnsinnAnzeige();
+  oeffneStatPopup(L("Der Garten", "The Garden"),
+    L("Hinter der Festung öffnet sich ein stiller, wuchernder <b>Garten</b> unter fahlem Licht. Nichts hier wirkt feindselig — und doch beobachtet dich etwas.\n\nAm Ende wacht <b>Gaius</b>. Und dahinter… liegt etwas, das nur mit dem richtigen Schlüssel erwacht.", "Behind the fortress opens a silent, overgrown <b>Garden</b> beneath pale light. Nothing here seems hostile — and yet something watches you.\n\nAt the end stands <b>Gaius</b>. And beyond… lies something that awakens only with the right key."), 1);
+}
+
+// --- Enir-Ilim betreten (Haupt-Endweg) ---
+function starteEnirIlim(titel, text) {
+  document.getElementById("popup-overlay").style.display = "none";
+  aktuelleRegion = "EnirIlim"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null;
+  wahnsinn = 0; scharlachRot = false;
+  netzKarte = generiereRautenNetz("EnirIlim");
+  heileUndRegeneriereVoll(hardMode);
+  speichereRun(); baueKarteHTML(); updateUI(); aktualisiereWahnsinnAnzeige();
+  oeffneStatPopup(titel, text, 1);
+}
+
+// Ruinen von Rauh betreten (regulärer Weg nach Rellana). hitless = kam über die makellose Wahl
+function starteRauh(hitless) {
+  document.getElementById("popup-overlay").style.display = "none";
+  aktuelleRegion = "Rauh"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null;
+  scharlachRot = true;
+  netzKarte = generiereRautenNetz("Rauh");
+  heileUndRegeneriereVoll(hardMode);
+  speichereRun(); baueKarteHTML(); updateUI(); aktualisiereWahnsinnAnzeige();
+  oeffneStatPopup(L("Die Ruinen von Rauh", "The Ruins of Rauh"),
+    L("Uralte Tempel, überwuchert von blühender Scharlachfäule. Kaum betrittst du das Gelände, kriecht das Rot bereits durch deine Adern.\n\n<b>Scharlachfäule:</b> Jeder Knoten, den du betrittst, kostet dich <b>10% deiner maximalen Lebenskraft</b>. Nur an Orten der Gnade ebbt sie ab. Am Ende thront <b>Romina, Heilige der Knospe</b>.", "Ancient temples, overgrown with blooming Scarlet Rot. The moment you set foot here, the red already creeps through your veins.\n\n<b>Scarlet Rot:</b> Every node you step onto costs you <b>10% of your maximum health</b>. Only at sites of grace does it recede. At the end reigns <b>Romina, Saint of the Bud</b>."), 1);
+}
+
+// Wahnsinns-Balken (Abgrundwald) & Scharlachfäule-Chip (Rauh) — Overlays oben links über der Karte
+function aktualisiereWahnsinnAnzeige() {
+  let ov = document.getElementById("madness-overlay");
+  if (ov) {
+    let aktiv = aktuelleRegion === "AbyssalWoods";
+    ov.style.display = aktiv ? "block" : "none";
+    if (aktiv) {
+      let fill = document.getElementById("madness-fill"); if (fill) { fill.style.width = wahnsinn + "%"; fill.classList.toggle("crit", wahnsinn >= 75); }
+      let pct = document.getElementById("madness-pct"); if (pct) pct.textContent = wahnsinn + "%";
+    }
+  }
+  let chip = document.getElementById("rot-chip");
+  if (chip) chip.style.display = (aktuelleRegion === "Rauh" && scharlachRot) ? "block" : "none";
+}
+
+/* ============================================================
+   DLC: Fingerruinen & Metyr — eigenes 10×10-Erkundungsgitter.
+   Start unten links (Index 90), Ziel/Metyr oben rechts (9).
+   Drei Finger (72/45/27) müssen "geblasen" werden -> Metyr erwacht.
+   ============================================================ */
+function starteFingerruinen() {
+  document.getElementById("popup-overlay").style.display = "none";
+  aktuelleRegion = "Fingerruinen"; scharlachRot = false; inFingerruinen = false;
+  fingerGeblasen = []; wurmBann = 0;
+  aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null; imKampf = false;
+  netzKarte = generiereRautenNetz("Fingerruinen");
+  heileUndRegeneriereVoll(hardMode);
+  aktualisiereWahnsinnAnzeige(); speichereRun(); baueKarteHTML(); updateUI();
+  oeffneStatPopup(L("Die Ruinen der Finger", "The Finger Ruins"),
+    L("Ein Feld grauer Steinsäulen unter fremdem Sternenhimmel. Jeder Gegner hier ist ein <b>Fingerwurm</b> (kann dich bannen). <b>Blas in die drei Finger</b> (🖐) auf deinem Weg — dann wartet <b>Metyr</b>.",
+      "A field of grey stone pillars beneath an alien sky. Every enemy here is a <b>finger worm</b> (it can bind you). <b>Blow into the three fingers</b> (🖐) along your path — then <b>Metyr</b> awaits."), 1);
+}
+// Einbahn: 3 zufällige Finger, aber garantiert auf EINEM monotonen Treppen-Pfad
+// (Start unten links -> Metyr oben rechts, nur hoch/rechts). So ist jeder Finger
+// ohne Umkehr erreichbar und es kann keinen Soft-Lock geben.
+function wuerfleFinger() {
+  let r = 9, c = 0, pfad = [];
+  while (!(r === 0 && c === 9)) {
+    if (r > 0 && c < 9) { if (Math.random() < 0.5) r--; else c++; }
+    else if (r > 0) r--; else c++;
+    let idx = r * 10 + c;
+    if (idx !== FINGER_METYR) pfad.push(idx);
+  }
+  let kandidaten = pfad.filter(i => i !== FINGER_START && i !== FINGER_METYR);
+  let out = [];
+  // gleichmäßig streuen: Pfad in Drittel teilen, aus jedem eins ziehen
+  for (let seg = 0; seg < 3 && kandidaten.length; seg++) {
+    let lo = Math.floor(kandidaten.length * seg / 3), hi = Math.floor(kandidaten.length * (seg + 1) / 3);
+    if (hi <= lo) hi = lo + 1;
+    let pick = kandidaten[Math.min(kandidaten.length - 1, lo + Math.floor(Math.random() * (hi - lo)))];
+    if (pick != null && out.indexOf(pick) < 0) out.push(pick);
+  }
+  while (out.length < 3 && kandidaten.length >= 3) { let p = kandidaten[Math.floor(Math.random() * kandidaten.length)]; if (out.indexOf(p) < 0) out.push(p); }
+  return out;
+}
+// noch nicht geblasene Finger
+// Würmer besetzen ~22% der freien Kacheln (nie Start, nie Metyr, nie ein Finger).
+// Sie blockieren nichts — man kämpft NACH dem Zug, der Einbahn-Pfad bleibt also garantiert lösbar.
+function wuerfleWuermer() {
+  let out = [];
+  for (let i = 0; i < 100; i++) {
+    if (i === FINGER_START || i === FINGER_METYR || fingerNodes.indexOf(i) >= 0) continue;
+    if (Math.random() < 0.22) out.push(i);
+  }
+  return out;
+}
+function fingerOffen() { return fingerNodes.filter(i => fingerGeblasen.indexOf(i) < 0); }
+// Bleiben von (nr,nc) aus (per hoch/rechts) noch alle offenen Finger erreichbar?
+function fingerErreichbarVon(nr, nc) {
+  return fingerOffen().every(f => { let fr = Math.floor(f / 10), fc = f % 10; return fr <= nr && fc >= nc; });
+}
+// Erlaubte Züge: nur nach OBEN (Reihe−1) oder RECHTS (Spalte+1) und nur, wenn danach
+// kein offener Finger abgeschnitten wird (Metyr erst offen, wenn alle Finger tönen).
+function fingerErlaubteZuege(pos) {
+  let r = Math.floor(pos / 10), c = pos % 10, out = [];
+  [[r - 1, c], [r, c + 1]].forEach(function (m) {
+    let nr = m[0], nc = m[1]; if (nr < 0 || nc > 9) return;
+    let idx = nr * 10 + nc;
+    if (idx === FINGER_METYR) { if (fingerGeblasen.length >= fingerNodes.length) out.push(idx); return; }
+    if (fingerErreichbarVon(nr, nc)) out.push(idx);
+  });
+  return out;
+}
+function renderFingerruinen(grid, mv) {
+  if (mv) { mv.classList.remove("abyss-fog"); mv.style.backgroundImage = "linear-gradient(to bottom, rgba(18,14,30,0.92), rgba(5,4,10,0.985)), url('images/background/fingerruinen.jpg')"; }
+  let allBlown = fingerGeblasen.length >= fingerNodes.length;
+  let reach = fingerErlaubteZuege(fingerPos);
+  let cells = "";
+  for (let i = 0; i < 100; i++) {
+    let cls = "fr-cell", inner = "";
+    if (i === fingerPos) { cls += " fr-here"; inner = '<img class="fr-me" src="images/tarnished_idle.png" onerror="this.replaceWith(document.createTextNode(\'🧍\'))">'; }
+    else if (reach.indexOf(i) >= 0) cls += " fr-reach";
+    else if (fingerPfad.indexOf(i) >= 0) cls += " fr-visited";   // schon durchquert — kein Zurück
+    if (i === FINGER_METYR) { cls += " fr-metyr" + (allBlown ? " lit" : ""); inner = '<img class="fr-metyr-img" src="' + (bilderDatenbankBosse["Metyr, Mutter der Finger"] || "") + '" onerror="this.replaceWith(document.createTextNode(\'👁\'))">'; }
+    else if (fingerNodes.indexOf(i) >= 0) { let blown = fingerGeblasen.indexOf(i) >= 0; cls += " fr-finger" + (blown ? " blown" : ""); inner = "🖐"; }
+    else if (fingerWuermer.indexOf(i) >= 0 && i !== fingerPos) {   // Wurm-Kachel — man sieht sie und kann sie umgehen
+      let tot = fingerWuermerTot.indexOf(i) >= 0;
+      cls += " fr-wurm" + (tot ? " slain" : "");
+      inner = '<img class="fr-wurm-img" src="images/Gegner/wurm.avif" onerror="this.replaceWith(document.createTextNode(\'🪱\'))">';
+    }
+    cells += '<div class="' + cls + '" onclick="fingerKlick(' + i + ')">' + inner + '</div>';
+  }
+  let onFinger = fingerNodes.indexOf(fingerPos) >= 0 && fingerGeblasen.indexOf(fingerPos) < 0;
+  grid.innerHTML =
+    '<div class="fr-wrap">' +
+      '<div class="fr-head">🖐 ' + L("Finger", "Fingers") + ': <b>' + fingerGeblasen.length + ' / ' + fingerNodes.length + '</b>' +
+        (allBlown ? ' — <b style="color:#c9a86a;">' + L("Metyr erwacht! Geh nach oben rechts.", "Metyr awakens! Head to the top-right.") + '</b>'
+                  : ' <span style="color:#8a83a8;">— ' + L("nur hoch/rechts, kein Zurück", "up/right only, no going back") + '</span>') + '</div>' +
+      '<div class="fr-grid">' + cells + '</div>' +
+      '<div class="fr-actions">' +
+        (onFinger ? '<button class="btn-modal-action fr-blow" onclick="fingerBlasen()">🌬 ' + L("In den Finger blasen", "Blow into the finger") + '</button>' : '') +
+      '</div>' +
+    '</div>';
+}
+function fingerKlick(i) {
+  if (imKampf || aktionsSperre) return;
+  if (i === fingerPos) { if (fingerNodes.indexOf(i) >= 0 && fingerGeblasen.indexOf(i) < 0) fingerBlasen(); return; }
+  if (fingerErlaubteZuege(fingerPos).indexOf(i) < 0) {   // Einbahn: nur erlaubte Vorwärts-Züge
+    if (i === FINGER_METYR && fingerGeblasen.length < fingerNodes.length) zeigeFingerToast(L("Die drei Finger müssen erst erklingen…", "The three fingers must sound first…"));
+    return;
+  }
+  if (i === FINGER_METYR) { fingerPos = i; fingerPfad.push(i); speichereRun(); starteMetyr(); return; }
+  fingerPos = i; if (fingerPfad.indexOf(i) < 0) fingerPfad.push(i); speichereRun();
+  // Auf der Kachel sitzt ein Wurm -> Kampf. Der Zug ist bereits gemacht, ein Soft-Lock ist damit ausgeschlossen.
+  if (fingerWuermer.indexOf(i) >= 0 && fingerWuermerTot.indexOf(i) < 0) { starteFingerwurm(); return; }
+  baueKarteHTML();
+}
+
+// Im Gebiet der Finger ist JEDER Gegner der Wurm.
+function starteFingerwurm() {
+  // Bewusst unter einem Elite: der Wurm hat mit dem Bann-Spell schon genug Druck, und Metyr (3800/195)
+  // muss der harte Teil bleiben — sonst schlägt das Fußvolk fast so hart wie der Geheimboss.
+  let m = (hardMode ? 12.0 * 1.3 : 12.0) * 1.05;
+  gegnerName = "Fingerwurm"; gegnerMaxHp = Math.round(45 * m); gegnerHp = gegnerMaxHp; gegnerSchaden = Math.round(7.5 * m);
+  aktuellerKnotenTyp = 1; imKampf = true; aktionsSperre = false; wurmBann = 0;
+  playerHitsOnEnemy = 0; enemyIsStaggered = false; staggerVisualActive = false; nextHitBonusDamage = false;
+  if (window.ER) try { ER.discover("Fingerwurm"); } catch (e) {}
+  document.getElementById("battle-log").innerText = L("Zwischen den Säulen schiebt sich ein bleicher Wurm hervor. Sein Maul formt Laute, die keine Zunge sprechen sollte.", "A pale worm pushes out from between the pillars. Its maw forms sounds no tongue should speak.");
+  speichereRun(); updateUI();
+}
+function fingerBlasen() {
+  if (fingerNodes.indexOf(fingerPos) < 0 || fingerGeblasen.indexOf(fingerPos) >= 0) return;
+  fingerGeblasen.push(fingerPos); playFingerSound();
+  zeigeFingerToast(L("Ein tiefer Ton hallt durch die Ruinen…", "A deep tone echoes through the ruins…") + " (" + fingerGeblasen.length + "/" + fingerNodes.length + ")");
+  speichereRun(); baueKarteHTML();
+}
+function starteMetyr() {
+  gegnerName = "Metyr, Mutter der Finger"; gegnerMaxHp = 3800; gegnerHp = 3800; gegnerSchaden = 195;
+  aktuellerKnotenTyp = 5; imKampf = true; aktionsSperre = false;
+  playerHitsOnEnemy = 0; enemyIsStaggered = false; staggerVisualActive = false; nextHitBonusDamage = false;
+  if (window.ER) try { ER.discover("Metyr, Mutter der Finger"); } catch (e) {}
+  document.getElementById("battle-log").innerText = L("Aus dem Sternenstaub über dir sinkt Metyr, Mutter der Finger — die blinde Botin der Äußeren Götter.", "From the stardust above descends Metyr, Mother of Fingers — the blind messenger of the Outer Gods.");
+  speichereRun(); updateUI();
+}
+function zeigeFingerToast(msg) {
+  let wrap = document.getElementById("ach-toast-wrap"); if (!wrap) return;
+  let el = document.createElement("div"); el.className = "ach-toast"; el.style.borderColor = "#7a5c22";
+  el.innerHTML = '<div class="ach-ic">🖐</div><div><div class="ach-label" style="color:#c9a86a;">' + L("FINGERRUINEN", "FINGER RUINS") + '</div><div class="ach-desc">' + msg + '</div></div>';
+  wrap.appendChild(el);
+  setTimeout(function () { el.style.transition = "opacity .5s"; el.style.opacity = "0"; setTimeout(function () { try { el.remove(); } catch (e) {} }, 500); }, 2600);
+}
+function playFingerSound() {
+  try {
+    if (typeof _soundOn !== "undefined" && !_soundOn) return;
+    var AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+    var ac = new AC(); var o = ac.createOscillator(), o2 = ac.createOscillator(), g = ac.createGain();
+    o.type = "sine"; o2.type = "triangle";
+    o.frequency.setValueAtTime(62, ac.currentTime); o.frequency.exponentialRampToValueAtTime(120, ac.currentTime + 0.6);
+    o2.frequency.setValueAtTime(93, ac.currentTime);
+    g.gain.setValueAtTime(0.0001, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.28, ac.currentTime + 0.1);
+    g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + 1.6);
+    o.connect(g); o2.connect(g); g.connect(ac.destination);
+    o.start(); o2.start(); o.stop(ac.currentTime + 1.7); o2.stop(ac.currentTime + 1.7);
+    o.onended = function () { try { ac.close(); } catch (e) {} };
+  } catch (e) {}
+}
+
+// Aging Untouchable: erscheint bei einem Fehltritt im Abgrundwald — ein "Kampf", der nur den Wahnsinn treibt
+function starteUntouchableKampf() {
+  gegnerName = "Aging Untouchable"; gegnerMaxHp = 99999; gegnerHp = 99999; gegnerSchaden = 0;
+  untouchableRunden = 0; imKampf = true; aktionsSperre = false;
+  playerHitsOnEnemy = 0; enemyIsStaggered = false; staggerVisualActive = false; nextHitBonusDamage = false;
+  if (window.ER) try { ER.discover("Aging Untouchable"); } catch(e){}
+  document.getElementById("battle-log").innerText = L("Aus der Schwärze tritt der Aging Untouchable — du kannst ihn nicht töten. Greif an, um dich loszureißen!", "Out of the blackness steps the Aging Untouchable — you cannot kill it. Attack to tear yourself free!");
+  speichereRun(); updateUI();
+}
+// Nach dem Griff des Untouchable: man reißt sich los und geht (mit dem angesammelten Wahnsinn) weiter
+function entkommeUntouchable() {
+  imKampf = false; aktionsSperre = false;
+  let naechste = aktuelleEbene + 1;
+  document.getElementById("battle-view").style.display = "none"; document.getElementById("map-view").style.display = "flex";
+  oeffneStatPopup(L("Losgerissen", "Torn Free"),
+    L("Mit letzter Kraft reißt du dich aus dem Griff des Uralten und stolperst zurück auf den Pfad.\n\n<b>Wahnsinn: " + wahnsinn + "%</b>", "With the last of your strength you tear free of the Ancient's grasp and stumble back onto the path.\n\n<b>Madness: " + wahnsinn + "%</b>"), naechste);
+}
+function zeigeRotToast(rot) {
+  let wrap = document.getElementById("ach-toast-wrap"); if (!wrap) return;
+  let el = document.createElement("div");
+  el.className = "ach-toast"; el.style.borderColor = "#7a1520";
+  el.innerHTML = '<div class="ach-ic"><img src="images/icons/scarlet_rot_status_effect_elden_ring_wiki_guide_100px.png" style="width:26px;height:26px;object-fit:contain;" onerror="this.parentNode.textContent=\'🩸\'"></div><div><div class="ach-label" style="color:#e06a6a;">' + L("SCHARLACHFÄULE", "SCARLET ROT") + '</div><div class="ach-desc">−' + rot + ' HP</div></div>';
+  wrap.appendChild(el);
+  setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 3200);
+}
+
+// Ist der Spieler mit Google angemeldet? (nur eingeloggt zählt für Cloud/Rangliste/Achievements)
+function istEingeloggt() { try { return !!(window.ER && ER.currentUser && ER.currentUser()); } catch (e) { return false; } }
+// Warn-Box für Ergebnis-Screens, wenn NICHT eingeloggt — sonst leer.
+// Wichtig: NICHT anzeigen, solange Firebase den Login noch async wiederherstellt (sonst falsche Warnung trotz Login).
+function loginWarnungHtml() {
+  try { if (window.ER && ER.authReady && !ER.authReady()) return ""; } catch (e) {}
+  if (istEingeloggt()) return "";
+  return '<div style="background:rgba(120,30,30,0.28); border:1px solid #b04a4a; border-radius:6px; padding:11px 13px; margin:14px 0; font-family:sans-serif; font-size:0.86rem; color:#f0b8b8; line-height:1.5; text-transform:none;">'
+    + '⚠️ <b>' + L("Nicht angemeldet", "Not signed in") + '</b> — '
+    + L("dieser Abschluss zählt <b>nicht</b> für Rangliste & Achievements und wird nicht in der Cloud gespeichert.", "this run does <b>not</b> count for the leaderboard &amp; achievements and won't be saved to the cloud.")
+    + '<button onclick="loginVomErgebnis(this)" style="display:block; margin-top:9px; background:#2c2214; color:var(--gold); border:1px solid var(--gold-dark); border-radius:5px; padding:7px 14px; font-family:sans-serif; font-size:0.82rem; cursor:pointer;">🔑 ' + L("Jetzt mit Google anmelden", "Sign in with Google now") + '</button>'
+    + '</div>';
+}
+// Login direkt vom Ergebnis-Screen — der Run wurde lokal bereits gezählt, Login synct ihn in die Cloud.
+function loginVomErgebnis(btn) {
+  if (!window.ER || !ER.signInWithGoogle) return;
+  btn.disabled = true; btn.textContent = L("Anmelden…", "Signing in…");
+  ER.signInWithGoogle().then(function () {
+    try { if (ER.syncNow) ER.syncNow(true); } catch (e) {}
+    btn.parentNode.innerHTML = '<div style="color:#8fe6b0; font-family:sans-serif; font-size:0.88rem;">✓ ' + L("Angemeldet — dein Fortschritt wird jetzt gespeichert.", "Signed in — your progress is now saved.") + '</div>';
+  }).catch(function () { btn.disabled = false; btn.textContent = L("🔑 Erneut versuchen", "🔑 Try again"); });
+}
 function oeffneAbschlussPopup(titel, text) {
   loescheRunSave(); // abgeschlossener Run wird nicht mehr gespeichert/fortgesetzt
   let __s = belohneSeelen(true);
@@ -3410,6 +4690,8 @@ function oeffneAbschlussPopup(titel, text) {
     <h3 style="color: var(--gold); font-size:1.6rem; margin-top:0; letter-spacing:2px; font-family: 'Mantinia', serif;">${titel}</h3>
     <p style="color:#ddd; font-size:0.95rem; font-family: sans-serif; white-space: pre-line; line-height:1.5;">${text}</p>
     <div style="color:#cda34f;font-weight:bold;font-family:sans-serif;margin:14px 0;font-size:1.05rem;">✨ +${__s} ${L("Seelen erbeutet","Souls earned")}</div>
+    ${loginWarnungHtml()}
+    <button class="btn-modal-action" onclick="teileErgebnis(true, this)">${t("share_result")}</button>
     <a href="index.html" class="btn-modal-action" style="display:inline-block; text-decoration:none;" onclick="loescheRunSave()">${t("btn_main_menu")}</a>
   `;
   overlay.style.display = "flex";
@@ -3507,6 +4789,194 @@ function bestaetigeStufe(naechsteEbene) { document.getElementById("popup-overlay
     const slot = document.getElementById("mini-rune-" + k);
     if (slot) { slot.addEventListener("mouseenter", showTip); slot.addEventListener("mouseleave", hideTip); }
   });
+})();
+
+/* =====================================================================
+   DEV-/TEST-PANEL — Umschalten mit Taste ` (Backtick, links neben 1)
+   oder URL-Parameter ?dev=1. Nur zum Testen; nutzt bestehende Funktionen.
+   ===================================================================== */
+(function(){
+  const REGIONEN = ["Limgrave","Caelid","Liurnia","Leyndell","Gelmir","Mountaintops","FarumAzula","AshenCapital","EldenThrone","Haligtree"];
+  let panel = null, statusZeile = null;
+
+  function devEnsureRun(){ if (!gewaehlteKlasse) { try { waehleKlasseEngine('schwertkaempfer'); } catch(e){ console.warn(e); } } }
+  function devClosePopups(){ const o=document.getElementById("popup-overlay"); if(o) o.style.display="none"; }
+  function devApply(){
+    imKampf = false; aktionsSperre = false;
+    if (spielerHp <= 0) { try { spielerHp = berechneFinalMaxHp(); } catch(e){ spielerHp = spielerMaxHp; } }
+    try { var ds=document.getElementById("death-screen"); if(ds) ds.classList.remove("show"); } catch(e){}
+    try { var bv=document.getElementById("battle-view"); if(bv) bv.style.display="none"; var mv=document.getElementById("map-view"); if(mv) mv.style.display="flex"; } catch(e){}
+    try { updateUI(); baueKarteHTML(); } catch(e){}
+    devRefresh();
+  }
+  function devGoto(region){
+    devEnsureRun();
+    activeChallenge = "";                       // ggf. Tower verlassen
+    var ri = REGIONEN.indexOf(region);
+    hatGodrickRune = ri >= 1; hatRadahnRune = ri >= 2; hatMorgottRune = ri >= 3;
+    aktuelleRegion = region; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null;
+    try { netzKarte = generiereRautenNetz(region); } catch(e){ console.warn(e); }
+    devClosePopups(); devApply();
+  }
+  function devSetMedaillons(n){ devEnsureRun(); medallionHalves = Math.max(0, Math.min(2, n)); devRefresh(); }
+  function devSetBlaidd(n){ devEnsureRun(); questProgress = Math.max(0, n); devRefresh(); }
+  function devGideonWahl(){ devEnsureRun(); medallionHalves = 2; devClosePopups(); try{ oeffneHaligtreeWahl(); }catch(e){ alert("oeffneHaligtreeWahl(): "+e); } }
+  function devMalenia(){ devEnsureRun(); medallionHalves = 2; devGoto("Haligtree"); }
+  function devBlaiddBelohnung(){ devEnsureRun(); devClosePopups(); try{ oeffneQuestRewardPopup(aktuelleEbene + 1); }catch(e){ alert(e); } }
+  function devHeal(){ devEnsureRun(); try { spielerHp = berechneFinalMaxHp(); } catch(e){ spielerHp = spielerMaxHp; } spielerFlasks = maxKlassenFlasks; devApply(); }
+  function devGott(){ devEnsureRun(); spielerMaxHp = 9999; spielerHp = 9999; maxKlassenFlasks = Math.max(maxKlassenFlasks, 9); spielerFlasks = maxKlassenFlasks; waffenSchaden = 9999; devApply(); }
+  function devRunen(){ devEnsureRun(); hatGodrickRune = hatRadahnRune = hatMorgottRune = true; devRefresh(); }
+  function devSetSeelen(){
+    var n = prompt("Seelen setzen:", "10000"); if (n === null) return;
+    try { var m = ladeMeta(); m.seelen = Math.max(0, parseInt(n,10)||0); speichereMeta(m); } catch(e){ alert("Fehler: "+e); return; }
+    devRefresh();
+  }
+  // DLC-Test: Mohg-Erstsieg in die Stats schreiben (falls nötig) und direkt VOR den Mohg-Kampf springen —
+  // nach dem Sieg erscheint dann die Hand-Wahl (Zugang ins Land des Schattens).
+  function devMohgFight(){
+    devEnsureRun();
+    try { if (window.ER && (ER.getStats().bossKills["Mohg, Fürst des Blutes"] || 0) < 1) ER.bossKilled("Mohg, Fürst des Blutes"); } catch(e){}
+    activeChallenge = "";
+    hatGodrickRune = hatRadahnRune = hatMorgottRune = true;
+    aktuelleRegion = "Mohgwyn"; geloesieKnotenIds = []; aktuellerKnotenId = null;
+    try { netzKarte = generiereRautenNetz("Mohgwyn"); } catch(e){ console.warn(e); }
+    var bossReihe = netzKarte.length;                       // letzte Ebene = Boss
+    var vorletzte = netzKarte[bossReihe - 2];
+    var start = vorletzte.knoten.find(function(k){ return k.wege && k.wege.includes(0); }) || vorletzte.knoten[0];
+    geloesieKnotenIds = [start.id]; aktuellerKnotenId = start.id; aktuelleEbene = bossReihe;
+    devClosePopups(); devApply();
+  }
+  function devGotoDLC(region){
+    devEnsureRun();
+    activeChallenge = "";
+    hatGodrickRune = hatRadahnRune = hatMorgottRune = true;
+    aktuelleRegion = region; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null;
+    torbogenSpruenge = 0; wolfsgeheulGehoert = false; wahnsinn = 0; untouchableRunden = 0; rellanaGetroffen = false; rauhGeheimIntakt = true; inFingerruinen = false; fingerPos = 90; fingerGeblasen = []; fingerNodes = []; fingerPfad = [90]; hatGebetet = false; messmerGekippt = false; fingerWuermer = []; fingerWuermerTot = []; wurmBann = 0;
+    scharlachRot = (region === "Rauh");
+    try { netzKarte = generiereRautenNetz(region); } catch(e){ console.warn(e); }
+    devClosePopups(); devApply(); aktualisiereWahnsinnAnzeige();
+  }
+
+  function devTowerFloor(){
+    var n = prompt("Battle-Tower-Etage (1-"+TOWER_MAX+"):", "1"); if (n === null) return;
+    n = Math.max(1, Math.min(TOWER_MAX, parseInt(n,10)||1));
+    devEnsureRun();
+    activeChallenge = "tower";
+    try { towerEtage = n; towerDmgMult = 1.0; towerSoulMult = 1.0; letzterTowerBoss = ""; towerRadahnPhase2 = false; towerModifier = null; starteTowerEtage(); } catch(e){ alert("Tower: "+e); }
+    devRefresh();
+  }
+
+  function b(label, fn, color){
+    var btn = document.createElement("button"); btn.textContent = label;
+    btn.style.cssText = "display:block;width:100%;margin:3px 0;padding:5px 8px;font:11px sans-serif;background:#1a1510;color:"+(color||"#cabf9f")+";border:1px solid #3a3224;border-radius:4px;cursor:pointer;text-align:left;";
+    btn.onmouseover = function(){ btn.style.background="#241d12"; }; btn.onmouseout = function(){ btn.style.background="#1a1510"; };
+    btn.onclick = fn; return btn;
+  }
+  function row(){ var d=document.createElement("div"); d.style.cssText="display:flex;gap:4px;margin:3px 0;"; return d; }
+  function bSmall(label, fn){ var btn=b(label,fn); btn.style.margin="0"; btn.style.textAlign="center"; btn.style.flex="1"; btn.style.padding="5px 2px"; return btn; }
+
+  function bauePanel(){
+    panel = document.createElement("div"); panel.id = "dev-panel";
+    panel.style.cssText = "position:fixed;top:10px;left:10px;z-index:99999;width:224px;max-height:92vh;overflow-y:auto;background:rgba(10,9,7,0.96);border:1px solid #cda34f;border-radius:8px;padding:10px;box-shadow:0 6px 30px rgba(0,0,0,0.6);";
+    var kopf = document.createElement("div");
+    kopf.style.cssText = "display:flex;justify-content:space-between;align-items:center;color:#cda34f;font:bold 12px sans-serif;letter-spacing:1px;margin-bottom:6px;";
+    kopf.innerHTML = "<span>⚙ DEV / TEST</span>";
+    var zu = document.createElement("button"); zu.textContent="✕"; zu.style.cssText="background:none;border:none;color:#888;cursor:pointer;font-size:14px;"; zu.onclick=function(){ toggle(false); }; kopf.appendChild(zu);
+    panel.appendChild(kopf);
+    statusZeile = document.createElement("pre");
+    statusZeile.style.cssText = "font:10px/1.5 monospace;color:#9aa0a6;background:#0d0b08;border:1px solid #241d12;border-radius:4px;padding:6px;margin:0 0 8px;white-space:pre-wrap;";
+    panel.appendChild(statusZeile);
+
+    panel.appendChild(b("❤ Voll heilen + Flakons", devHeal, "#2ecc71"));
+    panel.appendChild(b("⚡ Godmode (9999 HP + Schaden)", devGott, "#f1c40f"));
+    panel.appendChild(b("✨ Seelen setzen", devSetSeelen, "#cda34f"));
+    panel.appendChild(b("🗝 Alle Story-Runen", devRunen));
+    var r1 = row(); REGIONEN.slice(0,5).forEach(function(r){ r1.appendChild(bSmall(r.substring(0,4), function(){ devGoto(r); })); }); panel.appendChild(r1);
+    var r2 = row(); REGIONEN.slice(5).forEach(function(r){ r2.appendChild(bSmall(r.substring(0,4), function(){ devGoto(r); })); }); panel.appendChild(r2);
+    panel.appendChild(b("🌸 Malenia-Kampf betreten", devMalenia, "#e05a8a"));
+    panel.appendChild(b("👁 Gideon→Malenia-Wahl", devGideonWahl, "#e05a8a"));
+    var med = row(); [0,1,2].forEach(function(n){ med.appendChild(bSmall("Med "+n, function(){ devSetMedaillons(n); })); }); med.appendChild(bSmall("Mohg-Med", function(){ devEnsureRun(); hatMohgMedaille = true; devRefresh(); })); panel.appendChild(med);
+    var bl = row(); [0,1,2,3,4].forEach(function(n){ bl.appendChild(bSmall("Bl "+n, function(){ devSetBlaidd(n); })); }); panel.appendChild(bl);
+    panel.appendChild(b("🐺 Blaidd-Belohnung öffnen", devBlaiddBelohnung, "#3498db"));
+    var geheim = row();
+    geheim.appendChild(bSmall("Rya-Quest", function(){ devEnsureRun(); window.__ryaForce = true; devGoto("Liurnia"); window.__ryaForce = false; }));
+    geheim.appendChild(bSmall("Rykard-Kill", function(){ devEnsureRun(); try { ER.bossKilled("Rykard, Herr der Blasphemie"); } catch(e){} if (aktuelleRegion === "Leyndell") devGoto("Leyndell"); devRefresh(); }));
+    geheim.appendChild(bSmall("Sewers", function(){ devEnsureRun(); try { ER.bossKilled("Rykard, Herr der Blasphemie"); } catch(e){} gewaehlteKlasse = "nackt"; devGoto("Leyndell"); }));
+    panel.appendChild(geheim);
+    var geheim2 = row();
+    geheim2.appendChild(bSmall("Haligtree frei", function(){ devEnsureRun(); try { ER.gameCompleted("schwertkaempfer","normal",true,false); } catch(e){} devRefresh(); alert("Pfad des Haligtree freigeschaltet — ab jetzt spawnen Festungen (Medaillons) auf dem Weg zu Malenia."); }));
+    geheim2.appendChild(bSmall("Festung hier", function(){ devEnsureRun(); fortressPlacedRegions = []; try { if(window.ER&&ER.gameCompleted) ER.gameCompleted("schwertkaempfer","normal",true,false); } catch(e){} var k=netzKarte; for(var zi=1; zi<k.length-1; zi++){ var frei=k[zi].knoten.find(function(n){ return ![4,5,10,15].includes(n.typ); }); if(frei){ frei.typ=15; break; } } fortressPlacedRegions.push(aktuelleRegion); baueKarteHTML(); }));
+    panel.appendChild(geheim2);
+    panel.appendChild(b("🩸 Mohg-Kampf (DLC-Zugang testen)", devMohgFight, "#c0392b"));
+    var dlcRow = row();
+    [["Grave","Gravesite"],["Ensis","CastleEnsis"],["Wald","Waldgebiet"],["Grusel","AbyssalWoods"],["Messmer","FestungMessmer"],["Garten","Garten"],["Rauh","Rauh"],["Enir","EnirIlim"]].forEach(function(p){ dlcRow.appendChild(bSmall(p[0], function(){ devGotoDLC(p[1]); })); });
+    dlcRow.appendChild(bSmall("🪤Mimic", function(){
+      devEnsureRun();
+      if (besitztFingerMimic()) { for (var i=0;i<backpackItems.length;i++) if (backpackItems[i] && backpackItems[i].type==="fingermimic") backpackItems[i]=null; }
+      else { var s = backpackItems.indexOf(null); if (s < 0) s = 0; backpackItems[s] = Object.assign({}, FINGER_MIMIC); }
+      try{ speichereRun(); updateUI(); }catch(e){}
+      alert("Finger Mimic: " + (besitztFingerMimic() ? "im Rucksack (Garten -> Metyr)" : "weg (Garten -> Enir-Ilim)"));
+    }));
+    dlcRow.appendChild(bSmall("🙏Gebet", function(){ hatGebetet = !hatGebetet; try{ speichereRun(); }catch(e){} alert("Statue-Gebet: " + (hatGebetet ? "JA (Garten waehlbar)" : "nein")); }));
+    dlcRow.appendChild(bSmall("🖐Finger", function(){ devEnsureRun(); activeChallenge=""; hatGodrickRune=hatRadahnRune=hatMorgottRune=true; devClosePopups(); starteFingerruinen(); }));
+    panel.appendChild(dlcRow);
+    panel.appendChild(b("🗼 Battle-Tower Etage…", devTowerFloor, "#9b8cff"));
+    panel.appendChild(b("🔄 Run neu starten", function(){ try{ direktNeustarten(); }catch(e){} devRefresh(); }, "#e67e22"));
+    panel.appendChild(b("🧹 Lokalen Spielstand LÖSCHEN", function(){ window.location.href = "game.html?wipe=1"; }, "#e74c3c"));
+    panel.appendChild(b("♻ Testprofil zurücksetzen (lokal + Cloud-Rangliste)", function(){
+      if (!confirm("Testprofil komplett zurücksetzen?\n\n• Lokales Profil (Stats, Achievements, Unlocks, Seelen) wird geleert\n• Falls eingeloggt: deine Ranglisten-Werte werden aus der Cloud entfernt\n\nNur für Dev-Testen gedacht.")) return;
+      var r = (window.ER && ER.devResetProfile) ? ER.devResetProfile() : false;
+      if (!r) { alert("Reset nur in der Dev-Umgebung möglich."); return; }
+      alert("Testprofil zurückgesetzt.\nLokal: geleert\nCloud-Rangliste: " + (r.cloud ? "entfernt" : "(nicht eingeloggt – nichts in der Cloud)") + "\n\nSeite wird neu geladen.");
+      window.location.href = "index.html";
+    }, "#c0392b"));
+
+    var hint = document.createElement("div");
+    hint.style.cssText="margin-top:8px;font:9px sans-serif;color:#666;line-height:1.4;";
+    hint.textContent = "Taste ` zum Ein-/Ausblenden. Hardmode: ?mode=hard, Tower: ?challenge=tower in der URL.";
+    panel.appendChild(hint);
+    document.body.appendChild(panel);
+  }
+
+  window.devRefresh = function(){
+    if(!statusZeile) return;
+    var seelen = "?"; try{ seelen = ladeMeta().seelen||0; }catch(e){}
+    statusZeile.textContent =
+      "Modus: " + (activeChallenge ? activeChallenge : ((typeof hardMode!=="undefined"&&hardMode) ? "hard" : "normal")) + "   Klasse: " + (gewaehlteKlasse||"—") + "\n"
+      + (activeChallenge==="tower" ? ("Tower-Etage: " + (towerEtage||"-") + "/" + TOWER_MAX + "\n") : ("Region: " + (typeof aktuelleRegion!=="undefined"?aktuelleRegion:"-") + "  (Ebene " + (aktuelleEbene||"-") + ")\n"))
+      + "HP: " + Math.round(spielerHp||0) + "/" + Math.round(spielerMaxHp||0) + "   Flakons: " + (spielerFlasks||0) + "\n"
+      + "Seelen: " + seelen + "\n"
+      + "Medaillons: " + (medallionHalves||0) + "/2   Blaidd: " + (questProgress||0) + "\n"
+      + "Runen: " + ([hatGodrickRune&&"Godrick",hatRadahnRune&&"Radahn",hatRennalaRune&&"Rennala",hatMorgottRune&&"Morgott",hatRykardRune&&"Rykard"].filter(Boolean).join(", ") || "—") + "\n"
+      + (function(){
+          try {
+            var s = ER.getStats();
+            var gelmirFrei = ER.isUnlocked("gelmir");
+            return "— Geheimpfade —\n"
+              + "Gelmir frei: " + (gelmirFrei ? "JA (keine Rya-Kette mehr)" : "nein -> Kette: Samurai+Liurnia, 50%") + "\n"
+              + "Rykard-Kills: " + (s.bossKills["Rykard, Herr der Blasphemie"]||0) + " (0 = keine Kanalisation)\n"
+              + "Kanalisation: " + ((s.bossKills["Rykard, Herr der Blasphemie"]||0) >= 1 ? ((gewaehlteKlasse === "nackt" || (s.mohgwynVisits||0) >= 1) ? "spawnt in Leyndell" : "nur als BETTLER (nackt)") : "gesperrt") + "\n"
+              + "Mohgwyn-Besuche: " + (s.mohgwynVisits||0) + "   Gelmir-Besuche: " + (s.gelmirVisits||0);
+          } catch(e){ return ""; }
+        })();
+  };
+
+  function toggle(on){
+    if(!panel) bauePanel();
+    const sichtbar = on !== undefined ? on : panel.style.display === "none";
+    panel.style.display = sichtbar ? "block" : "none";
+    if(sichtbar) devRefresh();
+  }
+
+  // Dev-Tools nur in der Dev-/Test-Umgebung (localhost / *.pages.dev). Auf Live gesperrt -> kein Cheaten in die Bestenliste.
+  function devErlaubt(){ return !!(window.ER && ER.isDevMode && ER.isDevMode()); }
+  document.addEventListener("keydown", function(e){
+    if((e.key === "`" || e.key === "^" || e.code === "Backquote") && !/^(input|textarea)$/i.test((e.target.tagName||""))){
+      if(!devErlaubt()) return;
+      e.preventDefault(); toggle();
+    }
+  });
+  try{ if(devErlaubt() && new URLSearchParams(location.search).get("dev")==="1"){ window.addEventListener("load", function(){ toggle(true); }); } }catch(e){}
 })();
 
 </script>
