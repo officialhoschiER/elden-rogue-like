@@ -2725,6 +2725,8 @@ function klickeKnoten(ebene, knoten) {
   if (aktuelleRegion === "AbyssalWoods") rMult = (hardMode ? 9.0*1.3 : 9.0) * 1.05;   // Gruselwald
   if (aktuelleRegion === "FestungMessmer") rMult = (hardMode ? 10.0*1.3 : 10.0) * 1.05;
   if (aktuelleRegion === "Garten") rMult = (hardMode ? 11.0*1.3 : 11.0) * 1.05;
+  if (aktuelleRegion === "Rauh") rMult = (hardMode ? 11.0*1.3 : 11.0) * 1.05;            // Ruinen von Rauh (parallel zum Garten)
+  if (aktuelleRegion === "EnirIlim") rMult = (hardMode ? 12.0*1.3 : 12.0) * 1.05;        // Enir-Ilim (finale Hauptregion)
   if (aktuelleRegion === "Fingerruinen") rMult = (hardMode ? 12.0*1.3 : 12.0) * 1.05;   // Reich der Äußeren Götter
 
   if (gebietsGegnerKonfig[aktuelleRegion]) {
