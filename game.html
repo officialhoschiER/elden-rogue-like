@@ -875,7 +875,7 @@ function aktualisiereSeedAnzeige() {
   let el = document.getElementById("seed-display");
   if (el) el.innerHTML = 'SEED: <b style="color:var(--gold); letter-spacing:1px;">' + runSeed + '</b> ⧉';
   let badge = document.getElementById("seed-badge");
-  if (badge) { badge.style.display = seedIsCustom ? "block" : "none"; badge.innerHTML = "🎲 " + t("seed_badge"); }
+  if (badge) { badge.style.display = seedIsCustom ? "block" : "none"; badge.innerHTML = istDailySeedRun() ? ("🏆 " + t("daily_badge")) : ("🎲 " + t("seed_badge")); }
 }
 /* ===== Täglicher Seed – Wertung (identischer Algorithmus wie das Menü) ===== */
 function spielDailySeedStr() {
@@ -1305,8 +1305,9 @@ function dmgTypIconHtml(art) {
   return `<span class="dmg-type-icon tip" data-tooltip="${t("combat_dmg_type")}: ${dmgArtLoc(art)}"><img src="${datei}" alt="${dmgArtLoc(art)}" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';"><span class="dmg-fallback" style="display:none; color:${farbe};">${dmgArtLoc(art).slice(0,2)}</span></span>`;
 }
 
-function poolUnlockedWaffe(rarity){ let m=ladeMeta(); let pool=waffenDatenbank[rarity]||[]; let frei=pool.filter(w=>m.unlockedWeapons.indexOf(w.name)>=0); return frei.length?frei:pool; }
-function poolUnlockedRuestung(rarity){ let m=ladeMeta(); let pool=ruestungDatenbank[rarity]||[]; let frei=pool.filter(a=>(m.unlockedArmor||[]).indexOf(a.name)>=0); return frei.length?frei:pool; }
+// Daily-Seed: nur der BASIS-Pool (DEFAULT_*) — keine im Roundtable freigeschalteten Extras -> fairer Loot für alle.
+function poolUnlockedWaffe(rarity){ let pool=waffenDatenbank[rarity]||[]; let frei=istDailySeedRun()?pool.filter(w=>DEFAULT_WEAPONS.indexOf(w.name)>=0):pool.filter(w=>ladeMeta().unlockedWeapons.indexOf(w.name)>=0); return frei.length?frei:pool; }
+function poolUnlockedRuestung(rarity){ let pool=ruestungDatenbank[rarity]||[]; let frei=istDailySeedRun()?pool.filter(a=>DEFAULT_ARMOR.indexOf(a.name)>=0):pool.filter(a=>(ladeMeta().unlockedArmor||[]).indexOf(a.name)>=0); return frei.length?frei:pool; }
 function rolleZufallsWaffe() {
   let shift = Math.min(besiegteWaechter * CONFIG.waffenRarityShift.proWaechter, CONFIG.waffenRarityShift.max);
   let pCommon = 0.50 - shift, pRare = 0.30 + shift * 0.60, pEpic = 0.15 + shift * 0.30;
@@ -2003,7 +2004,8 @@ function oeffneKlassenAuswahl() {
       <input id="seed-input" maxlength="12" placeholder="${t('seed_placeholder')}" style="background:#0a0a0a; border:1px solid var(--border-color); color:#ede6d4; padding:6px 8px; border-radius:3px; font-family:sans-serif; font-size:0.8rem; width:130px; text-transform:uppercase;">
       <button onclick="uebernehmeSeedEingabe()" style="background:#1c1710; border:1px solid var(--gold-dark); color:var(--gold); padding:6px 10px; border-radius:3px; cursor:pointer; font-family:sans-serif; font-size:0.78rem;">${t('seed_apply')}</button>
     </div>
-    ${seedIsCustom ? '<div style="margin-top:8px; color:#e0a34f; font-size:0.75rem; font-family:sans-serif; text-transform:none;">🎲 ' + t('seed_run_warn') + '</div>' : ''}`;
+    ${seedIsCustom ? '<div style="margin-top:8px; color:#e0a34f; font-size:0.75rem; font-family:sans-serif; text-transform:none;">🎲 ' + t('seed_run_warn') + '</div>' : ''}
+    ${istDailySeedRun() ? '<div style="margin-top:6px; color:#7fc7e6; font-size:0.78rem; font-weight:bold; font-family:sans-serif; text-transform:none;">🏆 ' + t('daily_fair_warn') + '</div>' : ''}`;
 }
 
 function zeigeTodesBildschirm(endgueltig) {
