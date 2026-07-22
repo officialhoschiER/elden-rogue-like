@@ -27,7 +27,7 @@
   };
 
   const ONLINE = !!FIREBASE_CONFIG.apiKey && typeof firebase !== "undefined";
-  const PATCH = "1.5"; // aktuelle Spielversion – wird an neue Bestenlisten-Einträge angehängt
+  const PATCH = "1.6"; // aktuelle Spielversion – wird an neue Bestenlisten-Einträge angehängt
   let fbAuth = null, fbDB = null, currentUser = null;
   let authReady = false;   // true, sobald Firebase den Login-Status EINMAL geliefert hat (verhindert falsche "nicht angemeldet"-Warnungen während der async-Wiederherstellung)
   const userListeners = [];

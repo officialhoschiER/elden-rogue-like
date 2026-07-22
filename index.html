@@ -478,7 +478,7 @@
 
 <div class="todo-card" id="todo-card"></div>
 
-<div id="version-tag" onclick="openModal('patchnotes')" title="Patch Notes">v1.5.3</div>
+<div id="version-tag" onclick="openModal('patchnotes')" title="Patch Notes">v1.6</div>
 
 
 <div class="menu-wrap">
@@ -668,7 +668,7 @@
     <div class="modal-title" id="lb-title">Bestenliste</div>
     <div style="display:flex; justify-content:flex-end; gap:8px; margin:-4px 0 8px;">
       <select id="lb-date" onchange="ladeBestenliste()" style="display:none; background:#111; color:var(--gold); border:1px solid var(--gold-dark); padding:3px 10px; font-family:'Cinzel',serif; font-size:0.7rem; letter-spacing:1px; border-radius:3px; cursor:pointer;"></select>
-      <select id="lb-patch" onchange="ladeBestenliste()" style="background:#111; color:var(--gold); border:1px solid var(--gold-dark); padding:3px 10px; font-family:'Cinzel',serif; font-size:0.7rem; letter-spacing:1px; border-radius:3px; cursor:pointer;"><option value="1.5" selected>PATCH v1.5</option><option value="1.4">PATCH v1.4</option><option value="1.3">PATCH v1.3</option></select>
+      <select id="lb-patch" onchange="ladeBestenliste()" style="background:#111; color:var(--gold); border:1px solid var(--gold-dark); padding:3px 10px; font-family:'Cinzel',serif; font-size:0.7rem; letter-spacing:1px; border-radius:3px; cursor:pointer;"><option value="1.6" selected>PATCH v1.6</option><option value="1.5">PATCH v1.5</option><option value="1.4">PATCH v1.4</option><option value="1.3">PATCH v1.3</option></select>
     </div>
     <div id="lb-cat-tabs" class="lb-tabs"></div>
     <div id="lb-area" style="height:520px; display:flex; flex-direction:column;">
@@ -1047,6 +1047,28 @@
 
     // Patch-Historie: neuester Eintrag zuerst. Neue Patches oben ergänzen.
     var PATCHES = [
+      { ver:"1.6 — Land des Schattens", sections: [
+        { icon:"🆕", title: shopL("Neu","New"), items: [
+          shopL("<b>Das komplette DLC „Land des Schattens“:</b> Ein neues Endgame öffnet sich nach dem <b>zweiten Sieg über Mohg</b>. Neue Gebiete, neue Bosse, versteckte Geheimnisse und mehrere Enden — den Rest findest du selbst heraus. 👀", "<b>The full „Land of Shadow“ DLC:</b> A new endgame opens after your <b>second victory over Mohg</b>. New areas, new bosses, hidden secrets and multiple endings — find out the rest yourself. 👀"),
+          shopL("<b>Neue Achievements</b> für die DLC-Bosse und beide Enden — alles sauber im Eldendex.", "<b>New achievements</b> for the DLC bosses and both endings — all neatly in the Eldendex."),
+          shopL("<b>Täglicher Seed ist jetzt fair:</b> alle Roundtable-Upgrades & -Ausrüstung sind deaktiviert – jeder startet mit Basis-Stats.", "<b>The daily seed is now fair:</b> all Roundtable upgrades & gear are disabled — everyone starts on base stats.")
+        ]},
+        { icon:"✨", title: shopL("Verbesserungen","Improvements"), items: [
+          shopL("<b>Roundtable-Truhen:</b> jetzt <b>10× auf einmal</b> öffnen (−10% Rabatt).", "<b>Roundtable chests:</b> now open <b>10× at once</b> (−10% discount)."),
+          shopL("<b>Deutlich weniger Text</b> zwischen den Etappen – Boss-Siege sagen nur noch „X besiegt“.", "<b>Far less text</b> between stages — boss wins simply say „X defeated“."),
+          shopL("<b>Bestenliste</b> bleibt beim Kategorie-Wechsel gleich groß (kein Springen mehr).", "<b>Leaderboard</b> keeps a fixed size when switching categories (no more jumping).")
+        ]},
+        { icon:"⚖️", title: shopL("Balance","Balance"), items: [
+          shopL("<b>Battle Tower deutlich schwerer</b> – und der „unsterblich“-Build ist Geschichte: Schaden skaliert jetzt mit deiner Max-HP, HP-Stacking trivialisiert nichts mehr.", "<b>Battle Tower is significantly harder</b> — and the „unkillable“ build is gone: damage now scales with your max HP, HP-stacking trivialises nothing anymore."),
+          shopL("<b>DLC-Endbosse sind echte Walls:</b> ein Treffer kostet immer denselben Anteil deiner Leiste, egal wie viel HP du hast.", "<b>DLC endbosses are real walls:</b> a hit always costs the same share of your bar, no matter how much HP you have."),
+          shopL("Das Spiel ist insgesamt <b>~15% härter</b>.", "The game is <b>~15% harder</b> overall.")
+        ]},
+        { icon:"🐛", title: shopL("Käfer","Bugs"), items: [
+          shopL("<b>Login-Warnung</b> erschien fälschlich, obwohl man eingeloggt war – behoben.", "<b>Login warning</b> falsely appeared even when signed in — fixed."),
+          shopL("<b>Mohgwyn-Dynastie</b> schaltet jetzt erst frei, wenn man wirklich den Weg in die Kanalisation findet.", "<b>Mohgwyn Dynasty</b> now only unlocks once you truly find the way into the sewers."),
+          shopL("Diverse fehlende/falsche Bilder behoben (u. a. Radahn Phase 2).", "Fixed various missing/incorrect images (incl. Radahn phase 2).")
+        ]}
+      ]},
       { ver:"1.5.3", sections: [
         { icon:"🆕", title: shopL("Neu","New"), items: [
           shopL("<b>Berg Gelmir:</b> Ein alternativer Pfad statt Leyndell. Stelle dich <b>Rykard, Herr der Blasphemie</b> (jetzt mit 2 Phasen!). Freigeschaltet über eine geheime <b>Rya-Quest</b>.", "<b>Mount Gelmir:</b> An alternative path instead of Leyndell. Face <b>Rykard, Lord of Blasphemy</b> (now with 2 phases!). Unlocked via a secret <b>Rya questline</b>."),
