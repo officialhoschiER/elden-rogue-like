@@ -2246,7 +2246,7 @@ function baueKarteHTML() {
           if (vorherigeEbeneKnoten) { let alterKnoten = vorherigeEbeneKnoten.find(k => k.id === aktuellerKnotenId); if (alterKnoten && alterKnoten.wege.includes(knoten.index)) istWaehlbar = true; }
         }
       }
-      if (knoten.sicher) nodeDiv.classList.add("abyss-sicher");   // Abgrundwald: der sichere Pfad glimmt kaum merklich
+      // Gruselwald: der sichere Pfad bekommt bewusst KEINEN Hinweis — reines Auswendiglernen (fester Pfad).
       if (istGeloest) { nodeDiv.classList.add("completed"); }
       else if (knoten.id === aktuellerKnotenId) nodeDiv.classList.add("current-pos");
       else if (istWaehlbar) { nodeDiv.classList.add("selectable"); nodeDiv.onclick = () => klickeKnoten(zeile.ebene, knoten); }
@@ -4361,7 +4361,7 @@ function starteGruselwald() {
   netzKarte = generiereRautenNetz("AbyssalWoods");
   speichereRun(); baueKarteHTML(); updateUI(); aktualisiereWahnsinnAnzeige();
   oeffneStatPopup(L("Der Gruselwald", "The Eerie Woods"),
-    L("Alle Wege sind schwarz — nur der <b>richtige</b> glimmt sacht. Verlässt du ihn, packt dich der Aging Untouchable: <b>+25% Wahnsinn</b> je Griff, bei 100% ist der Run vorbei.", "Every path is black — only the <b>right</b> one faintly glimmers. Stray from it and the Aging Untouchable grabs you: <b>+25% madness</b> each time; at 100% the run is over."), 1);
+    L("Alle Wege sehen gleich aus — pechschwarz. Nur <b>einer</b> ist sicher, und nichts verrät ihn. Ein Fehltritt weckt den Aging Untouchable: <b>+25% Wahnsinn</b> je Griff, bei 100% ist der Run vorbei. <b>Merk dir den Weg.</b>", "Every path looks the same — pitch black. Only <b>one</b> is safe, and nothing marks it. A wrong step wakes the Aging Untouchable: <b>+25% madness</b> each time; at 100% the run is over. <b>Learn the way.</b>"), 1);
 }
 
 // --- Beide Mittelwege muenden hier: die Festung von Messmer ---
