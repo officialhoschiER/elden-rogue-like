@@ -618,6 +618,22 @@
       </div>
       <button class="btn-mini" id="set-todo-btn" onclick="todoShowAgain(this)">Wieder anzeigen</button>
     </div>
+    <div class="set-row" style="flex-wrap:wrap; border-top:1px solid #3a1a1a; margin-top:6px;">
+      <div>
+        <div class="set-label" id="set-wipe-label" style="color:#e74c3c;">Fortschritt löschen</div>
+        <div class="set-sub" id="set-wipe-sub">Setzt ALLES unwiderruflich zurück — lokal &amp; Cloud</div>
+      </div>
+      <button class="btn-mini" id="set-wipe-btn" onclick="wipeProgressStart()" style="min-width:64px; border-color:#e74c3c; color:#e74c3c;">Löschen…</button>
+      <div id="set-wipe-confirm" style="width:100%; display:none; margin-top:12px; background:rgba(231,76,60,0.06); border:1px solid #3a1a1a; border-radius:6px; padding:12px;">
+        <div id="set-wipe-hint" class="set-sub" style="margin:0 0 8px;">Tippe <b style="color:#e74c3c; letter-spacing:1px;">DELETE</b> zum Bestätigen. Das kann nicht rückgängig gemacht werden.</div>
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <input type="text" id="set-wipe-input" maxlength="10" placeholder="DELETE" autocomplete="off" oninput="wipeProgressCheck()" style="width:130px; background:#111; color:#e74c3c; border:1px solid #e74c3c; border-radius:4px; padding:7px 10px; font-family:'Cinzel',serif; letter-spacing:2px; text-transform:uppercase;">
+          <button class="btn-mini" id="set-wipe-go" disabled onclick="wipeProgressConfirm()" style="border-color:#e74c3c; color:#e74c3c; opacity:0.4;">Endgültig löschen</button>
+          <button class="btn-mini" id="set-wipe-cancel" onclick="wipeProgressCancel()">Abbrechen</button>
+        </div>
+        <div id="set-wipe-result" class="set-sub" style="margin-top:8px; min-height:1em;"></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -2358,6 +2374,59 @@
     if (btn) { var en = (typeof _menuIsEn === "function") ? _menuIsEn() : false; btn.textContent = en ? "Shown ✓" : "Angezeigt ✓"; }
   }
   window.todoLoginClick = todoLoginClick; window.todoDiscordToggle = todoDiscordToggle; window.todoGenCode = todoGenCode; window.todoDiscordDone = todoDiscordDone; window.todoHide = todoHide; window.todoShowAgain = todoShowAgain;
+
+  /* ===== Gesamten Fortschritt löschen (Settings) — verlangt Eingabe von DELETE ===== */
+  function wipeProgressStart() {
+    var box = document.getElementById("set-wipe-confirm");
+    var btn = document.getElementById("set-wipe-btn");
+    if (box) box.style.display = "block";
+    if (btn) btn.style.display = "none";
+    var inp = document.getElementById("set-wipe-input");
+    if (inp) { inp.value = ""; setTimeout(function () { try { inp.focus(); } catch (e) {} }, 30); }
+    wipeProgressCheck();
+    var res = document.getElementById("set-wipe-result"); if (res) res.textContent = "";
+  }
+  function wipeProgressCancel() {
+    var box = document.getElementById("set-wipe-confirm");
+    var btn = document.getElementById("set-wipe-btn");
+    if (box) box.style.display = "none";
+    if (btn) btn.style.display = "";
+  }
+  function wipeProgressCheck() {
+    var inp = document.getElementById("set-wipe-input");
+    var go = document.getElementById("set-wipe-go");
+    if (!inp || !go) return;
+    var ok = inp.value.trim().toUpperCase() === "DELETE";   // in jeder Sprache immer DELETE
+    go.disabled = !ok;
+    go.style.opacity = ok ? "1" : "0.4";
+    go.style.cursor = ok ? "pointer" : "default";
+  }
+  function wipeProgressConfirm() {
+    var inp = document.getElementById("set-wipe-input");
+    if (!inp || inp.value.trim().toUpperCase() !== "DELETE") return;
+    var en = (typeof _menuIsEn === "function") ? _menuIsEn() : false;
+    var go = document.getElementById("set-wipe-go");
+    var cancel = document.getElementById("set-wipe-cancel");
+    var res = document.getElementById("set-wipe-result");
+    if (go) { go.disabled = true; go.style.opacity = "0.4"; }
+    if (cancel) cancel.disabled = true;
+    if (res) { res.style.color = "#b5a98f"; res.textContent = en ? "Deleting…" : "Wird gelöscht…"; }
+    var done = function () {
+      if (res) { res.style.color = "#5a7d3a"; res.textContent = en ? "Progress deleted. Reloading…" : "Fortschritt gelöscht. Lade neu…"; }
+      setTimeout(function () { try { location.reload(); } catch (e) { location.href = location.href; } }, 700);
+    };
+    try {
+      if (window.ER && ER.wipeProfile) {
+        var p = ER.wipeProfile();
+        if (p && typeof p.then === "function") p.then(done, done); else done();
+      } else {   // Fallback: wenigstens lokal leeren
+        ["eldenRogueStats","eldenRogueAchievements","eldenRogueSeenUnlocks","eldenRogueRun","eldenRogueSave","eldenRogueMeta","eldenRogueHallOfFame","eldenRogueLocalBoard"]
+          .forEach(function (k) { try { localStorage.removeItem(k); } catch (e) {} });
+        done();
+      }
+    } catch (e) { done(); }
+  }
+  window.wipeProgressStart = wipeProgressStart; window.wipeProgressCancel = wipeProgressCancel; window.wipeProgressCheck = wipeProgressCheck; window.wipeProgressConfirm = wipeProgressConfirm;
   if (window.ER && ER.onUserChange) ER.onUserChange(function () { renderTodo(); });
   document.addEventListener("languageChanged", function () { renderTodo(); });
   renderTodo();
@@ -2791,6 +2860,12 @@ function localizeMenuExtras(){
   set("set-todo-label", "Erste-Schritte-Liste", "First-steps list");
   set("set-todo-sub", "Die To-Do-Karte im Hauptmenü wieder einblenden", "Show the to-do card in the main menu again");
   set("set-todo-btn", "Wieder anzeigen", "Show again");
+  set("set-wipe-label", "Fortschritt löschen", "Delete progress");
+  set("set-wipe-sub", "Setzt ALLES unwiderruflich zurück — lokal & Cloud", "Wipes EVERYTHING permanently — local & cloud");
+  set("set-wipe-btn", "Löschen…", "Delete…");
+  setH("set-wipe-hint", "Tippe <b style=\"color:#e74c3c; letter-spacing:1px;\">DELETE</b> zum Bestätigen. Das kann nicht rückgängig gemacht werden.", "Type <b style=\"color:#e74c3c; letter-spacing:1px;\">DELETE</b> to confirm. This cannot be undone.");
+  set("set-wipe-go", "Endgültig löschen", "Delete permanently");
+  set("set-wipe-cancel", "Abbrechen", "Cancel");
   _updateSpeedrunBtn();
   _updateTimerBtn();
   setH("info-l1", "<b>Modus wählen:</b> Starte einen <b>Normalen</b> Run. Den <b>Hard Mode</b> schaltest du frei, sobald du einmal durchgespielt hast.", "<b>Pick a mode:</b> Start a <b>Normal</b> run. <b>Hard Mode</b> unlocks once you've finished the game.");

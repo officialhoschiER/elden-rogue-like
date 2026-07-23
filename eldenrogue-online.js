@@ -920,6 +920,29 @@
     return { lokal: true, cloud: cloudGeleert };
   };
 
+  // OEFFENTLICHER Voll-Reset: loescht ALLES (Stats, Achievements, Meta/Roundtable, Runs,
+  // Hall of Fame, gesehene Unlocks, lokales Board) — lokal UND, falls eingeloggt, in der Cloud.
+  // Gibt ein Promise zurueck, das erst aufloest, wenn die Cloud-Loeschung durch ist (damit ein
+  // anschliessendes Neuladen NICHT die alten Cloud-Werte zurueckmergt). Fuer jeden Spieler nutzbar.
+  ER.wipeProfile = function () {
+    ["eldenRogueStats", "eldenRogueAchievements", "eldenRogueSeenUnlocks", "eldenRogueRun",
+     "eldenRogueSave", "eldenRogueMeta", "eldenRogueHallOfFame", "eldenRogueLocalBoard"
+    ].forEach(function (k) { try { localStorage.removeItem(k); } catch (e) {} });
+    initialSyncDone = false;   // beim naechsten Login sauber neu mergen (nichts zieht Altes zurueck)
+    if (ONLINE && fbDB && currentUser && firebase.firestore && firebase.firestore.FieldValue) {
+      try {
+        var del = firebase.firestore.FieldValue.delete();
+        var doc = { stats: del, achievements: del, metaStr: del, hofStr: del, seenStr: del, runStr: del,
+                    idleRunen: del, idleOwned: del, idleRate: del, allAchDate: del, allAchCount: del };
+        LB_CLOUD_FELDER.forEach(function (k) { doc[k] = del; });
+        return fbDB.collection("users").doc(currentUser.uid).set(doc, { merge: true })
+          .then(function () { return { lokal: true, cloud: true }; })
+          .catch(function (e) { try { console.warn("[ER] wipeProfile Cloud:", e); } catch (_) {} return { lokal: true, cloud: false }; });
+      } catch (e) { try { console.warn("[ER] wipeProfile Cloud:", e); } catch (_) {} }
+    }
+    return Promise.resolve({ lokal: true, cloud: false });
+  };
+
   /* ====== 5d) TÄGLICHER SEED – eigene Rangliste (bester Score pro Tag) ====== */
   function heutigerDailyKey() {
     var d = new Date();
