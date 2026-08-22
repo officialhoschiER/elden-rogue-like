@@ -624,6 +624,9 @@
       if (klasse) { s.classesNormalDone = s.classesNormalDone || {}; s.classesNormalDone[klasse] = true; }
       // Haligtree/Malenia: ein Durchlauf OHNE Blaidd zählt auf Normal ODER Hard
       if (noBlaidd) s.normalNoBlaiddClears = (s.normalNoBlaiddClears || 0) + 1;
+      // "Nacktläufer"-Achievement: Run OHNE Rüstung abgeschlossen — jede Klasse (Bettler zählt inhärent),
+      // jede Schwierigkeit. Der No-Armor-Challenge-Modus-Button existiert nicht mehr, daher hier vergeben.
+      if (noArmor) { s.challengesCompleted = s.challengesCompleted || {}; s.challengesCompleted.noarmor = true; }
       if (diff !== "hard") {    // die übrigen Freischaltungen bleiben Normal-spezifisch
         s.normalCompletions = (s.normalCompletions || 0) + 1;
         if (noArmor && klasse === "schwertkaempfer") s.normalNoArmorClears = (s.normalNoArmorClears || 0) + 1;  // Liurnia: NUR Vagabund + bewusst abgelegte Rüstung (Samurai/Bettler folgen später)

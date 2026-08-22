@@ -1846,6 +1846,14 @@ function generiereRautenNetz(regionName) {
   // DLC Gebiet der Finger: 3 KOMPLETTE Finger-Reihen (typ 24). Jeder Pfad quert pro Reihe genau
   // einen Knoten -> man bläst garantiert 3 Finger, bevor man Metyr erreicht (kein Soft-Lock möglich).
   if (regionName === "Fingerruinen") {
+    // Metyrs Reich hat KEINE Fremd-Mechaniken: der Standard-Pool schleust sonst Dungeon-Eingänge (10),
+    // Blaidd (9), Minibosse (14) und Loot ein — die dort nichts zu suchen haben und den Run soft-locken
+    // können. Design: „jeder Kampfknoten ist ein Fingerwurm". Daher alles außer Gnade(4)/Boss(5) auf
+    // reinen Kampf(2) normalisieren (typ 2 -> Fingerwurm), bevor die Finger-Reihen gesetzt werden.
+    fertigeKarte.forEach((z, e) => {
+      if (e === fertigeKarte.length - 1) return;   // Boss-Reihe unangetastet
+      z.knoten.forEach(k => { if (k.typ !== 4 && k.typ !== 5) k.typ = 2; });
+    });
     let eligible = [];
     for (let e = 1; e < fertigeKarte.length - 1; e++) {
       let z = fertigeKarte[e];
@@ -3817,7 +3825,7 @@ function kampfGewonnen() {
 
   if (window.ER) {
     ER.fightWon();
-    if (gegnerName === "Eldenbiest" || (gegnerName === "Mohg, Fürst des Blutes" && !mohgZweiterKill)) { if (!__schonGezaehlt) { ER.bossKilled(gegnerName); if (window.ER && ER.addBossValue) ER.addBossValue(gibStageNummer()); runBosseGelegt++; markiereGefolgeBoss(gegnerName); recordHallOfFame(); ER.gameCompleted(gewaehlteKlasse, hardMode ? "hard" : "normal", !blaiddEncounteredRun, (armorRemovedByPlayer && !hatRuestungAusgeruestet())); stopRunTimer();
+    if (gegnerName === "Eldenbiest" || (gegnerName === "Mohg, Fürst des Blutes" && !mohgZweiterKill)) { if (!__schonGezaehlt) { ER.bossKilled(gegnerName); if (window.ER && ER.addBossValue) ER.addBossValue(gibStageNummer()); runBosseGelegt++; markiereGefolgeBoss(gegnerName); recordHallOfFame(); ER.gameCompleted(gewaehlteKlasse, hardMode ? "hard" : "normal", !blaiddEncounteredRun, (!hatRuestungAusgeruestet() && (gewaehlteKlasse === "nackt" || armorRemovedByPlayer))); stopRunTimer();
       // Completion-Marks für die Klassen-Tafel (Hard schließt Normal mit ein)
       ER.classFeat(gewaehlteKlasse, "normal");
       if (hardMode) ER.classFeat(gewaehlteKlasse, "hard");
@@ -4307,7 +4315,7 @@ function vollendeRunMitAbschluss(titel, text) {
   dlcWahlOffen = false;
   if (window.ER) {
     recordHallOfFame();
-    ER.gameCompleted(gewaehlteKlasse, hardMode ? "hard" : "normal", !blaiddEncounteredRun, (armorRemovedByPlayer && !hatRuestungAusgeruestet()));
+    ER.gameCompleted(gewaehlteKlasse, hardMode ? "hard" : "normal", !blaiddEncounteredRun, (!hatRuestungAusgeruestet() && (gewaehlteKlasse === "nackt" || armorRemovedByPlayer)));
     stopRunTimer();
     ER.classFeat(gewaehlteKlasse, "normal");
     if (hardMode) ER.classFeat(gewaehlteKlasse, "hard");
