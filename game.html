@@ -974,8 +974,6 @@ let fastTravelRun = false;    // Schnellreise: Veteranen-Fast-Track direkt vor M
 // Sie ist der Schlüssel zum Gebiet der Finger (Metyr) — wer sie benutzt/wegwirft, verliert ihn.
 const FINGER_MIMIC = { type: "fingermimic", name: "Finger Mimic", desc: "Ein zuckender, abgetrennter Finger. Er fühlt sich… erwartungsvoll an.", icon: "🖐", bild: "images/icons/finger_mimic.webp" };
 function besitztFingerMimic(){ return backpackItems.some(function(i){ return i && i.type === "fingermimic"; }); }
-const FINGER_START = 90;           // unten links
-const FINGER_METYR = 9;            // oben rechts (Metyr)
 
 let playerHitsOnEnemy = 0;
 let enemyIsStaggered = false; let staggerVisualActive = false;
@@ -2196,8 +2194,7 @@ function baueKarteHTML() {
   grid.innerHTML = ""; 
   let mapScrollArea = document.getElementById("map-view");
   if (grid.offsetParent === null) return;
-  if (inFingerruinen) { renderFingerruinen(grid, mapScrollArea); return; }   // DLC: eigenes 10×10-Gitter
-  
+
   if (inSubDungeon) {
     mapScrollArea.style.backgroundImage = inSewers
       ? "linear-gradient(to bottom, rgba(15,5,8,0.8), rgba(8,2,4,0.92)), url('images/background/dungeatersewers.jpg')"
@@ -4548,135 +4545,6 @@ function starteFingerruinen() {
   oeffneStatPopup(L("Die Ruinen der Finger", "The Finger Ruins"),
     L("Ein Feld grauer Steinsäulen unter fremdem Sternenhimmel. Jeder Gegner hier ist ein <b>Fingerwurm</b> (kann dich bannen). <b>Blas in die drei Finger</b> (🖐) auf deinem Weg — dann wartet <b>Metyr</b>.",
       "A field of grey stone pillars beneath an alien sky. Every enemy here is a <b>finger worm</b> (it can bind you). <b>Blow into the three fingers</b> (🖐) along your path — then <b>Metyr</b> awaits."), 1);
-}
-// Einbahn: 3 zufällige Finger, aber garantiert auf EINEM monotonen Treppen-Pfad
-// (Start unten links -> Metyr oben rechts, nur hoch/rechts). So ist jeder Finger
-// ohne Umkehr erreichbar und es kann keinen Soft-Lock geben.
-function wuerfleFinger() {
-  let r = 9, c = 0, pfad = [];
-  while (!(r === 0 && c === 9)) {
-    if (r > 0 && c < 9) { if (Math.random() < 0.5) r--; else c++; }
-    else if (r > 0) r--; else c++;
-    let idx = r * 10 + c;
-    if (idx !== FINGER_METYR) pfad.push(idx);
-  }
-  let kandidaten = pfad.filter(i => i !== FINGER_START && i !== FINGER_METYR);
-  let out = [];
-  // gleichmäßig streuen: Pfad in Drittel teilen, aus jedem eins ziehen
-  for (let seg = 0; seg < 3 && kandidaten.length; seg++) {
-    let lo = Math.floor(kandidaten.length * seg / 3), hi = Math.floor(kandidaten.length * (seg + 1) / 3);
-    if (hi <= lo) hi = lo + 1;
-    let pick = kandidaten[Math.min(kandidaten.length - 1, lo + Math.floor(Math.random() * (hi - lo)))];
-    if (pick != null && out.indexOf(pick) < 0) out.push(pick);
-  }
-  while (out.length < 3 && kandidaten.length >= 3) { let p = kandidaten[Math.floor(Math.random() * kandidaten.length)]; if (out.indexOf(p) < 0) out.push(p); }
-  return out;
-}
-// noch nicht geblasene Finger
-// Würmer besetzen ~22% der freien Kacheln (nie Start, nie Metyr, nie ein Finger).
-// Sie blockieren nichts — man kämpft NACH dem Zug, der Einbahn-Pfad bleibt also garantiert lösbar.
-function wuerfleWuermer() {
-  let out = [];
-  for (let i = 0; i < 100; i++) {
-    if (i === FINGER_START || i === FINGER_METYR || fingerNodes.indexOf(i) >= 0) continue;
-    if (Math.random() < 0.22) out.push(i);
-  }
-  return out;
-}
-function fingerOffen() { return fingerNodes.filter(i => fingerGeblasen.indexOf(i) < 0); }
-// Bleiben von (nr,nc) aus (per hoch/rechts) noch alle offenen Finger erreichbar?
-function fingerErreichbarVon(nr, nc) {
-  return fingerOffen().every(f => { let fr = Math.floor(f / 10), fc = f % 10; return fr <= nr && fc >= nc; });
-}
-// Erlaubte Züge: nur nach OBEN (Reihe−1) oder RECHTS (Spalte+1) und nur, wenn danach
-// kein offener Finger abgeschnitten wird (Metyr erst offen, wenn alle Finger tönen).
-function fingerErlaubteZuege(pos) {
-  let r = Math.floor(pos / 10), c = pos % 10, out = [];
-  [[r - 1, c], [r, c + 1]].forEach(function (m) {
-    let nr = m[0], nc = m[1]; if (nr < 0 || nc > 9) return;
-    let idx = nr * 10 + nc;
-    if (idx === FINGER_METYR) { if (fingerGeblasen.length >= fingerNodes.length) out.push(idx); return; }
-    if (fingerErreichbarVon(nr, nc)) out.push(idx);
-  });
-  return out;
-}
-function renderFingerruinen(grid, mv) {
-  if (mv) { mv.classList.remove("abyss-fog"); mv.style.backgroundImage = "linear-gradient(to bottom, rgba(18,14,30,0.92), rgba(5,4,10,0.985)), url('images/background/fingerruinen.jpg')"; }
-  let allBlown = fingerGeblasen.length >= fingerNodes.length;
-  let reach = fingerErlaubteZuege(fingerPos);
-  let cells = "";
-  for (let i = 0; i < 100; i++) {
-    let cls = "fr-cell", inner = "";
-    if (i === fingerPos) { cls += " fr-here"; inner = '<img class="fr-me" src="images/tarnished_idle.png" onerror="this.replaceWith(document.createTextNode(\'🧍\'))">'; }
-    else if (reach.indexOf(i) >= 0) cls += " fr-reach";
-    else if (fingerPfad.indexOf(i) >= 0) cls += " fr-visited";   // schon durchquert — kein Zurück
-    if (i === FINGER_METYR) { cls += " fr-metyr" + (allBlown ? " lit" : ""); inner = '<img class="fr-metyr-img" src="' + (bilderDatenbankBosse["Metyr, Mutter der Finger"] || "") + '" onerror="this.replaceWith(document.createTextNode(\'👁\'))">'; }
-    else if (fingerNodes.indexOf(i) >= 0) { let blown = fingerGeblasen.indexOf(i) >= 0; cls += " fr-finger" + (blown ? " blown" : ""); inner = "🖐"; }
-    else if (fingerWuermer.indexOf(i) >= 0 && i !== fingerPos) {   // Wurm-Kachel — man sieht sie und kann sie umgehen
-      let tot = fingerWuermerTot.indexOf(i) >= 0;
-      cls += " fr-wurm" + (tot ? " slain" : "");
-      inner = '<img class="fr-wurm-img" src="images/Gegner/wurm.avif" onerror="this.replaceWith(document.createTextNode(\'🪱\'))">';
-    }
-    cells += '<div class="' + cls + '" onclick="fingerKlick(' + i + ')">' + inner + '</div>';
-  }
-  let onFinger = fingerNodes.indexOf(fingerPos) >= 0 && fingerGeblasen.indexOf(fingerPos) < 0;
-  grid.innerHTML =
-    '<div class="fr-wrap">' +
-      '<div class="fr-head">🖐 ' + L("Finger", "Fingers") + ': <b>' + fingerGeblasen.length + ' / ' + fingerNodes.length + '</b>' +
-        (allBlown ? ' — <b style="color:#c9a86a;">' + L("Metyr erwacht! Geh nach oben rechts.", "Metyr awakens! Head to the top-right.") + '</b>'
-                  : ' <span style="color:#8a83a8;">— ' + L("nur hoch/rechts, kein Zurück", "up/right only, no going back") + '</span>') + '</div>' +
-      '<div class="fr-grid">' + cells + '</div>' +
-      '<div class="fr-actions">' +
-        (onFinger ? '<button class="btn-modal-action fr-blow" onclick="fingerBlasen()">🌬 ' + L("In den Finger blasen", "Blow into the finger") + '</button>' : '') +
-      '</div>' +
-    '</div>';
-}
-function fingerKlick(i) {
-  if (imKampf || aktionsSperre) return;
-  if (i === fingerPos) { if (fingerNodes.indexOf(i) >= 0 && fingerGeblasen.indexOf(i) < 0) fingerBlasen(); return; }
-  if (fingerErlaubteZuege(fingerPos).indexOf(i) < 0) {   // Einbahn: nur erlaubte Vorwärts-Züge
-    if (i === FINGER_METYR && fingerGeblasen.length < fingerNodes.length) zeigeFingerToast(L("Die drei Finger müssen erst erklingen…", "The three fingers must sound first…"));
-    return;
-  }
-  if (i === FINGER_METYR) { fingerPos = i; fingerPfad.push(i); speichereRun(); starteMetyr(); return; }
-  fingerPos = i; if (fingerPfad.indexOf(i) < 0) fingerPfad.push(i); speichereRun();
-  // Auf der Kachel sitzt ein Wurm -> Kampf. Der Zug ist bereits gemacht, ein Soft-Lock ist damit ausgeschlossen.
-  if (fingerWuermer.indexOf(i) >= 0 && fingerWuermerTot.indexOf(i) < 0) { starteFingerwurm(); return; }
-  baueKarteHTML();
-}
-
-// Im Gebiet der Finger ist JEDER Gegner der Wurm.
-function starteFingerwurm() {
-  // Bewusst unter einem Elite: der Wurm hat mit dem Bann-Spell schon genug Druck, und Metyr (3800/195)
-  // muss der harte Teil bleiben — sonst schlägt das Fußvolk fast so hart wie der Geheimboss.
-  let m = (hardMode ? 12.0 * 1.3 : 12.0) * 1.05;
-  gegnerName = "Fingerwurm"; gegnerMaxHp = Math.round(45 * m); gegnerHp = gegnerMaxHp; gegnerSchaden = Math.round(7.5 * m);
-  aktuellerKnotenTyp = 1; imKampf = true; aktionsSperre = false; wurmBann = 0;
-  playerHitsOnEnemy = 0; enemyIsStaggered = false; staggerVisualActive = false; nextHitBonusDamage = false;
-  if (window.ER) try { ER.discover("Fingerwurm"); } catch (e) {}
-  document.getElementById("battle-log").innerText = L("Zwischen den Säulen schiebt sich ein bleicher Wurm hervor. Sein Maul formt Laute, die keine Zunge sprechen sollte.", "A pale worm pushes out from between the pillars. Its maw forms sounds no tongue should speak.");
-  speichereRun(); updateUI();
-}
-function fingerBlasen() {
-  if (fingerNodes.indexOf(fingerPos) < 0 || fingerGeblasen.indexOf(fingerPos) >= 0) return;
-  fingerGeblasen.push(fingerPos); playFingerSound();
-  zeigeFingerToast(L("Ein tiefer Ton hallt durch die Ruinen…", "A deep tone echoes through the ruins…") + " (" + fingerGeblasen.length + "/" + fingerNodes.length + ")");
-  speichereRun(); baueKarteHTML();
-}
-function starteMetyr() {
-  gegnerName = "Metyr, Mutter der Finger"; gegnerMaxHp = 3800; gegnerHp = 3800; gegnerSchaden = 195;
-  aktuellerKnotenTyp = 5; imKampf = true; aktionsSperre = false;
-  playerHitsOnEnemy = 0; enemyIsStaggered = false; staggerVisualActive = false; nextHitBonusDamage = false;
-  if (window.ER) try { ER.discover("Metyr, Mutter der Finger"); } catch (e) {}
-  document.getElementById("battle-log").innerText = L("Aus dem Sternenstaub über dir sinkt Metyr, Mutter der Finger — die blinde Botin der Äußeren Götter.", "From the stardust above descends Metyr, Mother of Fingers — the blind messenger of the Outer Gods.");
-  speichereRun(); updateUI();
-}
-function zeigeFingerToast(msg) {
-  let wrap = document.getElementById("ach-toast-wrap"); if (!wrap) return;
-  let el = document.createElement("div"); el.className = "ach-toast"; el.style.borderColor = "#7a5c22";
-  el.innerHTML = '<div class="ach-ic">🖐</div><div><div class="ach-label" style="color:#c9a86a;">' + L("FINGERRUINEN", "FINGER RUINS") + '</div><div class="ach-desc">' + msg + '</div></div>';
-  wrap.appendChild(el);
-  setTimeout(function () { el.style.transition = "opacity .5s"; el.style.opacity = "0"; setTimeout(function () { try { el.remove(); } catch (e) {} }, 500); }, 2600);
 }
 function playFingerSound() {
   try {
