@@ -562,6 +562,10 @@
     return Math.max(0, Math.round((basis + skill + zeit) * mult));
   }
 
+  // Schnellreise-Run (Veteranen-Fast-Track ins DLC): zählt NICHT für die geteilten Bestenlisten
+  // (Score-/Speedrun-Board), weil er den halben Content überspringt. Achievements/DLC-Enden zählen weiter.
+  var fastTravelRun = false;
+
   /* ====== 5) ÖFFENTLICHE API (window.ER) ====== */
   const ER = {
     ACHIEVEMENTS: ACHIEVEMENTS,
@@ -581,24 +585,27 @@
       var diff = normDiff(r.difficulty);
       var cat = normCat(r.category || diff);
       var score = berechneScore(r);
-      // kombiniert (für die Stat-Anzeige) ...
-      setMax("bestScore", score);
-      setMax("bestRunBosses", r.bosses || 0);
-      // ... getrennt nach Schwierigkeit (Stat-Anzeige/Cloud-Kompatibilität) ...
-      setMax(diff === "hard" ? "bestScoreHard" : "bestScoreNormal", score);
-      setMax(diff === "hard" ? "bestRunBossesHard" : "bestRunBossesNormal", r.bosses || 0);
-      // ... und pro Patch + KATEGORIE (Quelle der jeweiligen Bestenliste)
-      if (score > 0) {
-        var s = getStats();
-        var pk = patchKey(PATCH);
-        s.patchBest = s.patchBest || {};
-        if (!s.patchBest[pk]) s.patchBest[pk] = leererPatchSlot();
-        if (!s.patchBest[pk][cat]) s.patchBest[pk][cat] = { score: 0, stage: 0, bosses: 0 };
-        var slot = s.patchBest[pk][cat];
-        if (score > (slot.score || 0)) { slot.score = score; slot.stage = r.stage || 0; slot.bosses = r.bosses || 0; }
-        saveStats(s);
+      // Schnellreise: KEINE Wertung in Bestenlisten/Bestwerten (überspringt das halbe Spiel).
+      if (!fastTravelRun) {
+        // kombiniert (für die Stat-Anzeige) ...
+        setMax("bestScore", score);
+        setMax("bestRunBosses", r.bosses || 0);
+        // ... getrennt nach Schwierigkeit (Stat-Anzeige/Cloud-Kompatibilität) ...
+        setMax(diff === "hard" ? "bestScoreHard" : "bestScoreNormal", score);
+        setMax(diff === "hard" ? "bestRunBossesHard" : "bestRunBossesNormal", r.bosses || 0);
+        // ... und pro Patch + KATEGORIE (Quelle der jeweiligen Bestenliste)
+        if (score > 0) {
+          var s = getStats();
+          var pk = patchKey(PATCH);
+          s.patchBest = s.patchBest || {};
+          if (!s.patchBest[pk]) s.patchBest[pk] = leererPatchSlot();
+          if (!s.patchBest[pk][cat]) s.patchBest[pk][cat] = { score: 0, stage: 0, bosses: 0 };
+          var slot = s.patchBest[pk][cat];
+          if (score > (slot.score || 0)) { slot.score = score; slot.stage = r.stage || 0; slot.bosses = r.bosses || 0; }
+          saveStats(s);
+        }
+        submitToBoard(score, { stage: r.stage || 0, bosses: r.bosses || 0, fights: r.fights || 0, difficulty: diff, category: cat });
       }
-      submitToBoard(score, { stage: r.stage || 0, bosses: r.bosses || 0, fights: r.fights || 0, difficulty: diff, category: cat });
       // Zähler zurücksetzen – Schwierigkeit, Kategorie & hadDeath bleiben bis zum nächsten startRun erhalten
       saveRun({ stage: 0, bosses: 0, fights: 0, ripostes: 0, weakHits: 0, bossScore: 0, timeMs: 0, difficulty: diff, category: cat, hadDeath: r.hadDeath });
       return score;
@@ -694,6 +701,23 @@
         done: all.filter(function (c) { return !!done[c]; }),
         missing: all.filter(function (c) { return !done[c]; }) };
     },
+
+    /* --- Schnellreise (Veteranen-Fast-Track ins DLC) --- */
+    // Die 7 Klassen-Marken, die eine Klasse für die Schnellreise komplett haben muss.
+    FASTTRAVEL_FEATS: ["normal", "hard", "malenia", "mohgwyn", "speed5", "pcr", "metyr"],
+    // Hat diese Klasse ALLE 7 Marken? -> Schnellreise freigeschaltet.
+    hasFastTravel: function (klasse) {
+      if (!klasse) return false;
+      var f = (ER.getClassFeats() || {})[klasse] || {};
+      return ER.FASTTRAVEL_FEATS.every(function (k) { return !!f[k]; });
+    },
+    // Welche Klassen haben die Schnellreise frei?
+    fastTravelClasses: function () {
+      return ["schwertkaempfer", "samurai", "nackt"].filter(function (k) { return ER.hasFastTravel(k); });
+    },
+    // game.html setzt das pro Run: Schnellreise-Runs zählen NICHT für die Bestenlisten.
+    setFastTravel: function (v) { fastTravelRun = !!v; },
+    isFastTravel: function () { return fastTravelRun; },
 
     /* --- Geräte-Sync: lokale Stände (Meta/HoF/Run) in die Cloud spiegeln ---
        syncNow()      -> gebündelt nach ein paar Sekunden (für häufige Ereignisse wie speichereRun)

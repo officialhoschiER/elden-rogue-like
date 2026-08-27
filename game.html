@@ -969,6 +969,7 @@ let messmerGekippt = false;        // Schalter oben in der Festung gezogen -> Ab
 let fingerWuermer = [];            // Gebiet der Finger: Kacheln mit einem Wurm-Gegner
 let fingerWuermerTot = [];         // davon bereits erschlagen
 let wurmBann = 0;              // Wurm-Spell aktiv -> die naechste Aktion des Spielers faellt aus
+let fastTravelRun = false;    // Schnellreise: Veteranen-Fast-Track direkt vor Mohg (zählt NICHT für Bestenlisten)
 // Die Finger Mimic ist ein echtes RUCKSACK-Item (Drop des Fingercreepers im Waldgebiet).
 // Sie ist der Schlüssel zum Gebiet der Finger (Metyr) — wer sie benutzt/wegwirft, verliert ihn.
 const FINGER_MIMIC = { type: "fingermimic", name: "Finger Mimic", desc: "Ein zuckender, abgetrennter Finger. Er fühlt sich… erwartungsvoll an.", icon: "🖐", bild: "images/icons/finger_mimic.webp" };
@@ -1002,7 +1003,7 @@ function speichereRun() {
     v: 1, hardMode: hardMode, challenge: activeChallenge, ts: Date.now(), runPlayMs: runPlayMs,
     runSeed, seedIsCustom, seedRngCalls, runEbeneMax, runBosseGelegt,
     torbogenSpruenge, wolfsgeheulGehoert, wahnsinn, untouchableRunden, rellanaGetroffen, scharlachRot, dlcWahlOffen,
-    rauhGeheimIntakt, inFingerruinen, fingerPos, fingerGeblasen, fingerNodes, fingerPfad, hatGebetet, messmerGekippt, fingerWuermer, fingerWuermerTot,
+    rauhGeheimIntakt, inFingerruinen, fingerPos, fingerGeblasen, fingerNodes, fingerPfad, hatGebetet, messmerGekippt, fingerWuermer, fingerWuermerTot, fastTravelRun,
     spielerHp, spielerMaxHp, spielerFlasks, maxKlassenFlasks, estusHeilProzent,
     gewaehlteKlasse, basisAusweichChance, playerImageStr,
     waffenName, waffenSchaden, waffenUpgrade, waffenRaritaet, waffenSchadensarten,
@@ -1045,7 +1046,8 @@ function ladeGespeichertenRun() {
     if (window.ER && ER.setSeedRun) ER.setSeedRun(seedIsCustom);
     setTimeout(aktualisiereSeedAnzeige, 0);
     torbogenSpruenge = d.torbogenSpruenge || 0; wolfsgeheulGehoert = !!d.wolfsgeheulGehoert; wahnsinn = d.wahnsinn || 0; untouchableRunden = d.untouchableRunden || 0; rellanaGetroffen = !!d.rellanaGetroffen; scharlachRot = !!d.scharlachRot; dlcWahlOffen = !!d.dlcWahlOffen;
-    rauhGeheimIntakt = d.rauhGeheimIntakt !== false; inFingerruinen = !!d.inFingerruinen; fingerPos = (typeof d.fingerPos === "number") ? d.fingerPos : 90; fingerGeblasen = d.fingerGeblasen || []; fingerNodes = d.fingerNodes || []; fingerPfad = (d.fingerPfad && d.fingerPfad.length) ? d.fingerPfad : [fingerPos]; hatGebetet = !!d.hatGebetet; messmerGekippt = !!d.messmerGekippt; fingerWuermer = d.fingerWuermer || []; fingerWuermerTot = d.fingerWuermerTot || []; wurmBann = 0;
+    rauhGeheimIntakt = d.rauhGeheimIntakt !== false; inFingerruinen = !!d.inFingerruinen; fingerPos = (typeof d.fingerPos === "number") ? d.fingerPos : 90; fingerGeblasen = d.fingerGeblasen || []; fingerNodes = d.fingerNodes || []; fingerPfad = (d.fingerPfad && d.fingerPfad.length) ? d.fingerPfad : [fingerPos]; hatGebetet = !!d.hatGebetet; messmerGekippt = !!d.messmerGekippt; fingerWuermer = d.fingerWuermer || []; fingerWuermerTot = d.fingerWuermerTot || []; wurmBann = 0; fastTravelRun = !!d.fastTravelRun;
+    if (window.ER && ER.setFastTravel) try { ER.setFastTravel(fastTravelRun); } catch(e){}
     setTimeout(aktualisiereWahnsinnAnzeige, 0);
     if (dlcWahlOffen) setTimeout(oeffneMohgDlcWahl, 100);   // Wahl-Popup übersteht einen Reload
     towerEtage=d.towerEtage||0;
@@ -1952,6 +1954,7 @@ window.onload = function() {
 };
 
 function oeffneKlassenAuswahl() {
+  fastTravelRun = false;   // regulärer Auswahl-Screen -> kein Schnellreise-Run
   aktuelleRegion = "Limgrave"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null;
   netzKarte = generiereRautenNetz("Limgrave");
   inSubDungeon = false; mainMapState = null;
@@ -1983,6 +1986,17 @@ function oeffneKlassenAuswahl() {
   popUp.classList.add("klassen-modal");
   document.getElementById("popup-overlay").style.display = "flex";
   let modeTag = hardMode ? '<div style="color:#e74c3c; font-size:0.75rem; font-weight:bold; letter-spacing:3px; text-transform:uppercase; margin-bottom:4px; font-family:sans-serif;">⚠️ HARD MODE</div>' : '';
+  // Schnellreise: Klassen mit ALLEN 7 Marken bekommen hier einen Fast-Track-Button (direkt vor Mohg).
+  let ftKlassen = (window.ER && ER.fastTravelClasses) ? ER.fastTravelClasses() : [];
+  let ftNames = { schwertkaempfer: t('class_vagabond'), samurai: t('class_samurai'), nackt: t('class_wretch') };
+  let ftHtml = ftKlassen.length ? (
+    '<div style="margin-top:18px; border-top:1px solid #2a2013; padding-top:14px;">' +
+    '<div style="color:#b97cff; font-size:0.8rem; letter-spacing:2px; text-transform:uppercase; font-family:sans-serif; margin-bottom:4px;">⚡ ' + L("Schnellreise","Fast Travel") + '</div>' +
+    '<div style="color:#8f8f80; font-size:0.72rem; font-family:sans-serif; margin-bottom:8px; text-transform:none;">' + L("Meisterklasse (alle 7 Marken): direkt vor Mohg, +25% Leben &amp; lila Waffe. Zählt nicht für Bestenlisten.","Mastered class (all 7 deeds): straight to Mohg, +25% health &amp; a purple weapon. Not counted on leaderboards.") + '</div>' +
+    '<div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">' +
+    ftKlassen.map(function(k){ return '<button onclick="starteSchnellreise(\'' + k + '\')" style="background:#1a1226; border:1px solid #b97cff; color:#c9a6ff; padding:7px 14px; border-radius:4px; cursor:pointer; font-family:\'Cinzel\',serif; font-size:0.82rem; letter-spacing:1px;">⚡ ' + (ftNames[k]||k) + '</button>'; }).join("") +
+    '</div></div>'
+  ) : '';
   popUp.innerHTML = `
     <h2 style="color: var(--gold); font-size: 2.2rem; margin-top:0; letter-spacing:4px; font-family: 'Mantinia', serif;">ELDEN ROGUE</h2>
     ${modeTag}
@@ -2013,7 +2027,8 @@ function oeffneKlassenAuswahl() {
       <button onclick="uebernehmeSeedEingabe()" style="background:#1c1710; border:1px solid var(--gold-dark); color:var(--gold); padding:6px 10px; border-radius:3px; cursor:pointer; font-family:sans-serif; font-size:0.78rem;">${t('seed_apply')}</button>
     </div>
     ${seedIsCustom ? '<div style="margin-top:8px; color:#e0a34f; font-size:0.75rem; font-family:sans-serif; text-transform:none;">🎲 ' + t('seed_run_warn') + '</div>' : ''}
-    ${istDailySeedRun() ? '<div style="margin-top:6px; color:#7fc7e6; font-size:0.78rem; font-weight:bold; font-family:sans-serif; text-transform:none;">🏆 ' + t('daily_fair_warn') + '</div>' : ''}`;
+    ${istDailySeedRun() ? '<div style="margin-top:6px; color:#7fc7e6; font-size:0.78rem; font-weight:bold; font-family:sans-serif; text-transform:none;">🏆 ' + t('daily_fair_warn') + '</div>' : ''}
+    ${ftHtml}`;
 }
 
 function zeigeTodesBildschirm(endgueltig) {
@@ -2105,7 +2120,7 @@ function direktNeustarten() {
   playerHitsOnEnemy = 0; enemyIsStaggered = false; staggerVisualActive = false; nextHitBonusDamage = false;
   currentAffinity = "Keine"; affinityHits = 0; completedDungeonsCount = 0;
   backpackItems = [null, null, null]; activeBuffs = []; inSubDungeon = false; inSewers = false; mainMapState = null; towerEtage = 0;
-  torbogenSpruenge = 0; wolfsgeheulGehoert = false; wahnsinn = 0; untouchableRunden = 0; rellanaGetroffen = false; scharlachRot = false; dlcWahlOffen = false; rauhGeheimIntakt = true; inFingerruinen = false; fingerPos = 90; fingerGeblasen = []; fingerNodes = []; fingerPfad = [90]; hatGebetet = false; messmerGekippt = false; fingerWuermer = []; fingerWuermerTot = []; wurmBann = 0; aktualisiereWahnsinnAnzeige();
+  torbogenSpruenge = 0; wolfsgeheulGehoert = false; wahnsinn = 0; untouchableRunden = 0; rellanaGetroffen = false; scharlachRot = false; dlcWahlOffen = false; rauhGeheimIntakt = true; inFingerruinen = false; fingerPos = 90; fingerGeblasen = []; fingerNodes = []; fingerPfad = [90]; hatGebetet = false; messmerGekippt = false; fingerWuermer = []; fingerWuermerTot = []; wurmBann = 0; fastTravelRun = false; aktualisiereWahnsinnAnzeige();
   // Seed-Run (geteilter Seed): derselbe Seed bleibt für den Retry — normaler Run: frisch würfeln
   setzeSeed(seedIsCustom ? runSeed : zufallsSeed(), seedIsCustom);
   oeffneKlassenAuswahl();
@@ -2135,11 +2150,45 @@ function waehleKlasseEngine(klasse) {
   // Kategorie mitgeben, damit Challenge-Runs (tower/noarmor/noblaidd/autobattle/haligtree)
   // in ihrer eigenen Bestenliste landen. Leeres activeChallenge -> normCat fällt auf normal/hard zurück.
   if (window.ER) ER.startRun(hardMode ? "hard" : "normal", activeChallenge);
+  if (window.ER && ER.setFastTravel) ER.setFastTravel(fastTravelRun);   // Schnellreise-Runs aus den Bestenlisten halten
   aktualisiereSeedAnzeige();
   runPlayMs = 0; runEbeneMax = 1; runBosseGelegt = 0; __dailyEingereicht = false; startRunTimer();
   speichereRun();
   if (activeChallenge === "tower") { starteTowerModus(); return; }   // Tower: direkt in den Aufstieg statt Regionskarte
   updateUI();
+}
+
+// Zufällige lila (epische) Waffe — Belohnung für den Schnellreise-Fast-Track.
+function rolleEpischeWaffe() {
+  let pool = (typeof poolUnlockedWaffe === "function") ? poolUnlockedWaffe("epic") : null;
+  if (!pool || !pool.length) pool = waffenDatenbank.epic || [];
+  let base = pool[Math.floor(Math.random() * pool.length)];
+  if (!base) return null;
+  return { name: base.name, basisDmg: base.basisDmg, rarity: "epic",
+           schadensarten: [ schadensArten[Math.floor(Math.random() * schadensArten.length)] ] };
+}
+
+// SCHNELLREISE (Veteranen-Fast-Track): nur frei, wenn eine Klasse ALLE 7 Marken hat.
+// Setzt die Klasse regulär auf, gibt +25% Basis-Max-HP und eine lila Waffe und spawnt DIREKT
+// vor Mohg (Mini-Karte mit nur dem Boss). mohgZweiterKill greift automatisch -> Hand -> DLC.
+// Zählt NICHT für die Bestenlisten (fastTravelRun).
+function starteSchnellreise(klasse) {
+  if (window.ER && ER.hasFastTravel && !ER.hasFastTravel(klasse)) return;   // Sicherheitsnetz
+  fastTravelRun = true;
+  waehleKlasseEngine(klasse);   // Basis-Setup (Stats, Meta, startRun, Timer) — synchronisiert ER.setFastTravel(true)
+  spielerMaxHp = Math.round(spielerMaxHp * 1.25);   // +25% auf die Basis (fließt durch berechneFinalMaxHp)
+  spielerHp = berechneFinalMaxHp();
+  let w = rolleEpischeWaffe(); if (w) setzeAusgeruesteteWaffe(w);   // lila Waffe
+  aktuelleRegion = "Mohgwyn"; aktuelleEbene = 1; geloesieKnotenIds = []; aktuellerKnotenId = null;
+  inSubDungeon = false; inSewers = false; mainMapState = null; inFingerruinen = false;
+  netzKarte = [{ ebene: 1, knoten: [{ id: "Moh_1_0", index: 0, typ: 5, wege: [] }] }];   // nur Mohg
+  if (window.ER && ER.mohgwynVisited) try { ER.mohgwynVisited(); } catch(e){}
+  speichereRun(); baueKarteHTML(); updateUI();
+  oeffneStatPopup(
+    L("Schnellreise", "Fast Travel"),
+    L("Als Meister dieser Klasse reißt dich die Macht der verwelkten Hand direkt an den Rand der Mohgwyn-Dynastie.\n\nDu trägst eine <b>lila Waffe</b> und <b>+25% Leben</b> — doch der Weg ins Schattenland führt weiterhin nur über <b>Mohg</b>.\n\n<i>(Dieser Lauf zählt nicht für die Bestenlisten.)</i>",
+      "As a master of this class, the withered hand's power tears you straight to the edge of Mohgwyn Dynasty.\n\nYou carry a <b>purple weapon</b> and <b>+25% health</b> — but the road into the Land of Shadow still leads only through <b>Mohg</b>.\n\n<i>(This run does not count for the leaderboards.)</i>"),
+    1);
 }
 
 function baueKarteHTML() {
@@ -3949,6 +3998,7 @@ function kampfGewonnen() {
     return;
   }
   if (gegnerName === "Radahn, Gemahl Miquellas") {
+    if (window.ER && ER.classFeat) try { ER.classFeat(gewaehlteKlasse, "pcr"); } catch(e){}   // Klassen-Marke: DLC-Endboss (PCR)
     vollendeRunMitAbschluss(
       L("ZEITALTER DER BARMHERZIGKEIT", "AGE OF COMPASSION"),
       L("Der Verheißene Gemahl Radahn ist gefallen, und Miquellas Traum zerbricht an der Spitze von Enir-Ilim.\n\nDu hast das Land des Schattens bis zu seinem Ende durchschritten und den größten aller Feinde bezwungen. <b>Nur die Allerwenigsten kommen je so weit.</b>", "Promised Consort Radahn has fallen, and Miquella's dream shatters at the summit of Enir-Ilim.\n\nYou have walked the Land of Shadow to its very end and defeated the greatest foe of all. <b>Only the fewest of the few ever come this far.</b>"));
@@ -3956,6 +4006,7 @@ function kampfGewonnen() {
   }
   if (gegnerName === "Metyr, Mutter der Finger") {
     inFingerruinen = false;
+    if (window.ER && ER.classFeat) try { ER.classFeat(gewaehlteKlasse, "metyr"); } catch(e){}   // Klassen-Marke: Geheim-Endboss Metyr
     vollendeRunMitAbschluss(
       L("DIE MUTTER DER FINGER IST TOT", "THE MOTHER OF FINGERS IS DEAD"),
       L("Metyr, Botin der Äußeren Götter, zerfällt zu Sternenstaub. Ihr Blick, der aus dem Nichts zwischen den Welten auf die Zwischenlande fiel, erlischt für immer.\n\nDu hast das tiefste, bestgehütete Geheimnis des Schattenlands gelüftet — einen Boss, den <b>fast niemand</b> je zu Gesicht bekommt.", "Metyr, messenger of the Outer Gods, crumbles to stardust. Her gaze, cast upon the Lands Between from the void between worlds, is snuffed out forever.\n\nYou have uncovered the deepest, best-kept secret of the Land of Shadow — a boss <b>almost no one</b> ever lays eyes upon."));
@@ -4314,13 +4365,13 @@ function oeffneMohgDlcWahl() {
 function vollendeRunMitAbschluss(titel, text) {
   dlcWahlOffen = false;
   if (window.ER) {
-    recordHallOfFame();
+    if (!fastTravelRun) recordHallOfFame();   // Schnellreise: nicht in die Hall of Fame (kein voller Run)
     ER.gameCompleted(gewaehlteKlasse, hardMode ? "hard" : "normal", !blaiddEncounteredRun, (!hatRuestungAusgeruestet() && (gewaehlteKlasse === "nackt" || armorRemovedByPlayer)));
     stopRunTimer();
     ER.classFeat(gewaehlteKlasse, "normal");
     if (hardMode) ER.classFeat(gewaehlteKlasse, "hard");
     if (runPlayMs > 0 && runPlayMs <= CONFIG.speedrunMarkMs) ER.classFeat(gewaehlteKlasse, "speed5");
-    if (activeChallenge === "" && ER.recordCompletionTime) try { ER.recordCompletionTime(runPlayMs, { klasse: gewaehlteKlasse, diff: hardMode ? "hard" : "normal" }); } catch(e){}
+    if (activeChallenge === "" && !fastTravelRun && ER.recordCompletionTime) try { ER.recordCompletionTime(runPlayMs, { klasse: gewaehlteKlasse, diff: hardMode ? "hard" : "normal" }); } catch(e){}   // Speedrun-Board: keine Schnellreisen
     if (hardMode) ER.hardCompleted();
     if (activeChallenge) ER.challengeCompleted(activeChallenge);
     if (maleniaBesiegtRun) ER.maleniaRunCompleted();
